@@ -98,11 +98,11 @@ export default function Formazione() {
   // Calcola statistiche formazione
   const stats = useMemo(() => {
     const total = formazioni.length;
-    const validi = formazioni.filter(f => f.stato === 'approvato').length;
+    const validi = formazioni.filter(f => f.stato === 'fatto').length;
     const inScadenza = formazioni.filter(f => f.stato === 'in_scadenza').length;
     const scaduti = formazioni.filter(f => f.stato === 'scaduto').length;
     
-    const lavoratoriFormati = new Set(formazioni.filter(f => f.stato === 'approvato').map(f => f.lavoratoreId)).size;
+    const lavoratoriFormati = new Set(formazioni.filter(f => f.stato === 'fatto').map(f => f.lavoratoreId)).size;
     const lavoratoriNonConformi = new Set(formazioni.filter(f => f.stato === 'scaduto').map(f => f.lavoratoreId)).size;
     
     return { total, validi, inScadenza, scaduti, lavoratoriFormati, lavoratoriNonConformi };
@@ -332,7 +332,7 @@ export default function Formazione() {
                             'text-xs',
                             corso.stato === 'scaduto' && 'bg-red-500/20 text-red-500',
                             corso.stato === 'in_scadenza' && 'bg-amber-500/20 text-amber-500',
-                            corso.stato === 'approvato' && 'bg-emerald-500/20 text-emerald-500'
+                            corso.stato === 'fatto' && 'bg-emerald-500/20 text-emerald-500'
                           )}>
                             {corso.stato}
                           </Badge>
