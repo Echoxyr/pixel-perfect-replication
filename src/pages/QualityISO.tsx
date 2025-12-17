@@ -5,7 +5,6 @@ import {
   CAPA,
   AuditInterno,
   DocumentoControllato,
-  generateComplianceId
 } from '@/types/compliance';
 import { formatDateFull, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,9 @@ import {
   XCircle,
   Clock,
   Search,
-  BarChart3
+  BarChart3,
+  Trash2,
+  Edit
 } from 'lucide-react';
 
 export default function QualityISO() {
@@ -151,6 +152,37 @@ export default function QualityISO() {
 
   const [showNewNCDialog, setShowNewNCDialog] = useState(false);
   const [showNewAuditDialog, setShowNewAuditDialog] = useState(false);
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false);
+  const [showNCDetailDialog, setShowNCDetailDialog] = useState<string | null>(null);
+
+  // Form states
+  const [newNC, setNewNC] = useState({
+    origine: '' as 'interna' | 'cliente' | 'fornitore' | 'audit' | '',
+    tipoNC: '' as 'prodotto' | 'processo' | 'servizio' | 'sistema' | '',
+    gravita: '' as 'minore' | 'maggiore' | 'critica' | '',
+    descrizione: '',
+    rilevatore: '',
+    cantiereId: ''
+  });
+
+  const [newAudit, setNewAudit] = useState({
+    tipoAudit: '' as 'sistema' | 'processo' | 'prodotto' | 'cantiere' | '',
+    areaAuditata: '',
+    auditorLead: '',
+    dataAudit: '',
+    durataOre: 4,
+    cantiereId: ''
+  });
+
+  const [newDoc, setNewDoc] = useState({
+    codice: '',
+    titolo: '',
+    tipo: '' as 'procedura' | 'istruzione' | 'modulo' | 'manuale' | 'specifica' | '',
+    revisione: '01',
+    redattore: '',
+    verificatore: '',
+    approvatore: ''
+  });
 
   const stats = useMemo(() => ({
     ncAperte: nonConformita.filter(nc => nc.stato !== 'chiusa' && nc.stato !== 'verificata').length,
@@ -186,6 +218,126 @@ export default function QualityISO() {
       default: return 'bg-gray-500/20 text-gray-500';
     }
   };
+
+  const generateNCCode = () => {
+    const year = new Date().getFullYear();
+    const count = nonConformita.filter(nc => nc.codice.includes(year.toString())).length + 1;
+    return `NC-${year}-${count.toString().padStart(3, '0')}`;
+  };
+
+  const generateAuditCode = () => {
+    const year = new Date().getFullYear();
+    const count = auditInterni.filter(a => a.codice.includes(year.toString())).length + 1;
+    return `AUD-${year}-${count.toString().padStart(3, '0')}`;
+  };
+
+  const handleSaveNC = () => {
+    if (!newNC.origine || !newNC.gravita || !newNC.descrizione || !newNC.rilevatore) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const nc: NonConformita = {
+      id: generateId(),
+      codice: generateNCCode(),
+      cantiereId: newNC.cantiereId || undefined,
+      origine: newNC.origine,
+      tipoNC: newNC.tipoNC || 'processo',
+      descrizione: newNC.descrizione,
+      rilevatore: newNC.rilevatore,
+      dataRilevamento: new Date().toISOString().slice(0, 10),
+      gravita: newNC.gravita,
+      stato: 'aperta',
+      allegatiUrl: []
+    };
+
+    setNonConformita(prev => [nc, ...prev]);
+    toast({ title: 'Non Conformità registrata', description: `Codice: ${nc.codice}` });
+    setShowNewNCDialog(false);
+    setNewNC({ origine: '', tipoNC: '', gravita: '', descrizione: '', rilevatore: '', cantiereId: '' });
+  };
+
+  const handleSaveAudit = () => {
+    if (!newAudit.tipoAudit || !newAudit.areaAuditata || !newAudit.auditorLead || !newAudit.dataAudit) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const audit: AuditInterno = {
+      id: generateId(),
+      codice: generateAuditCode(),
+      tipoAudit: newAudit.tipoAudit,
+      areaAuditata: newAudit.areaAuditata,
+      cantiereId: newAudit.cantiereId || undefined,
+      auditorLead: newAudit.auditorLead,
+      teamAudit: [],
+      dataAudit: newAudit.dataAudit,
+      durataOre: newAudit.durataOre,
+      checklist: [],
+      findings: [],
+      conclusioni: '',
+      stato: 'pianificato'
+    };
+
+    setAuditInterni(prev => [audit, ...prev]);
+    toast({ title: 'Audit pianificato', description: `Codice: ${audit.codice}` });
+    setShowNewAuditDialog(false);
+    setNewAudit({ tipoAudit: '', areaAuditata: '', auditorLead: '', dataAudit: '', durataOre: 4, cantiereId: '' });
+  };
+
+  const handleSaveDoc = () => {
+    if (!newDoc.codice || !newDoc.titolo || !newDoc.tipo || !newDoc.redattore) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const doc: DocumentoControllato = {
+      id: generateId(),
+      codice: newDoc.codice,
+      titolo: newDoc.titolo,
+      tipo: newDoc.tipo,
+      revisione: newDoc.revisione,
+      dataEmissione: new Date().toISOString().slice(0, 10),
+      redattore: newDoc.redattore,
+      verificatore: newDoc.verificatore,
+      approvatore: newDoc.approvatore,
+      stato: 'bozza',
+      fileUrl: '',
+      distribuzioneControlata: true,
+      elencoDistribuzione: []
+    };
+
+    setDocumentiControllati(prev => [doc, ...prev]);
+    toast({ title: 'Documento creato' });
+    setShowNewDocDialog(false);
+    setNewDoc({ codice: '', titolo: '', tipo: '', revisione: '01', redattore: '', verificatore: '', approvatore: '' });
+  };
+
+  const handleUpdateNCStatus = (ncId: string, newStatus: NonConformita['stato']) => {
+    setNonConformita(prev => prev.map(nc => 
+      nc.id === ncId ? { ...nc, stato: newStatus, dataChiusura: newStatus === 'chiusa' ? new Date().toISOString().slice(0, 10) : nc.dataChiusura } : nc
+    ));
+    toast({ title: 'Stato aggiornato' });
+  };
+
+  const handleDeleteNC = (ncId: string) => {
+    setNonConformita(prev => prev.filter(nc => nc.id !== ncId));
+    toast({ title: 'NC eliminata' });
+  };
+
+  const handleDeleteAudit = (auditId: string) => {
+    setAuditInterni(prev => prev.filter(a => a.id !== auditId));
+    toast({ title: 'Audit eliminato' });
+  };
+
+  const handleUpdateAuditStatus = (auditId: string, newStatus: AuditInterno['stato']) => {
+    setAuditInterni(prev => prev.map(a => 
+      a.id === auditId ? { ...a, stato: newStatus } : a
+    ));
+    toast({ title: 'Stato audit aggiornato' });
+  };
+
+  const selectedNC = nonConformita.find(nc => nc.id === showNCDetailDialog);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -318,7 +470,26 @@ export default function QualityISO() {
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">Gestisci</Button>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={nc.stato} 
+                      onValueChange={(v) => handleUpdateNCStatus(nc.id, v as NonConformita['stato'])}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aperta">Aperta</SelectItem>
+                        <SelectItem value="in_analisi">In Analisi</SelectItem>
+                        <SelectItem value="in_trattamento">In Trattamento</SelectItem>
+                        <SelectItem value="chiusa">Chiusa</SelectItem>
+                        <SelectItem value="verificata">Verificata</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteNC(nc.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
                 {nc.azioneCorrettiva && (
                   <div className="mt-4 pt-4 border-t border-border">
@@ -398,6 +569,25 @@ export default function QualityISO() {
                       Lead: {audit.auditorLead} | Data: {formatDateFull(audit.dataAudit)} | Durata: {audit.durataOre}h
                     </p>
                   </div>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={audit.stato} 
+                      onValueChange={(v) => handleUpdateAuditStatus(audit.id, v as AuditInterno['stato'])}
+                    >
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pianificato">Pianificato</SelectItem>
+                        <SelectItem value="in_corso">In Corso</SelectItem>
+                        <SelectItem value="completato">Completato</SelectItem>
+                        <SelectItem value="report_emesso">Report Emesso</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteAudit(audit.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
                 {audit.findings.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-border">
@@ -418,9 +608,11 @@ export default function QualityISO() {
                     </div>
                   </div>
                 )}
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground">{audit.conclusioni}</p>
-                </div>
+                {audit.conclusioni && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground">{audit.conclusioni}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -428,6 +620,12 @@ export default function QualityISO() {
 
         {/* Documenti Tab */}
         <TabsContent value="documenti" className="mt-6">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setShowNewDocDialog(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Nuovo Documento
+            </Button>
+          </div>
           <div className="space-y-4">
             {documentiControllati.map(doc => (
               <div key={doc.id} className="p-4 rounded-xl border border-border bg-card flex items-center justify-between">
@@ -469,8 +667,8 @@ export default function QualityISO() {
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Origine</Label>
-                <Select>
+                <Label>Origine *</Label>
+                <Select value={newNC.origine} onValueChange={(v) => setNewNC(prev => ({ ...prev, origine: v as any }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona origine" />
                   </SelectTrigger>
@@ -483,8 +681,8 @@ export default function QualityISO() {
                 </Select>
               </div>
               <div>
-                <Label>Gravità</Label>
-                <Select>
+                <Label>Gravità *</Label>
+                <Select value={newNC.gravita} onValueChange={(v) => setNewNC(prev => ({ ...prev, gravita: v as any }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona gravità" />
                   </SelectTrigger>
@@ -497,12 +695,38 @@ export default function QualityISO() {
               </div>
             </div>
             <div>
-              <Label>Descrizione</Label>
-              <Textarea placeholder="Descrivi la non conformità..." />
+              <Label>Tipo NC</Label>
+              <Select value={newNC.tipoNC} onValueChange={(v) => setNewNC(prev => ({ ...prev, tipoNC: v as any }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prodotto">Prodotto</SelectItem>
+                  <SelectItem value="processo">Processo</SelectItem>
+                  <SelectItem value="servizio">Servizio</SelectItem>
+                  <SelectItem value="sistema">Sistema</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Descrizione *</Label>
+              <Textarea 
+                placeholder="Descrivi la non conformità..." 
+                value={newNC.descrizione}
+                onChange={(e) => setNewNC(prev => ({ ...prev, descrizione: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Rilevatore *</Label>
+              <Input 
+                placeholder="Nome del rilevatore"
+                value={newNC.rilevatore}
+                onChange={(e) => setNewNC(prev => ({ ...prev, rilevatore: e.target.value }))}
+              />
             </div>
             <div>
               <Label>Cantiere (opzionale)</Label>
-              <Select>
+              <Select value={newNC.cantiereId} onValueChange={(v) => setNewNC(prev => ({ ...prev, cantiereId: v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona cantiere" />
                 </SelectTrigger>
@@ -516,10 +740,166 @@ export default function QualityISO() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewNCDialog(false)}>Annulla</Button>
-            <Button onClick={() => {
-              toast({ title: 'Non Conformità registrata' });
-              setShowNewNCDialog(false);
-            }}>Crea NC</Button>
+            <Button onClick={handleSaveNC}>Crea NC</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Audit Dialog */}
+      <Dialog open={showNewAuditDialog} onOpenChange={setShowNewAuditDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Pianifica Audit Interno</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Tipo Audit *</Label>
+                <Select value={newAudit.tipoAudit} onValueChange={(v) => setNewAudit(prev => ({ ...prev, tipoAudit: v as any }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sistema">Sistema</SelectItem>
+                    <SelectItem value="processo">Processo</SelectItem>
+                    <SelectItem value="prodotto">Prodotto</SelectItem>
+                    <SelectItem value="cantiere">Cantiere</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Data Audit *</Label>
+                <Input 
+                  type="date"
+                  value={newAudit.dataAudit}
+                  onChange={(e) => setNewAudit(prev => ({ ...prev, dataAudit: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Area Auditata *</Label>
+              <Input 
+                placeholder="Es: Gestione Approvvigionamenti"
+                value={newAudit.areaAuditata}
+                onChange={(e) => setNewAudit(prev => ({ ...prev, areaAuditata: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Auditor Lead *</Label>
+              <Input 
+                placeholder="Nome auditor principale"
+                value={newAudit.auditorLead}
+                onChange={(e) => setNewAudit(prev => ({ ...prev, auditorLead: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Durata (ore)</Label>
+                <Input 
+                  type="number"
+                  value={newAudit.durataOre}
+                  onChange={(e) => setNewAudit(prev => ({ ...prev, durataOre: parseInt(e.target.value) || 4 }))}
+                />
+              </div>
+              <div>
+                <Label>Cantiere (opzionale)</Label>
+                <Select value={newAudit.cantiereId} onValueChange={(v) => setNewAudit(prev => ({ ...prev, cantiereId: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cantieri.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewAuditDialog(false)}>Annulla</Button>
+            <Button onClick={handleSaveAudit}>Pianifica Audit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Document Dialog */}
+      <Dialog open={showNewDocDialog} onOpenChange={setShowNewDocDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuovo Documento Controllato</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Codice *</Label>
+                <Input 
+                  placeholder="Es: PQ-02"
+                  value={newDoc.codice}
+                  onChange={(e) => setNewDoc(prev => ({ ...prev, codice: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Revisione</Label>
+                <Input 
+                  value={newDoc.revisione}
+                  onChange={(e) => setNewDoc(prev => ({ ...prev, revisione: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Titolo *</Label>
+              <Input 
+                placeholder="Titolo del documento"
+                value={newDoc.titolo}
+                onChange={(e) => setNewDoc(prev => ({ ...prev, titolo: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Tipo *</Label>
+              <Select value={newDoc.tipo} onValueChange={(v) => setNewDoc(prev => ({ ...prev, tipo: v as any }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manuale">Manuale</SelectItem>
+                  <SelectItem value="procedura">Procedura</SelectItem>
+                  <SelectItem value="istruzione">Istruzione Operativa</SelectItem>
+                  <SelectItem value="modulo">Modulo</SelectItem>
+                  <SelectItem value="specifica">Specifica Tecnica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Redattore *</Label>
+                <Input 
+                  placeholder="Nome"
+                  value={newDoc.redattore}
+                  onChange={(e) => setNewDoc(prev => ({ ...prev, redattore: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Verificatore</Label>
+                <Input 
+                  placeholder="Nome"
+                  value={newDoc.verificatore}
+                  onChange={(e) => setNewDoc(prev => ({ ...prev, verificatore: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Approvatore</Label>
+                <Input 
+                  placeholder="Nome"
+                  value={newDoc.approvatore}
+                  onChange={(e) => setNewDoc(prev => ({ ...prev, approvatore: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewDocDialog(false)}>Annulla</Button>
+            <Button onClick={handleSaveDoc}>Crea Documento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
