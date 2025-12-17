@@ -44,8 +44,10 @@ import {
   Clock,
   Download,
   Building2,
-  HardHat
+  HardHat,
+  ClipboardList
 } from 'lucide-react';
+import SafetyFormsModule from '@/components/workhub/SafetyFormsModule';
 
 export default function SafetyDLgs81() {
   const { cantieri, imprese, lavoratori } = useWorkHub();
@@ -218,6 +220,10 @@ export default function SafetyDLgs81() {
           <TabsTrigger value="duvri">DUVRI</TabsTrigger>
           <TabsTrigger value="infortuni">Registro Infortuni</TabsTrigger>
           <TabsTrigger value="visite">Visite Mediche</TabsTrigger>
+          <TabsTrigger value="moduli" className="gap-1">
+            <ClipboardList className="w-4 h-4" />
+            Moduli Compilabili
+          </TabsTrigger>
         </TabsList>
 
         {/* POS Tab */}
@@ -438,6 +444,11 @@ export default function SafetyDLgs81() {
               );
             })}
           </div>
+        </TabsContent>
+
+        {/* Moduli Compilabili Tab */}
+        <TabsContent value="moduli" className="mt-6">
+          <SafetyFormsModule />
         </TabsContent>
       </Tabs>
 
