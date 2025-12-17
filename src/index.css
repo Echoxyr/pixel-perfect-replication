@@ -76,19 +76,21 @@
   .dark {
     --background: 224 71% 4%;
     --foreground: 220 14% 96%;
-    --card: 224 71% 6%;
-    --card-foreground: 220 14% 96%;
-    --popover: 224 71% 6%;
-    --popover-foreground: 220 14% 96%;
+    
+    /* Cards - Lighter gray for contrast on dark background */
+    --card: 220 10% 28%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 10% 26%;
+    --popover-foreground: 0 0% 98%;
     
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 224 71% 10%;
-    --secondary-foreground: 220 14% 96%;
+    --secondary: 220 10% 24%;
+    --secondary-foreground: 0 0% 95%;
     
-    --muted: 224 71% 12%;
-    --muted-foreground: 220 9% 60%;
+    --muted: 220 10% 22%;
+    --muted-foreground: 220 9% 70%;
     
     --accent: 217 91% 15%;
     --accent-foreground: 217 91% 70%;
@@ -96,8 +98,8 @@
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 224 71% 12%;
-    --input: 224 71% 12%;
+    --border: 220 10% 35%;
+    --input: 220 10% 30%;
     --ring: 217 91% 60%;
     
     --sidebar-background: 224 50% 10%;
@@ -112,7 +114,7 @@
     --shadow-glow: 0 0 30px -5px hsl(217 91% 60% / 0.4);
     
     /* Content area - RAL 9018 inspired gray with glass */
-    --content-glass: 220 10% 18%;
+    --content-glass: 220 8% 14%;
   }
 }
 
