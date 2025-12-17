@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { 
   SAL, 
   ContrattoLavorazione, 
   TipoLavorazione,
   StatoSAL,
+  PrevisioneSAL,
   generateId, 
   formatCurrency, 
   formatDateFull,
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -45,21 +47,121 @@ import {
   Building2,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { SALComparisonChart } from '@/components/workhub/SALComparisonChart';
+import * as XLSX from 'xlsx';
 
 export default function SALPage() {
-  const { cantieri, sal, contratti, addSAL, updateSAL, deleteSAL, addContratto, updateContratto, deleteContratto } = useWorkHub();
+  const { cantieri, sal, contratti, previsioni, addSAL, updateSAL, deleteSAL, addContratto, updateContratto, deleteContratto, addPrevisione } = useWorkHub();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedCantiereId, setSelectedCantiereId] = useState<string>('all');
   const [selectedTipoLavorazione, setSelectedTipoLavorazione] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewSALDialog, setShowNewSALDialog] = useState(false);
   const [showNewContrattoDialog, setShowNewContrattoDialog] = useState(false);
+  const [showNewPrevisioneDialog, setShowNewPrevisioneDialog] = useState(false);
   const [editingSAL, setEditingSAL] = useState<SAL | null>(null);
+
+  // Previsione Form
+  const [previsioneForm, setPrevisioneForm] = useState({
+    cantiereId: '',
+    mese: new Date().toISOString().slice(0, 7),
+    tipoLavorazione: 'elettrico' as TipoLavorazione,
+    importoPrevisto: 0,
+    percentualePrevista: 0,
+    note: ''
+  });
+
+  // Handle Excel file upload for previsioni
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        let imported = 0;
+        jsonData.forEach((row: any) => {
+          // Expected columns: cantiereId/cantiere, mese, tipoLavorazione/tipo, importoPrevisto/importo, percentualePrevista/percentuale, note
+          const cantiereId = row.cantiereId || row.cantiere || selectedCantiereId;
+          const mese = row.mese || new Date().toISOString().slice(0, 7);
+          const tipoLavorazione = row.tipoLavorazione || row.tipo || 'elettrico';
+          const importoPrevisto = parseFloat(row.importoPrevisto || row.importo || 0);
+          const percentualePrevista = parseFloat(row.percentualePrevista || row.percentuale || 0);
+          const note = row.note || '';
+
+          if (cantiereId && cantiereId !== 'all' && importoPrevisto > 0) {
+            addPrevisione({
+              cantiereId,
+              mese,
+              tipoLavorazione: tipoLavorazione as TipoLavorazione,
+              importoPrevisto,
+              percentualePrevista,
+              note
+            });
+            imported++;
+          }
+        });
+
+        toast({ 
+          title: "Import completato", 
+          description: `${imported} previsioni importate da ${file.name}` 
+        });
+      } catch (error) {
+        toast({ 
+          title: "Errore import", 
+          description: "Formato file non valido", 
+          variant: "destructive" 
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
+  };
+
+  // Download template Excel
+  const downloadTemplate = () => {
+    const template = [
+      { cantiere: 'ID_CANTIERE', mese: '2024-01', tipo: 'elettrico', importo: 50000, percentuale: 10, note: 'Previsione gennaio' },
+      { cantiere: 'ID_CANTIERE', mese: '2024-02', tipo: 'elettrico', importo: 75000, percentuale: 25, note: 'Previsione febbraio' },
+    ];
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Previsioni');
+    XLSX.writeFile(wb, 'template_previsioni_sal.xlsx');
+  };
+
+  const handleCreatePrevisione = () => {
+    if (!previsioneForm.cantiereId) {
+      toast({ title: "Errore", description: "Seleziona un cantiere", variant: "destructive" });
+      return;
+    }
+
+    addPrevisione(previsioneForm);
+    toast({ title: "Previsione creata", description: `Previsione per ${previsioneForm.mese} aggiunta` });
+    setPrevisioneForm({
+      cantiereId: '',
+      mese: new Date().toISOString().slice(0, 7),
+      tipoLavorazione: 'elettrico',
+      importoPrevisto: 0,
+      percentualePrevista: 0,
+      note: ''
+    });
+    setShowNewPrevisioneDialog(false);
+  };
   
   // SAL Form
   const [salForm, setSalForm] = useState({
@@ -309,11 +411,20 @@ export default function SALPage() {
         </div>
       </div>
 
+      {/* SAL Comparison Chart */}
+      <SALComparisonChart 
+        sal={selectedCantiereId !== 'all' ? sal.filter(s => s.cantiereId === selectedCantiereId) : sal}
+        previsioni={selectedCantiereId !== 'all' ? previsioni.filter(p => p.cantiereId === selectedCantiereId) : previsioni}
+        cantiereId={selectedCantiereId !== 'all' ? selectedCantiereId : undefined}
+        onAddPrevisione={selectedCantiereId !== 'all' ? addPrevisione : undefined}
+      />
+
       {/* Tabs */}
       <Tabs defaultValue="sal" className="w-full">
         <TabsList>
           <TabsTrigger value="sal">SAL Mensili</TabsTrigger>
           <TabsTrigger value="contratti">Contratti Lavorazioni</TabsTrigger>
+          <TabsTrigger value="previsioni">Previsioni</TabsTrigger>
           <TabsTrigger value="gantt">Timeline Gantt</TabsTrigger>
         </TabsList>
 
@@ -470,6 +581,92 @@ export default function SALPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Previsioni Tab */}
+        <TabsContent value="previsioni" className="mt-6">
+          <div className="space-y-4">
+            {/* Actions */}
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={() => setShowNewPrevisioneDialog(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nuova Previsione
+              </Button>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="gap-2">
+                <Upload className="w-4 h-4" />
+                Importa Excel
+              </Button>
+              <Button variant="outline" onClick={downloadTemplate} className="gap-2">
+                <Download className="w-4 h-4" />
+                Scarica Template
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Previsioni List */}
+            {previsioni.filter(p => selectedCantiereId === 'all' || p.cantiereId === selectedCantiereId).length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessuna previsione trovata</p>
+                <p className="text-sm mt-2">Crea una previsione manualmente o importa da file Excel</p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {previsioni
+                  .filter(p => selectedCantiereId === 'all' || p.cantiereId === selectedCantiereId)
+                  .sort((a, b) => a.mese.localeCompare(b.mese))
+                  .map(p => (
+                    <div key={p.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={cn(
+                            'p-2 rounded-lg',
+                            p.tipoLavorazione === 'elettrico' ? 'bg-yellow-500/10' :
+                            p.tipoLavorazione === 'meccanico' ? 'bg-blue-500/10' :
+                            p.tipoLavorazione === 'idraulico' ? 'bg-cyan-500/10' :
+                            'bg-gray-500/10'
+                          )}>
+                            <TrendingUp className={cn(
+                              'w-5 h-5',
+                              p.tipoLavorazione === 'elettrico' ? 'text-yellow-500' :
+                              p.tipoLavorazione === 'meccanico' ? 'text-blue-500' :
+                              p.tipoLavorazione === 'idraulico' ? 'text-cyan-500' :
+                              'text-gray-500'
+                            )} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{p.mese}</h3>
+                              <span className={cn(
+                                'px-2 py-0.5 text-xs font-medium rounded-full',
+                                p.tipoLavorazione === 'elettrico' ? 'bg-yellow-500/20 text-yellow-500' :
+                                p.tipoLavorazione === 'meccanico' ? 'bg-blue-500/20 text-blue-500' :
+                                p.tipoLavorazione === 'idraulico' ? 'bg-cyan-500/20 text-cyan-500' :
+                                'bg-gray-500/20 text-gray-500'
+                              )}>
+                                {TIPO_LAVORAZIONE_LABELS[p.tipoLavorazione]}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{getCantiereName(p.cantiereId)}</p>
+                            {p.note && <p className="text-xs text-muted-foreground mt-1">{p.note}</p>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold">{formatCurrency(p.importoPrevisto)}</p>
+                          <p className="text-sm text-muted-foreground">{p.percentualePrevista.toFixed(1)}% avanzamento</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -740,6 +937,89 @@ export default function SALPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewContrattoDialog(false)}>Annulla</Button>
             <Button onClick={handleCreateContratto}>Crea Contratto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Previsione Dialog */}
+      <Dialog open={showNewPrevisioneDialog} onOpenChange={setShowNewPrevisioneDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuova Previsione SAL</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Cantiere *</Label>
+              <Select value={previsioneForm.cantiereId} onValueChange={(v) => setPrevisioneForm({ ...previsioneForm, cantiereId: v })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona cantiere" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeCantieri.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Mese</Label>
+                <Input
+                  type="month"
+                  className="mt-1"
+                  value={previsioneForm.mese}
+                  onChange={(e) => setPrevisioneForm({ ...previsioneForm, mese: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Tipo Lavorazione</Label>
+                <Select value={previsioneForm.tipoLavorazione} onValueChange={(v) => setPrevisioneForm({ ...previsioneForm, tipoLavorazione: v as TipoLavorazione })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TIPO_LAVORAZIONE_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Importo Previsto €</Label>
+                <Input
+                  type="number"
+                  className="mt-1"
+                  value={previsioneForm.importoPrevisto}
+                  onChange={(e) => setPrevisioneForm({ ...previsioneForm, importoPrevisto: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label>% Avanzamento Prevista</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="mt-1"
+                  value={previsioneForm.percentualePrevista}
+                  onChange={(e) => setPrevisioneForm({ ...previsioneForm, percentualePrevista: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Note</Label>
+              <Input
+                className="mt-1"
+                value={previsioneForm.note}
+                onChange={(e) => setPrevisioneForm({ ...previsioneForm, note: e.target.value })}
+                placeholder="Note opzionali..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewPrevisioneDialog(false)}>Annulla</Button>
+            <Button onClick={handleCreatePrevisione}>Crea Previsione</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
