@@ -22,6 +22,7 @@ export default function Impostazioni() {
   const headerInputRef = useRef<HTMLInputElement>(null);
   const footerInputRef = useRef<HTMLInputElement>(null);
   const timbroInputRef = useRef<HTMLInputElement>(null);
+  const templateWordRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     toast({
@@ -59,6 +60,42 @@ export default function Impostazioni() {
   const handleRemoveImage = (field: 'cartaIntestataHeader' | 'cartaIntestataFooter' | 'timbro') => {
     updateDatiAzienda({ [field]: undefined });
     toast({ title: 'Immagine rimossa' });
+  };
+
+  const handleTemplateWordUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword'
+    ];
+    if (!validTypes.includes(file.type) && !file.name.endsWith('.docx') && !file.name.endsWith('.doc')) {
+      toast({ title: 'Formato non valido', description: 'Carica solo file Word (.docx o .doc)', variant: 'destructive' });
+      return;
+    }
+
+    // Check file size (max 10MB for Word documents)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File troppo grande', description: 'Dimensione massima 10MB', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      updateDatiAzienda({ 
+        templateDocumentoBase: reader.result as string,
+        templateDocumentoNome: file.name 
+      });
+      toast({ title: 'Template Word caricato', description: 'Questo file verrà usato come base per tutti i moduli' });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveTemplateWord = () => {
+    updateDatiAzienda({ templateDocumentoBase: undefined, templateDocumentoNome: undefined });
+    toast({ title: 'Template Word rimosso' });
   };
 
   return (
@@ -425,6 +462,80 @@ export default function Impostazioni() {
                   className="hidden"
                   onChange={handleImageUpload('timbro')}
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Template Word Base */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Template Documento Base (Word)
+              </CardTitle>
+              <CardDescription>
+                Carica un file Word (.docx) con la tua carta intestata già configurata. 
+                Questo file verrà usato come base <strong>"intoccabile"</strong> per generare tutti i moduli ufficiali.
+                L'intestazione, il footer e la formattazione del tuo documento verranno preservati.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {datiAzienda.templateDocumentoBase ? (
+                <div className="relative border border-border rounded-lg p-6 bg-muted/20">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <FileText className="w-10 h-10 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{datiAzienda.templateDocumentoNome || 'Template Word'}</p>
+                      <p className="text-sm text-muted-foreground">Template caricato e pronto all'uso</p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleRemoveTemplateWord}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Rimuovi
+                    </Button>
+                  </div>
+                  <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                      ✓ I moduli D.Lgs 81/2008 utilizzeranno questo documento come base
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                  onClick={() => templateWordRef.current?.click()}
+                >
+                  <Upload className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                  <p className="font-medium">Clicca per caricare il template Word</p>
+                  <p className="text-sm text-muted-foreground mt-1">File .docx con carta intestata aziendale (max 10MB)</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Il documento deve contenere l'intestazione superiore e inferiore già configurate
+                  </p>
+                </div>
+              )}
+              <input
+                ref={templateWordRef}
+                type="file"
+                accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                className="hidden"
+                onChange={handleTemplateWordUpload}
+              />
+              
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <p className="text-sm text-amber-700 dark:text-amber-400 font-medium mb-1">
+                  ⚠️ Informazioni importanti
+                </p>
+                <ul className="text-xs text-amber-600 dark:text-amber-300 space-y-1 list-disc list-inside">
+                  <li>Il file Word deve avere l'intestazione e il piè di pagina già configurati</li>
+                  <li>I moduli generati inseriranno i contenuti nel corpo del documento</li>
+                  <li>Le citazioni normative verranno inserite dove richiesto dalla legge</li>
+                  <li>I tuoi dati aziendali verranno usati solo nei campi obbligatori per legge</li>
+                </ul>
               </div>
             </CardContent>
           </Card>

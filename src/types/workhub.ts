@@ -37,6 +37,10 @@ export interface DatiAzienda {
   timbro?: string; // Base64 o URL immagine
   timbroPositionX?: number; // Posizione X in %
   timbroPositionY?: number; // Posizione Y in %
+  
+  // Template Word Base (file .docx caricato dall'utente)
+  templateDocumentoBase?: string; // Base64 del file .docx
+  templateDocumentoNome?: string; // Nome del file originale
 }
 
 // === ENUMS ===

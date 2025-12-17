@@ -104,8 +104,8 @@ interface ModuloCustom {
   fileUrl: string;
 }
 
-// Generate professional PDF with letterhead
-const generateProfessionalPDF = (
+// Generate professional document content with proper legal formatting
+const generateProfessionalDocument = (
   modulo: ModuloCompilato,
   moduloInfo: typeof MODULI_STANDARD[0] | undefined,
   datiAzienda: DatiAzienda,
@@ -119,127 +119,132 @@ const generateProfessionalPDF = (
   };
 
   const titolareNomeCompleto = `${datiAzienda.nomeTitolare} ${datiAzienda.cognomeTitolare}`.trim();
-  const indirizzoCompleto = [datiAzienda.sedeLegale, datiAzienda.cap, datiAzienda.citta, datiAzienda.provincia ? `(${datiAzienda.provincia})` : ''].filter(Boolean).join(' ');
+  const indirizzoCompleto = [datiAzienda.sedeLegale, datiAzienda.cap, datiAzienda.citta, datiAzienda.provincia ? `(${datiAzienda.provincia})` : ''].filter(Boolean).join(', ');
 
-  // Generate module-specific content
+  // References normative per ogni tipo di modulo
+  const RIFERIMENTI_NORMATIVI = {
+    psc_accettazione: 'Art. 100, comma 3 e Allegato XV del D.Lgs. 81/2008 - Piano di Sicurezza e Coordinamento',
+    no_interdetti: 'Art. 14 del D.Lgs. 81/2008 e s.m.i. - Provvedimenti degli organi di vigilanza',
+    oma: 'Art. 90, comma 9, lett. b) del D.Lgs. 81/2008 - Obblighi del committente',
+    dichiarazione_81: 'D.Lgs. 81/2008 e s.m.i. - Testo Unico sulla Sicurezza sul Lavoro',
+    nomina_direttore: 'Art. 90 e 97 del D.Lgs. 81/2008 - Figure della sicurezza in cantiere',
+    nomina_antincendio: 'Art. 18, comma 1, lett. b) e Art. 43 del D.Lgs. 81/2008 - D.M. 10 marzo 1998',
+    nomina_primo_soccorso: 'Art. 18, comma 1, lett. b) e Art. 45 del D.Lgs. 81/2008 - D.M. 388/2003',
+    nomina_rls: 'Art. 47, 48, 49 e 50 del D.Lgs. 81/2008 - Rappresentante dei Lavoratori per la Sicurezza',
+    nomina_medico: 'Art. 18, comma 1, lett. a) e Artt. 38-42 del D.Lgs. 81/2008 - Sorveglianza sanitaria',
+    nomina_rspp: 'Artt. 17, 31, 32, 33, 34 del D.Lgs. 81/2008 - Servizio di Prevenzione e Protezione',
+    consegna_dpi: 'Art. 18, comma 1, lett. d) e Titolo III, Capo II del D.Lgs. 81/2008 - DPI'
+  };
+
+  const getRiferimentoNormativo = () => {
+    return RIFERIMENTI_NORMATIVI[modulo.tipoModulo as keyof typeof RIFERIMENTI_NORMATIVI] || 'D.Lgs. 81/2008 e s.m.i.';
+  };
+
+  // Generate module-specific content with justified text and proper legal formatting
   const generateModuleContent = () => {
     switch (modulo.tipoModulo) {
       case 'psc_accettazione':
         return `
-          <p style="margin-bottom: 20px; line-height: 1.8;">
-            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
-            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
-            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
-            in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
+          <p class="dichiarazione-intro">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, codice fiscale <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
           </p>
-          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
-          <ul style="line-height: 2; margin-left: 20px;">
-            <li>di aver preso visione del Piano di Sicurezza e Coordinamento (PSC) ${modulo.datiForm.revisionePSC ? `Rev. ${modulo.datiForm.revisionePSC}` : ''} ${modulo.datiForm.dataPSC ? `del ${formatDate(modulo.datiForm.dataPSC)}` : ''};</li>
-            <li>di accettarne integralmente i contenuti;</li>
-            <li>di impegnarsi a rispettare tutte le prescrizioni in esso contenute;</li>
-            <li>di aver trasmesso il PSC ai propri lavoratori prima dell'inizio dei lavori.</li>
-          </ul>
-          ${modulo.datiForm.note ? `<p style="margin-top: 20px;"><strong>Note:</strong> ${modulo.datiForm.note}</p>` : ''}
+          
+          <p class="dichiarazione-premessa">
+            ai sensi e per gli effetti dell'Art. 100, comma 3 del D.Lgs. 81/2008 e s.m.i. e dell'Allegato XV del medesimo decreto, consapevole delle responsabilità civili e penali connesse al rilascio di dichiarazioni mendaci ai sensi degli artt. 75 e 76 del D.P.R. 445/2000,
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA</p>
+
+          <p class="dichiarazione-corpo">
+            di aver ricevuto, letto e compreso integralmente il Piano di Sicurezza e Coordinamento (PSC) ${modulo.datiForm.revisionePSC ? `Rev. ${modulo.datiForm.revisionePSC}` : ''} ${modulo.datiForm.dataPSC ? `datato ${formatDate(modulo.datiForm.dataPSC)}` : ''} relativo al cantiere in oggetto, di accettarne senza riserve tutti i contenuti e le prescrizioni in esso contenute, impegnandosi a rispettarle e a farle rispettare dai propri dipendenti e collaboratori. Dichiara altresì di aver trasmesso copia del PSC a tutti i lavoratori che opereranno nel cantiere prima dell'inizio delle rispettive attività lavorative, fornendo loro adeguata formazione e informazione sui rischi specifici presenti.
+          </p>
+
+          ${modulo.datiForm.note ? `<p class="note-aggiuntive"><strong>Note:</strong> ${modulo.datiForm.note}</p>` : ''}
         `;
 
       case 'no_interdetti':
         return `
-          <p style="margin-bottom: 20px; line-height: 1.8;">
-            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
-            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
-            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
-            in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
-            consapevole delle sanzioni penali previste dall'art. 76 del D.P.R. 445/2000 in caso di dichiarazioni mendaci,
+          <p class="dichiarazione-intro">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, codice fiscale <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, in qualità di Legale Rappresentante e Datore di Lavoro dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
           </p>
-          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
-          <p style="line-height: 1.8;">
-            che l'impresa non ha alle proprie dipendenze personale sottoposto a provvedimenti interdittivi o di sospensione 
-            ai sensi dell'art. 14 del D.Lgs. 81/2008 e s.m.i.
+
+          <p class="dichiarazione-premessa">
+            ai sensi e per gli effetti dell'art. 47 del D.P.R. 28 dicembre 2000, n. 445, consapevole delle sanzioni penali previste dall'art. 76 del medesimo decreto in caso di dichiarazioni mendaci e della decadenza dei benefici eventualmente conseguiti al provvedimento emanato sulla base di dichiarazioni non veritiere, ai sensi dell'art. 75 del citato D.P.R.,
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA</p>
+
+          <p class="dichiarazione-corpo">
+            che l'impresa rappresentata non ha attualmente alle proprie dipendenze personale sottoposto a provvedimenti di sospensione o interdittivi di cui all'art. 14 del D.Lgs. 81/2008 e successive modificazioni e integrazioni, né risultano pendenti procedimenti per l'adozione di tali provvedimenti a carico dell'impresa medesima o dei suoi dipendenti. Dichiara inoltre che l'impresa non è stata destinataria, negli ultimi cinque anni, di provvedimenti di sospensione dell'attività imprenditoriale per gravi e reiterate violazioni in materia di tutela della salute e sicurezza sul lavoro.
           </p>
         `;
 
       case 'oma':
         return `
-          <p style="margin-bottom: 20px; line-height: 1.8;">
-            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Legale Rappresentante dell'impresa 
-            <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
+          <p class="dichiarazione-intro">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>, C.F. <strong>${datiAzienda.codiceFiscaleAzienda || '_______________'}</strong>, iscritta alla Camera di Commercio di ${datiAzienda.provincia || '_______________'} al n. REA <strong>${datiAzienda.iscrizioneREA || '_______________'}</strong>,
           </p>
-          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
-          <p style="margin-bottom: 15px;">che l'Organico Medio Annuo dell'impresa per l'anno <strong>${modulo.datiForm.annoRiferimento || new Date().getFullYear()}</strong> è il seguente:</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr>
-              <td style="border: 1px solid #333; padding: 10px; width: 50%;"><strong>Organico Medio Annuo Complessivo</strong></td>
-              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.organicoMedio || '___'}</td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #333; padding: 10px;">di cui Operai</td>
-              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.operai || '___'}</td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #333; padding: 10px;">di cui Impiegati</td>
-              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.impiegati || '___'}</td>
-            </tr>
-            <tr>
-              <td style="border: 1px solid #333; padding: 10px;"><strong>CCNL Applicato</strong></td>
-              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.ccnl || '___'}</td>
-            </tr>
-          </table>
+
+          <p class="dichiarazione-premessa">
+            ai sensi dell'art. 90, comma 9, lettera b) del D.Lgs. 81/2008 e s.m.i., e ai sensi degli artt. 46 e 47 del D.P.R. 445/2000, consapevole delle responsabilità e delle sanzioni penali stabilite dalla legge per le false attestazioni e le dichiarazioni mendaci,
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA</p>
+
+          <p class="dichiarazione-corpo">
+            che l'Organico Medio Annuo (OMA) dell'impresa per l'anno <strong>${modulo.datiForm.annoRiferimento || new Date().getFullYear()}</strong>, calcolato secondo i criteri previsti dalla normativa vigente, è pari a <strong>${modulo.datiForm.organicoMedio || '___'}</strong> unità lavorative, di cui <strong>${modulo.datiForm.operai || '___'}</strong> operai e <strong>${modulo.datiForm.impiegati || '___'}</strong> impiegati. Dichiara inoltre che ai dipendenti viene applicato il Contratto Collettivo Nazionale di Lavoro <strong>${modulo.datiForm.ccnl || '_______________'}</strong> e che l'impresa è in regola con i versamenti contributivi e assicurativi previsti dalla legge.
+          </p>
         `;
 
       case 'dichiarazione_81':
-        const checks = [
-          { key: 'check_0', label: 'Aver effettuato la valutazione dei rischi (DVR)' },
-          { key: 'check_1', label: 'Aver nominato il RSPP' },
-          { key: 'check_2', label: 'Aver nominato il Medico Competente (ove previsto)' },
-          { key: 'check_3', label: 'Aver designato gli addetti alle emergenze' },
-          { key: 'check_4', label: 'Aver formato i lavoratori secondo normativa' },
-          { key: 'check_5', label: 'Aver fornito i DPI necessari' },
-        ];
+        const adempimenti = [
+          modulo.datiForm.check_0 && 'effettuato la valutazione di tutti i rischi per la salute e sicurezza dei lavoratori, elaborando il relativo Documento di Valutazione dei Rischi (DVR) ai sensi degli artt. 17 e 28 del D.Lgs. 81/2008',
+          modulo.datiForm.check_1 && 'nominato il Responsabile del Servizio di Prevenzione e Protezione (RSPP) ai sensi dell\'art. 17, comma 1, lett. b)',
+          modulo.datiForm.check_2 && 'nominato il Medico Competente ai sensi dell\'art. 18, comma 1, lett. a), ove previsto dalla valutazione dei rischi',
+          modulo.datiForm.check_3 && 'designato preventivamente i lavoratori incaricati dell\'attuazione delle misure di prevenzione incendi, lotta antincendio, evacuazione, primo soccorso e gestione delle emergenze ai sensi dell\'art. 18, comma 1, lett. b)',
+          modulo.datiForm.check_4 && 'adempiuto agli obblighi di informazione, formazione e addestramento dei lavoratori secondo quanto previsto dagli artt. 36 e 37',
+          modulo.datiForm.check_5 && 'fornito ai lavoratori i necessari e idonei Dispositivi di Protezione Individuale (DPI) ai sensi dell\'art. 18, comma 1, lett. d)'
+        ].filter(Boolean);
+
         return `
-          <p style="margin-bottom: 20px; line-height: 1.8;">
-            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
-            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
-            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
-            in qualità di Datore di Lavoro dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
+          <p class="dichiarazione-intro">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, codice fiscale <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, in qualità di Datore di Lavoro dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
           </p>
-          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
-          <p style="margin-bottom: 15px;">di ottemperare a tutti gli obblighi previsti dal D.Lgs. 81/2008 e successive modifiche e integrazioni in materia di tutela della salute e sicurezza nei luoghi di lavoro.</p>
-          <p style="margin-bottom: 15px;"><strong>In particolare dichiara di:</strong></p>
-          <ul style="line-height: 2; margin-left: 20px;">
-            ${checks.map(c => `<li>${modulo.datiForm[c.key] ? '☑' : '☐'} ${c.label}</li>`).join('')}
-          </ul>
+
+          <p class="dichiarazione-premessa">
+            ai sensi del D.Lgs. 9 aprile 2008, n. 81 e successive modifiche e integrazioni (Testo Unico sulla Salute e Sicurezza sul Lavoro) e ai sensi degli artt. 46 e 47 del D.P.R. 445/2000, consapevole delle responsabilità e delle sanzioni penali stabilite dalla legge per le false attestazioni e le dichiarazioni mendaci,
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA</p>
+
+          <p class="dichiarazione-corpo">
+            di ottemperare a tutti gli obblighi previsti dal D.Lgs. 81/2008 e successive modifiche e integrazioni in materia di tutela della salute e sicurezza nei luoghi di lavoro. In particolare, dichiara di aver ${adempimenti.join('; ')}.
+          </p>
+
+          <p class="dichiarazione-corpo">
+            Il sottoscritto si impegna inoltre a comunicare tempestivamente eventuali variazioni rispetto a quanto sopra dichiarato e a mantenere costantemente aggiornata la documentazione relativa alla sicurezza sul lavoro.
+          </p>
         `;
 
       case 'consegna_dpi':
         const dpiConsegnati = DPI_STANDARD.filter(dpi => modulo.datiForm[`dpi_${dpi.id}`]);
+        const dpiList = dpiConsegnati.map(dpi => 
+          `${dpi.nome} (norma ${dpi.normativa}) - quantità: ${modulo.datiForm[`qty_${dpi.id}`] || '1'}`
+        ).join('; ');
+
         return `
-          <p style="margin-bottom: 20px; line-height: 1.8;">
-            In data <strong>${modulo.datiForm.dataConsegna ? formatDate(modulo.datiForm.dataConsegna) : formatDate(modulo.dataCompilazione)}</strong>, 
-            presso il cantiere <strong>${cantiere?.nome || '_______________'}</strong>,
+          <p class="dichiarazione-premessa">
+            Ai sensi dell'art. 18, comma 1, lettera d) e del Titolo III, Capo II (artt. 74-79) del D.Lgs. 81/2008 e s.m.i., relativo all'uso dei Dispositivi di Protezione Individuale,
           </p>
-          <p style="margin-bottom: 15px;">il Datore di Lavoro <strong>${titolareNomeCompleto}</strong> dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> 
-          ha consegnato al lavoratore <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>, 
-          C.F. <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>, mansione <strong>${lavoratore?.mansione || '_______________'}</strong>,
-          i seguenti Dispositivi di Protezione Individuale:</p>
-          
-          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <tr style="background: #f5f5f5;">
-              <th style="border: 1px solid #333; padding: 10px; text-align: left;">DPI</th>
-              <th style="border: 1px solid #333; padding: 10px; text-align: center;">Normativa</th>
-              <th style="border: 1px solid #333; padding: 10px; text-align: center;">Qtà</th>
-            </tr>
-            ${dpiConsegnati.map(dpi => `
-              <tr>
-                <td style="border: 1px solid #333; padding: 10px;">${dpi.nome}</td>
-                <td style="border: 1px solid #333; padding: 10px; text-align: center;">${dpi.normativa}</td>
-                <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm[`qty_${dpi.id}`] || '1'}</td>
-              </tr>
-            `).join('')}
-          </table>
-          
-          <p style="margin-top: 20px; line-height: 1.8;">
-            Il lavoratore dichiara di aver ricevuto i DPI sopra elencati e di essere stato informato sulle corrette modalità di utilizzo, 
-            manutenzione e conservazione degli stessi, nonché sui rischi dai quali il DPI lo protegge.
+
+          <p class="dichiarazione-titolo">VERBALE DI CONSEGNA DPI</p>
+
+          <p class="dichiarazione-corpo">
+            In data <strong>${modulo.datiForm.dataConsegna ? formatDate(modulo.datiForm.dataConsegna) : formatDate(modulo.dataCompilazione)}</strong>, presso il cantiere <strong>${cantiere?.nome || '_______________'}</strong> sito in ${cantiere?.indirizzo || '_______________'}, il Datore di Lavoro <strong>${titolareNomeCompleto}</strong> dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> ha consegnato al lavoratore <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>, codice fiscale <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>, mansione <strong>${lavoratore?.mansione || '_______________'}</strong>, i seguenti Dispositivi di Protezione Individuale: ${dpiList || '_______________'}.
+          </p>
+
+          <p class="dichiarazione-corpo">
+            Il lavoratore dichiara di aver ricevuto i DPI sopra elencati e di essere stato adeguatamente formato e informato ai sensi dell'art. 77, comma 4, del D.Lgs. 81/2008 circa le corrette modalità di utilizzo, manutenzione, conservazione e riconsegna dei dispositivi, nonché sui rischi specifici dai quali i DPI sono destinati a proteggerlo e sulle circostanze nelle quali il loro uso è necessario. Il lavoratore si impegna ad utilizzare i DPI conformemente alle istruzioni ricevute e a segnalare tempestivamente eventuali difetti o inconvenienti.
           </p>
         `;
 
@@ -247,36 +252,93 @@ const generateProfessionalPDF = (
         // Nomine
         if (modulo.tipoModulo.startsWith('nomina_')) {
           const tipoNomina = modulo.tipoModulo.replace('nomina_', '');
-          const titoloNomina = {
-            direttore: 'Direttore Tecnico di Cantiere',
-            antincendio: 'Addetto alla Lotta Antincendio e Gestione Emergenze',
-            primo_soccorso: 'Addetto al Primo Soccorso',
-            rls: 'Rappresentante dei Lavoratori per la Sicurezza (RLS)',
-            medico: 'Medico Competente',
-            rspp: 'Responsabile del Servizio di Prevenzione e Protezione (RSPP)'
-          }[tipoNomina] || 'Incaricato';
+          const nominaConfig = {
+            direttore: {
+              titolo: 'DIRETTORE TECNICO DI CANTIERE',
+              riferimento: 'ai sensi degli artt. 90 e 97 del D.Lgs. 81/2008',
+              compiti: 'la direzione tecnica del cantiere, il coordinamento delle attività lavorative, la vigilanza sull\'osservanza delle disposizioni in materia di sicurezza e la gestione operativa delle maestranze'
+            },
+            antincendio: {
+              titolo: 'ADDETTO ALLA PREVENZIONE INCENDI, LOTTA ANTINCENDIO E GESTIONE DELLE EMERGENZE',
+              riferimento: 'ai sensi dell\'art. 18, comma 1, lettera b) e dell\'art. 43 del D.Lgs. 81/2008, nonché del D.M. 10 marzo 1998',
+              compiti: 'l\'attuazione delle misure di prevenzione incendi, la lotta antincendio, l\'evacuazione dei luoghi di lavoro in caso di pericolo grave ed immediato e la gestione delle emergenze'
+            },
+            primo_soccorso: {
+              titolo: 'ADDETTO AL PRIMO SOCCORSO',
+              riferimento: 'ai sensi dell\'art. 18, comma 1, lettera b) e dell\'art. 45 del D.Lgs. 81/2008, nonché del D.M. 388/2003',
+              compiti: 'l\'attuazione delle misure di primo soccorso, la gestione degli interventi di emergenza sanitaria e il coordinamento con i servizi di soccorso esterni'
+            },
+            rls: {
+              titolo: 'RAPPRESENTANTE DEI LAVORATORI PER LA SICUREZZA (RLS)',
+              riferimento: 'ai sensi degli artt. 47, 48, 49 e 50 del D.Lgs. 81/2008',
+              compiti: 'la rappresentanza dei lavoratori per quanto concerne gli aspetti della salute e della sicurezza durante il lavoro, secondo le attribuzioni di cui all\'art. 50 del D.Lgs. 81/2008'
+            },
+            medico: {
+              titolo: 'MEDICO COMPETENTE',
+              riferimento: 'ai sensi dell\'art. 18, comma 1, lettera a) e degli artt. 38-42 del D.Lgs. 81/2008',
+              compiti: 'la sorveglianza sanitaria dei lavoratori, la collaborazione con il Datore di Lavoro e con il Servizio di Prevenzione e Protezione, la visita degli ambienti di lavoro e tutte le attività di cui all\'art. 25 del D.Lgs. 81/2008'
+            },
+            rspp: {
+              titolo: 'RESPONSABILE DEL SERVIZIO DI PREVENZIONE E PROTEZIONE (RSPP)',
+              riferimento: 'ai sensi degli artt. 17, comma 1, lettera b), 31, 32, 33 e 34 del D.Lgs. 81/2008',
+              compiti: 'il coordinamento del Servizio di Prevenzione e Protezione, l\'individuazione dei fattori di rischio, l\'elaborazione delle misure preventive e protettive, la predisposizione dei programmi di informazione e formazione, e tutte le attività di cui all\'art. 33 del D.Lgs. 81/2008'
+            }
+          }[tipoNomina] || { titolo: 'INCARICATO', riferimento: 'ai sensi del D.Lgs. 81/2008', compiti: 'lo svolgimento delle mansioni assegnate' };
 
           return `
-            <p style="margin-bottom: 20px; line-height: 1.8;">
-              Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Datore di Lavoro dell'impresa 
-              <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
+            <p class="dichiarazione-intro">
+              Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Datore di Lavoro dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
             </p>
-            <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">NOMINA</p>
-            <p style="margin-bottom: 20px; line-height: 1.8;">
-              il Sig./Sig.ra <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>,
-              C.F. <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>,
+
+            <p class="dichiarazione-premessa">
+              ${nominaConfig.riferimento}, visti gli obblighi ivi previsti in materia di organizzazione della sicurezza aziendale,
             </p>
-            <p style="text-align: center; font-weight: bold; margin: 20px 0;">${titoloNomina}</p>
-            <p style="margin-bottom: 15px;">con decorrenza dal <strong>${modulo.datiForm.dataDecorrenza ? formatDate(modulo.datiForm.dataDecorrenza) : '_______________'}</strong></p>
-            ${cantiere ? `<p style="margin-bottom: 15px;">per il cantiere: <strong>${cantiere.nome}</strong> - ${cantiere.indirizzo}</p>` : ''}
-            ${modulo.datiForm.compiti ? `<p style="margin-top: 20px;"><strong>Compiti e responsabilità:</strong><br/>${modulo.datiForm.compiti}</p>` : ''}
+
+            <p class="dichiarazione-titolo">NOMINA</p>
+
+            <p class="dichiarazione-corpo">
+              il Sig./Sig.ra <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>, nato/a a <strong>_______________</strong> il <strong>_______________</strong>, codice fiscale <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>, residente in <strong>_______________</strong>,
+            </p>
+
+            <p class="nomina-ruolo">${nominaConfig.titolo}</p>
+
+            <p class="dichiarazione-corpo">
+              con decorrenza dal <strong>${modulo.datiForm.dataDecorrenza ? formatDate(modulo.datiForm.dataDecorrenza) : '_______________'}</strong>${cantiere ? ` per il cantiere denominato <strong>${cantiere.nome}</strong> sito in ${cantiere.indirizzo}` : ''}, conferendo al medesimo/alla medesima ${nominaConfig.compiti}.
+            </p>
+
+            ${modulo.datiForm.compiti ? `<p class="dichiarazione-corpo"><strong>Compiti e responsabilità specifiche:</strong> ${modulo.datiForm.compiti}</p>` : ''}
+
+            <p class="dichiarazione-corpo">
+              Il/La nominato/a dichiara di accettare l'incarico conferitogli/le e di essere in possesso dei requisiti formativi e professionali previsti dalla normativa vigente per lo svolgimento delle funzioni attribuite.
+            </p>
           `;
         }
-        return '<p>Contenuto del modulo</p>';
+        return '<p class="dichiarazione-corpo">Contenuto del modulo</p>';
     }
   };
 
-  const content = `
+  return {
+    content: generateModuleContent(),
+    riferimentoNormativo: getRiferimentoNormativo(),
+    titolareNomeCompleto,
+    indirizzoCompleto,
+    formatDate
+  };
+};
+
+// Generate professional PDF with letterhead - uses the document content generator
+const generateProfessionalPDF = (
+  modulo: ModuloCompilato,
+  moduloInfo: typeof MODULI_STANDARD[0] | undefined,
+  datiAzienda: DatiAzienda,
+  cantiere: any,
+  impresa: any,
+  lavoratore: any
+) => {
+  const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
+  const { content, riferimentoNormativo, titolareNomeCompleto, indirizzoCompleto, formatDate } = docData;
+
+  const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
@@ -284,12 +346,12 @@ const generateProfessionalPDF = (
       <style>
         @page {
           size: A4;
-          margin: 15mm 20mm 25mm 20mm;
+          margin: 20mm 25mm 30mm 25mm;
         }
         body {
           font-family: 'Times New Roman', Times, serif;
-          font-size: 12px;
-          line-height: 1.5;
+          font-size: 12pt;
+          line-height: 1.6;
           color: #000;
           margin: 0;
           padding: 0;
@@ -301,74 +363,124 @@ const generateProfessionalPDF = (
         }
         .header {
           text-align: center;
-          padding-bottom: 15px;
+          padding-bottom: 20px;
           border-bottom: 2px solid #333;
           margin-bottom: 30px;
         }
         .header-image {
           max-width: 100%;
-          max-height: 100px;
+          max-height: 120px;
           object-fit: contain;
         }
         .header-text {
           margin-top: 10px;
         }
         .company-name {
-          font-size: 18px;
+          font-size: 16pt;
           font-weight: bold;
-          margin-bottom: 5px;
+          margin-bottom: 8px;
+          text-transform: uppercase;
         }
         .company-info {
-          font-size: 10px;
-          color: #444;
+          font-size: 10pt;
+          color: #333;
+          line-height: 1.4;
         }
         .document-title {
           text-align: center;
-          font-size: 16px;
+          font-size: 14pt;
           font-weight: bold;
-          margin: 30px 0 10px 0;
+          margin: 40px 0 15px 0;
           text-transform: uppercase;
+          letter-spacing: 1px;
         }
         .document-subtitle {
           text-align: center;
-          font-size: 11px;
-          color: #666;
+          font-size: 10pt;
+          color: #444;
           margin-bottom: 30px;
+          font-style: italic;
         }
         .content {
           flex: 1;
           text-align: justify;
         }
         .cantiere-info {
-          background: #f8f8f8;
-          padding: 15px;
-          border-left: 3px solid #333;
-          margin-bottom: 25px;
+          background: #f5f5f5;
+          padding: 15px 20px;
+          border-left: 4px solid #333;
+          margin-bottom: 30px;
         }
         .cantiere-info p {
           margin: 5px 0;
+          font-size: 11pt;
+        }
+        /* Dichiarazione styling */
+        .dichiarazione-intro {
+          text-align: justify;
+          margin-bottom: 20px;
+          line-height: 1.8;
+        }
+        .dichiarazione-premessa {
+          text-align: justify;
+          margin-bottom: 25px;
+          line-height: 1.8;
+          font-style: italic;
+        }
+        .dichiarazione-titolo {
+          text-align: center;
+          font-weight: bold;
+          font-size: 14pt;
+          margin: 35px 0;
+          letter-spacing: 2px;
+        }
+        .dichiarazione-corpo {
+          text-align: justify;
+          margin-bottom: 20px;
+          line-height: 1.8;
+          text-indent: 30px;
+        }
+        .nomina-ruolo {
+          text-align: center;
+          font-weight: bold;
+          font-size: 12pt;
+          margin: 25px 0;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+        .note-aggiuntive {
+          margin-top: 25px;
+          padding: 15px;
+          background: #fafafa;
+          border-left: 3px solid #666;
         }
         .signature-area {
-          margin-top: 60px;
+          margin-top: 80px;
           display: flex;
           justify-content: space-between;
           page-break-inside: avoid;
         }
         .signature-box {
-          width: 45%;
+          width: 42%;
           text-align: center;
         }
         .signature-line {
           border-top: 1px solid #333;
-          margin-top: 50px;
-          padding-top: 5px;
+          margin-top: 60px;
+          padding-top: 8px;
+          font-size: 10pt;
+        }
+        .date-place {
+          text-align: right;
+          margin: 40px 0;
+          font-size: 11pt;
         }
         .footer {
           margin-top: auto;
           padding-top: 20px;
           border-top: 1px solid #ccc;
           text-align: center;
-          font-size: 10px;
+          font-size: 9pt;
           color: #666;
         }
         .footer-image {
@@ -379,15 +491,14 @@ const generateProfessionalPDF = (
         }
         .stamp {
           position: absolute;
-          right: 60px;
-          bottom: 150px;
-          max-width: 150px;
-          max-height: 150px;
+          right: 80px;
+          bottom: 180px;
+          max-width: 140px;
+          max-height: 140px;
           opacity: 0.9;
         }
-        .date-place {
-          text-align: right;
-          margin: 30px 0;
+        strong {
+          font-weight: bold;
         }
       </style>
     </head>
@@ -402,7 +513,9 @@ const generateProfessionalPDF = (
                 <div class="company-info">
                   ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
                   ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
-                  ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''} ${datiAzienda.pec ? `- PEC: ${datiAzienda.pec}` : ''}
+                  ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
+                  ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
+                  ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
                 </div>
               </div>`
           }
@@ -410,20 +523,20 @@ const generateProfessionalPDF = (
 
         <!-- Document Title -->
         <div class="document-title">${moduloInfo?.nome || 'DICHIARAZIONE'}</div>
-        <div class="document-subtitle">ai sensi del D.Lgs 81/2008 e s.m.i.</div>
+        <div class="document-subtitle">${riferimentoNormativo}</div>
 
         <!-- Cantiere Info -->
         ${cantiere ? `
         <div class="cantiere-info">
-          <p><strong>Cantiere:</strong> ${cantiere.nome}</p>
-          <p><strong>Codice Commessa:</strong> ${cantiere.codiceCommessa}</p>
-          <p><strong>Indirizzo:</strong> ${cantiere.indirizzo}</p>
+          <p><strong>Oggetto:</strong> Cantiere "${cantiere.nome}" - Commessa ${cantiere.codiceCommessa}</p>
+          <p><strong>Ubicazione:</strong> ${cantiere.indirizzo}</p>
+          ${cantiere.committente ? `<p><strong>Committente:</strong> ${cantiere.committente}</p>` : ''}
         </div>
         ` : ''}
 
         <!-- Content -->
         <div class="content">
-          ${generateModuleContent()}
+          ${content}
         </div>
 
         <!-- Date and Place -->
@@ -435,18 +548,18 @@ const generateProfessionalPDF = (
         <div class="signature-area">
           <div class="signature-box">
             <p>Il Datore di Lavoro / Legale Rappresentante</p>
-            <p style="font-size: 10px;">(${titolareNomeCompleto || '_______________'})</p>
+            <p style="font-size: 10pt;">(${titolareNomeCompleto || '_______________'})</p>
             <div class="signature-line">Firma</div>
           </div>
           <div class="signature-box">
-            <p>${lavoratore ? 'Il Lavoratore' : 'Per accettazione'}</p>
-            ${lavoratore ? `<p style="font-size: 10px;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 10px;">&nbsp;</p>'}
+            <p>${lavoratore ? 'Il Lavoratore / Nominato' : 'Per accettazione'}</p>
+            ${lavoratore ? `<p style="font-size: 10pt;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 10pt;">&nbsp;</p>'}
             <div class="signature-line">Firma</div>
           </div>
         </div>
 
         ${modulo.firmato && datiAzienda.timbro ? `
-        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 60}px; bottom: ${datiAzienda.timbroPositionY || 150}px;" />
+        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 80}px; bottom: ${datiAzienda.timbroPositionY || 180}px;" />
         ` : ''}
 
         <!-- Footer -->
@@ -462,7 +575,7 @@ const generateProfessionalPDF = (
     </html>
   `;
 
-  return content;
+  return htmlContent;
 };
 
 export default function SafetyFormsModule() {
