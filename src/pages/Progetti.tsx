@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { TaskTableInline } from '@/components/workhub/TaskTableInline';
+import { NotionTaskTable } from '@/components/workhub/NotionTaskTable';
 import { KanbanBoard } from '@/components/workhub/KanbanBoard';
 import { GanttTimeline } from '@/components/workhub/GanttTimeline';
 import { TaskCalendar } from '@/components/workhub/TaskCalendar';
@@ -36,7 +36,10 @@ import {
   FileText,
   Image as ImageIcon,
   Download,
-  Camera
+  Camera,
+  FileSpreadsheet,
+  Filter,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -197,10 +200,39 @@ export default function Progetti() {
           <h1 className="text-2xl font-bold">Progetti & Task</h1>
           <p className="text-muted-foreground">Gestione task e timeline lavori</p>
         </div>
-        <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nuovo Task
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              import('xlsx').then(XLSX => {
+                const data = filteredTasks.map(t => ({
+                  'Titolo': t.title,
+                  'Stato': t.status,
+                  'Priorità': t.priority,
+                  'Cantiere': cantieri.find(c => c.id === t.cantiereId)?.codiceCommessa || '-',
+                  'Impresa': imprese.find(i => i.id === t.impresaId)?.ragioneSociale || '-',
+                  'Data Inizio': t.startDate || '-',
+                  'Scadenza': t.dueDate || '-',
+                  'Descrizione': t.description || '-',
+                  'Note': t.note || '-',
+                }));
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Task');
+                XLSX.writeFile(wb, `export_task_${new Date().toISOString().split('T')[0]}.xlsx`);
+                toast({ title: 'Export completato', description: 'File Excel scaricato' });
+              });
+            }}
+            className="gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </Button>
+          <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Nuovo Task
+          </Button>
+        </div>
       </div>
 
       {/* Filters & View Toggle */}
@@ -328,7 +360,7 @@ export default function Progetti() {
 
       {/* Content based on view mode */}
       {viewMode === 'table' && (
-        <TaskTableInline tasks={filteredTasks} />
+        <NotionTaskTable tasks={filteredTasks} />
       )}
 
       {viewMode === 'board' && (

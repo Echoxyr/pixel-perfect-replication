@@ -120,6 +120,14 @@ export interface Subtask {
   done: boolean;
 }
 
+export interface TaskComment {
+  id: string;
+  text: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt: string;
+}
+
 export interface TaskUpdate {
   id: string;
   text: string;
@@ -138,23 +146,31 @@ export interface FileAttachment {
 
 export interface Task {
   id: string;
+  parentId?: string; // For nested subtasks
   title: string;
   description?: string;
   cantiereId?: string;
   impresaId?: string;
   lavoratoreId?: string;
+  assignedTeam?: string[];
   status: TaskStatus;
   priority: TaskPriority;
   startDate?: string;
   dueDate?: string;
+  completedAt?: string;
   note?: string;
   updates: TaskUpdate[];
+  comments?: TaskComment[];
   fileInfo?: string;
   fileLink?: string;
   files?: FileAttachment[];
   check: boolean;
   tags: string[];
   subtasks: Subtask[];
+  isFavorite?: boolean;
+  color?: string; // Custom color
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  approvedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
