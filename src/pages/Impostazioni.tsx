@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Bell, Shield, Database, Building2, Save, Upload, Image, Trash2, FileText } from 'lucide-react';
+import { Settings, Bell, Shield, Database, Building2, Save, Upload, Trash2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 
@@ -19,8 +19,6 @@ export default function Impostazioni() {
     giorniAnticipo: 30
   });
 
-  const headerInputRef = useRef<HTMLInputElement>(null);
-  const footerInputRef = useRef<HTMLInputElement>(null);
   const timbroInputRef = useRef<HTMLInputElement>(null);
   const templateWordRef = useRef<HTMLInputElement>(null);
 
@@ -39,27 +37,27 @@ export default function Impostazioni() {
     }
   };
 
-  const handleImageUpload = (field: 'cartaIntestataHeader' | 'cartaIntestataFooter' | 'timbro') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTimbroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: 'File troppo grande', description: 'Dimensione massima 2MB', variant: 'destructive' });
+    // Check file size (max 5MB for any format)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File troppo grande', description: 'Dimensione massima 5MB', variant: 'destructive' });
       return;
     }
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      updateDatiAzienda({ [field]: reader.result as string });
-      toast({ title: 'Immagine caricata con successo' });
+      updateDatiAzienda({ timbro: reader.result as string });
+      toast({ title: 'Timbro caricato con successo' });
     };
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveImage = (field: 'cartaIntestataHeader' | 'cartaIntestataFooter' | 'timbro') => {
-    updateDatiAzienda({ [field]: undefined });
-    toast({ title: 'Immagine rimossa' });
+  const handleRemoveTimbro = () => {
+    updateDatiAzienda({ timbro: undefined });
+    toast({ title: 'Timbro rimosso' });
   };
 
   const handleTemplateWordUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -332,137 +330,49 @@ export default function Impostazioni() {
             </CardContent>
           </Card>
 
-          {/* Carta Intestata e Timbro */}
+          {/* Timbro Aziendale */}
           <Card>
             <CardHeader>
-              <CardTitle>Carta Intestata e Timbro</CardTitle>
+              <CardTitle>Timbro Aziendale</CardTitle>
               <CardDescription>
-                Carica l'intestazione e il timbro aziendale per i documenti ufficiali. Formati supportati: PNG, JPG, JPEG (max 2MB)
+                Carica il timbro aziendale. Verrà inserito automaticamente nei documenti quando selezioni "Firma". 
+                Qualsiasi formato immagine è supportato (max 5MB).
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Header */}
-              <div className="space-y-3">
-                <Label className="font-semibold">Intestazione Superiore (Header)</Label>
-                <p className="text-sm text-muted-foreground">
-                  Inserisci un'immagine con il logo e i dati aziendali da visualizzare in alto nei documenti
-                </p>
-                {datiAzienda.cartaIntestataHeader ? (
-                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
-                    <img 
-                      src={datiAzienda.cartaIntestataHeader} 
-                      alt="Header" 
-                      className="max-h-32 w-auto mx-auto object-contain"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => handleRemoveImage('cartaIntestataHeader')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div 
-                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
-                    onClick={() => headerInputRef.current?.click()}
+            <CardContent>
+              {datiAzienda.timbro ? (
+                <div className="relative border border-border rounded-lg p-4 bg-muted/20">
+                  <img 
+                    src={datiAzienda.timbro} 
+                    alt="Timbro" 
+                    className="max-h-32 w-auto mx-auto object-contain"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveTimbro}
                   >
-                    <Image className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Clicca per caricare l'intestazione</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB)</p>
-                  </div>
-                )}
-                <input
-                  ref={headerInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  className="hidden"
-                  onChange={handleImageUpload('cartaIntestataHeader')}
-                />
-              </div>
-
-              {/* Footer */}
-              <div className="space-y-3">
-                <Label className="font-semibold">Intestazione Inferiore (Footer)</Label>
-                <p className="text-sm text-muted-foreground">
-                  Inserisci un'immagine da visualizzare in basso nei documenti (es: contatti, social, ecc.)
-                </p>
-                {datiAzienda.cartaIntestataFooter ? (
-                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
-                    <img 
-                      src={datiAzienda.cartaIntestataFooter} 
-                      alt="Footer" 
-                      className="max-h-24 w-auto mx-auto object-contain"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => handleRemoveImage('cartaIntestataFooter')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div 
-                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
-                    onClick={() => footerInputRef.current?.click()}
-                  >
-                    <Image className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Clicca per caricare il footer</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB)</p>
-                  </div>
-                )}
-                <input
-                  ref={footerInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  className="hidden"
-                  onChange={handleImageUpload('cartaIntestataFooter')}
-                />
-              </div>
-
-              {/* Timbro */}
-              <div className="space-y-3">
-                <Label className="font-semibold">Timbro Aziendale</Label>
-                <p className="text-sm text-muted-foreground">
-                  Carica il timbro aziendale. Verrà inserito automaticamente nei documenti quando selezioni "Firma"
-                </p>
-                {datiAzienda.timbro ? (
-                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
-                    <img 
-                      src={datiAzienda.timbro} 
-                      alt="Timbro" 
-                      className="max-h-32 w-auto mx-auto object-contain"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={() => handleRemoveImage('timbro')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div 
-                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
-                    onClick={() => timbroInputRef.current?.click()}
-                  >
-                    <FileText className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Clicca per caricare il timbro</p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB) - sfondo trasparente consigliato</p>
-                  </div>
-                )}
-                <input
-                  ref={timbroInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  className="hidden"
-                  onChange={handleImageUpload('timbro')}
-                />
-              </div>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                  onClick={() => timbroInputRef.current?.click()}
+                >
+                  <FileText className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Clicca per caricare il timbro</p>
+                  <p className="text-xs text-muted-foreground mt-1">Qualsiasi formato immagine (max 5MB)</p>
+                </div>
+              )}
+              <input
+                ref={timbroInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleTimbroUpload}
+              />
             </CardContent>
           </Card>
 
