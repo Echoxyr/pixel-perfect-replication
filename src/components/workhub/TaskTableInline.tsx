@@ -1,16 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { Task, formatDateFull, daysUntil, TaskStatus } from '@/types/workhub';
+import { Task, formatDateFull, daysUntil, TaskStatus, TaskPriority, generateId } from '@/types/workhub';
 import { StatusPill } from './StatusPill';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -18,16 +13,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, Clock, AlertTriangle, Edit2, Trash2, MoreHorizontal } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Edit2,
+  Trash2,
+  MoreHorizontal,
+  Paperclip,
+  Upload,
+  X,
+  ChevronDown,
+  FileText,
+  Image as ImageIcon,
+  Download
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+}
 
 interface TaskTableInlineProps {
   tasks: Task[];
@@ -36,10 +56,12 @@ interface TaskTableInlineProps {
 }
 
 export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: TaskTableInlineProps) {
-  const { cantieri, updateTask, deleteTask } = useWorkHub();
+  const { cantieri, imprese, updateTask, deleteTask } = useWorkHub();
   const { toast } = useToast();
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Task>>({});
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<{ taskId: string; field: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
 
   const getCantiereName = (cantiereId?: string) => {
     if (!cantiereId) return '-';
@@ -52,22 +74,20 @@ export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: Tas
     toast({ title: 'Stato aggiornato' });
   };
 
-  const handleEdit = (task: Task) => {
-    setEditingTask(task);
-    setEditForm({
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDate
-    });
+  const handlePriorityChange = (taskId: string, newPriority: TaskPriority) => {
+    updateTask(taskId, { priority: newPriority });
+    toast({ title: 'Priorità aggiornata' });
   };
 
-  const handleSaveEdit = () => {
-    if (!editingTask) return;
-    updateTask(editingTask.id, editForm);
-    toast({ title: 'Task aggiornato' });
-    setEditingTask(null);
+  const handleCantiereChange = (taskId: string, cantiereId: string) => {
+    updateTask(taskId, { cantiereId: cantiereId === 'none' ? undefined : cantiereId });
+    toast({ title: 'Cantiere aggiornato' });
+  };
+
+  const handleFieldUpdate = (taskId: string, field: string, value: string) => {
+    updateTask(taskId, { [field]: value || undefined });
+    setEditingField(null);
+    toast({ title: 'Campo aggiornato' });
   };
 
   const handleDelete = (taskId: string) => {
@@ -75,6 +95,28 @@ export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: Tas
       deleteTask(taskId);
       toast({ title: 'Task eliminato' });
     }
+  };
+
+  const handleFileUpload = (taskId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const fileNames = Array.from(files).map(f => f.name).join(', ');
+    const currentFiles = task.fileInfo || '';
+    const newFileInfo = currentFiles ? `${currentFiles}, ${fileNames}` : fileNames;
+    
+    updateTask(taskId, { fileInfo: newFileInfo });
+    toast({ title: 'File allegati', description: `${files.length} file aggiunti` });
+    setUploadingTaskId(null);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (tasks.length === 0) {
@@ -86,18 +128,29 @@ export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: Tas
   }
 
   return (
-    <>
-      <div className="space-y-2">
-        {tasks.map((task) => {
-          const days = task.dueDate ? daysUntil(task.dueDate) : null;
-          const isOverdue = days !== null && days < 0;
-          const isUrgent = days !== null && days <= 3 && days >= 0;
+    <div className="space-y-1">
+      {/* Table Header */}
+      <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+        <div className="col-span-4">Task</div>
+        <div className="col-span-2">Stato</div>
+        <div className="col-span-2">Priorità</div>
+        {showCantiere && <div className="col-span-2">Cantiere</div>}
+        <div className={showCantiere ? "col-span-1" : "col-span-3"}>Scadenza</div>
+        <div className="col-span-1 text-right">Azioni</div>
+      </div>
 
-          return (
+      {tasks.map((task) => {
+        const days = task.dueDate ? daysUntil(task.dueDate) : null;
+        const isOverdue = days !== null && days < 0;
+        const isUrgent = days !== null && days <= 3 && days >= 0;
+        const isExpanded = expandedTaskId === task.id;
+
+        return (
+          <div key={task.id}>
+            {/* Main Row */}
             <div
-              key={task.id}
               className={cn(
-                'flex items-center gap-4 p-3 rounded-lg border transition-colors',
+                'grid grid-cols-12 gap-2 px-3 py-2.5 rounded-lg border transition-colors items-center',
                 task.status === 'fatto' ? 'bg-emerald-500/5 border-emerald-500/20' :
                 task.status === 'bloccato' ? 'bg-red-500/5 border-red-500/20' :
                 isOverdue ? 'bg-red-500/5 border-red-500/30' :
@@ -105,110 +158,71 @@ export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: Tas
                 'bg-card border-border hover:border-primary/30'
               )}
             >
-              {/* Status indicator */}
-              <button
-                onClick={() => handleStatusChange(
-                  task.id,
-                  task.status === 'fatto' ? 'da_iniziare' : 'fatto'
-                )}
-                className={cn(
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors',
-                  task.status === 'fatto'
-                    ? 'bg-emerald-500 border-emerald-500'
-                    : 'border-muted-foreground/30 hover:border-primary'
-                )}
-              >
-                {task.status === 'fatto' && (
-                  <CheckCircle className="w-3 h-3 text-white" />
-                )}
-              </button>
-
-              {/* Task info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className={cn(
-                    'font-medium truncate',
-                    task.status === 'fatto' && 'line-through text-muted-foreground'
-                  )}>
-                    {task.title}
-                  </p>
-                  {task.priority && task.priority !== 'media' && task.priority !== 'nessuna' && (
-                    <StatusPill type="priority" value={task.priority} size="xs" />
+              {/* Task Title + Toggle */}
+              <div className="col-span-4 flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => handleStatusChange(
+                    task.id,
+                    task.status === 'fatto' ? 'da_iniziare' : 'fatto'
                   )}
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                  {showCantiere && task.cantiereId && (
-                    <span>{getCantiereName(task.cantiereId)}</span>
+                  className={cn(
+                    'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors',
+                    task.status === 'fatto'
+                      ? 'bg-emerald-500 border-emerald-500'
+                      : 'border-muted-foreground/30 hover:border-primary'
                   )}
-                  {task.dueDate && (
-                    <span className={cn(
-                      'flex items-center gap-1',
-                      isOverdue ? 'text-red-500' : isUrgent ? 'text-amber-500' : ''
-                    )}>
-                      {isOverdue ? (
-                        <AlertTriangle className="w-3 h-3" />
-                      ) : (
-                        <Clock className="w-3 h-3" />
+                >
+                  {task.status === 'fatto' && (
+                    <CheckCircle className="w-3 h-3 text-white" />
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  {editingField?.taskId === task.id && editingField.field === 'title' ? (
+                    <Input
+                      autoFocus
+                      defaultValue={task.title}
+                      className="h-7 text-sm"
+                      onBlur={(e) => handleFieldUpdate(task.id, 'title', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleFieldUpdate(task.id, 'title', e.currentTarget.value);
+                        if (e.key === 'Escape') setEditingField(null);
+                      }}
+                    />
+                  ) : (
+                    <p
+                      onClick={() => setEditingField({ taskId: task.id, field: 'title' })}
+                      className={cn(
+                        'font-medium truncate cursor-text hover:text-primary',
+                        task.status === 'fatto' && 'line-through text-muted-foreground'
                       )}
-                      {formatDateFull(task.dueDate)}
+                    >
+                      {task.title}
+                    </p>
+                  )}
+                  {task.fileInfo && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Paperclip className="w-3 h-3" />
+                      {task.fileInfo.split(',').length} file
                     </span>
                   )}
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 flex-shrink-0"
+                  onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                >
+                  <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
+                </Button>
               </div>
 
-              {/* Status pill */}
-              <StatusPill type="task" value={task.status} size="xs" />
-
-              {/* Actions */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEdit(task)}>
-                    <Edit2 className="w-4 h-4 mr-2" /> Modifica
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleDelete(task.id)} className="text-red-500">
-                    <Trash2 className="w-4 h-4 mr-2" /> Elimina
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifica Task</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Titolo</label>
-              <Input
-                value={editForm.title || ''}
-                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Descrizione</label>
-              <Textarea
-                value={editForm.description || ''}
-                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Stato</label>
+              {/* Status Dropdown */}
+              <div className="col-span-2">
                 <Select
-                  value={editForm.status}
-                  onValueChange={(v) => setEditForm({ ...editForm, status: v as TaskStatus })}
+                  value={task.status}
+                  onValueChange={(v) => handleStatusChange(task.id, v as TaskStatus)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -220,22 +234,228 @@ export function TaskTableInline({ tasks, showCantiere = true, onTaskClick }: Tas
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Scadenza</label>
-                <Input
-                  type="date"
-                  value={editForm.dueDate || ''}
-                  onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+
+              {/* Priority Dropdown */}
+              <div className="col-span-2">
+                <Select
+                  value={task.priority}
+                  onValueChange={(v) => handlePriorityChange(task.id, v as TaskPriority)}
+                >
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critica">Critica</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
+                    <SelectItem value="alta">Alta</SelectItem>
+                    <SelectItem value="media">Media</SelectItem>
+                    <SelectItem value="bassa">Bassa</SelectItem>
+                    <SelectItem value="nessuna">Nessuna</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Cantiere Dropdown */}
+              {showCantiere && (
+                <div className="col-span-2">
+                  <Select
+                    value={task.cantiereId || 'none'}
+                    onValueChange={(v) => handleCantiereChange(task.id, v)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="-" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nessuno</SelectItem>
+                      {cantieri.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Due Date */}
+              <div className={showCantiere ? "col-span-1" : "col-span-3"}>
+                {editingField?.taskId === task.id && editingField.field === 'dueDate' ? (
+                  <Input
+                    type="date"
+                    autoFocus
+                    defaultValue={task.dueDate || ''}
+                    className="h-7 text-xs"
+                    onBlur={(e) => handleFieldUpdate(task.id, 'dueDate', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setEditingField(null);
+                    }}
+                  />
+                ) : (
+                  <span
+                    onClick={() => setEditingField({ taskId: task.id, field: 'dueDate' })}
+                    className={cn(
+                      'text-xs cursor-text hover:text-primary flex items-center gap-1',
+                      isOverdue ? 'text-red-500' : isUrgent ? 'text-amber-500' : 'text-muted-foreground'
+                    )}
+                  >
+                    {task.dueDate ? (
+                      <>
+                        {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {formatDateFull(task.dueDate)}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground/50">-</span>
+                    )}
+                  </span>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="col-span-1 flex justify-end gap-1">
+                <input
+                  ref={uploadingTaskId === task.id ? fileInputRef : null}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(task.id, e)}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => {
+                    setUploadingTaskId(task.id);
+                    setTimeout(() => fileInputRef.current?.click(), 0);
+                  }}
+                  title="Allega file"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}>
+                      <Edit2 className="w-4 h-4 mr-2" /> Dettagli
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleDelete(task.id)} className="text-red-500">
+                      <Trash2 className="w-4 h-4 mr-2" /> Elimina
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
+
+            {/* Expanded Details */}
+            {isExpanded && (
+              <div className="ml-7 mr-3 mt-1 mb-2 p-4 rounded-lg bg-muted/30 border border-border space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Description */}
+                  <div className="col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Descrizione</label>
+                    <Textarea
+                      value={task.description || ''}
+                      onChange={(e) => updateTask(task.id, { description: e.target.value })}
+                      placeholder="Aggiungi una descrizione..."
+                      className="text-sm min-h-[60px]"
+                    />
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Data Inizio</label>
+                    <Input
+                      type="date"
+                      value={task.startDate || ''}
+                      onChange={(e) => updateTask(task.id, { startDate: e.target.value || undefined })}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Due Date */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Scadenza</label>
+                    <Input
+                      type="date"
+                      value={task.dueDate || ''}
+                      onChange={(e) => updateTask(task.id, { dueDate: e.target.value || undefined })}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Impresa */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Impresa</label>
+                    <Select
+                      value={task.impresaId || 'none'}
+                      onValueChange={(v) => updateTask(task.id, { impresaId: v === 'none' ? undefined : v })}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Seleziona impresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nessuna</SelectItem>
+                        {imprese.map(i => (
+                          <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Note */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Note</label>
+                    <Input
+                      value={task.note || ''}
+                      onChange={(e) => updateTask(task.id, { note: e.target.value || undefined })}
+                      placeholder="Note aggiuntive..."
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Files */}
+                  <div className="col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Allegati</label>
+                    <div className="flex flex-wrap gap-2">
+                      {task.fileInfo?.split(',').map((file, i) => (
+                        <div key={i} className="flex items-center gap-2 px-2 py-1 bg-muted rounded text-xs">
+                          <FileText className="w-3 h-3" />
+                          <span>{file.trim()}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 hover:bg-destructive/20"
+                            onClick={() => {
+                              const files = task.fileInfo?.split(',').map(f => f.trim()).filter((_, idx) => idx !== i);
+                              updateTask(task.id, { fileInfo: files?.join(', ') || undefined });
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setUploadingTaskId(task.id);
+                          setTimeout(() => fileInputRef.current?.click(), 0);
+                        }}
+                      >
+                        <Upload className="w-3 h-3 mr-1" />
+                        Carica file
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTask(null)}>Annulla</Button>
-            <Button onClick={handleSaveEdit}>Salva</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        );
+      })}
+    </div>
   );
 }
