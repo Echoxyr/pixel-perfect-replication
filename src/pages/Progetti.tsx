@@ -3,7 +3,7 @@ import { useWorkHub } from '@/contexts/WorkHubContext';
 import { NotionTaskTable } from '@/components/workhub/NotionTaskTable';
 import { KanbanBoard } from '@/components/workhub/KanbanBoard';
 import { GanttTimeline } from '@/components/workhub/GanttTimeline';
-import { TaskCalendar } from '@/components/workhub/TaskCalendar';
+import { InteractiveCalendar } from '@/components/workhub/InteractiveCalendar';
 import { Task, TaskStatus, TaskPriority, Subtask, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -368,15 +368,21 @@ export default function Progetti() {
       )}
 
       {viewMode === 'calendar' && (
-        <TaskCalendar 
+        <InteractiveCalendar 
           tasks={filteredTasks} 
           onTaskClick={() => {}}
           onCreateTask={handleCreateTaskFromCalendar}
+          onUpdateTask={updateTask}
+          onDeleteTask={deleteTask}
         />
       )}
 
       {viewMode === 'timeline' && (
-        <GanttTimeline tasks={filteredTasks} onTaskClick={() => {}} />
+        <GanttTimeline 
+          tasks={filteredTasks} 
+          onTaskClick={() => {}} 
+          onUpdateTask={updateTask}
+        />
       )}
 
       {/* New Task Dialog */}
