@@ -327,6 +327,7 @@ const generateProfessionalDocument = (
 };
 
 // Generate professional PDF with letterhead - uses the document content generator
+// Se templateDocumentoBase e presente, usa quello come base, altrimenti usa i dati azienda
 const generateProfessionalPDF = (
   modulo: ModuloCompilato,
   moduloInfo: typeof MODULI_STANDARD[0] | undefined,
@@ -338,67 +339,76 @@ const generateProfessionalPDF = (
   const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
   const { content, riferimentoNormativo, titolareNomeCompleto, indirizzoCompleto, formatDate } = docData;
 
+  // Se presente template Word base, non mostrare intestazione generata
+  const hasWordTemplate = datiAzienda.templateDocumentoBase && datiAzienda.templateDocumentoBase.length > 0;
+
   const htmlContent = `
     <!DOCTYPE html>
-    <html>
+    <html lang="it">
     <head>
+      <meta charset="UTF-8">
       <title>${moduloInfo?.nome || 'Documento'}</title>
       <style>
         @page {
           size: A4;
-          margin: 20mm 25mm 30mm 25mm;
+          margin: 25mm 20mm 25mm 20mm;
+        }
+        * {
+          box-sizing: border-box;
         }
         body {
-          font-family: 'Times New Roman', Times, serif;
-          font-size: 12pt;
-          line-height: 1.6;
+          font-family: Arial, sans-serif;
+          font-size: 10pt;
+          line-height: 1.5;
           color: #000;
           margin: 0;
           padding: 0;
+          text-align: justify;
         }
         .page-container {
           min-height: 100vh;
           display: flex;
           flex-direction: column;
+          padding: 0;
         }
         .header {
           text-align: center;
-          padding-bottom: 20px;
-          border-bottom: 2px solid #333;
-          margin-bottom: 30px;
+          padding-bottom: 15px;
+          border-bottom: 1px solid #333;
+          margin-bottom: 25px;
         }
         .header-image {
           max-width: 100%;
-          max-height: 120px;
+          max-height: 100px;
           object-fit: contain;
         }
         .header-text {
           margin-top: 10px;
         }
         .company-name {
-          font-size: 16pt;
+          font-size: 12pt;
           font-weight: bold;
-          margin-bottom: 8px;
+          margin-bottom: 5px;
           text-transform: uppercase;
         }
         .company-info {
-          font-size: 10pt;
+          font-size: 9pt;
           color: #333;
-          line-height: 1.4;
+          line-height: 1.3;
         }
         .document-title {
           text-align: center;
-          font-size: 14pt;
+          font-size: 12pt;
           font-weight: bold;
-          margin: 40px 0 15px 0;
+          margin: 30px 0 10px 0;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         .document-subtitle {
           text-align: center;
-          font-size: 10pt;
+          font-size: 9pt;
           color: #444;
-          margin-bottom: 30px;
+          margin-bottom: 25px;
           font-style: italic;
         }
         .content {
@@ -406,56 +416,55 @@ const generateProfessionalPDF = (
           text-align: justify;
         }
         .cantiere-info {
-          background: #f5f5f5;
-          padding: 15px 20px;
-          border-left: 4px solid #333;
-          margin-bottom: 30px;
+          background: #f8f8f8;
+          padding: 12px 15px;
+          border-left: 3px solid #333;
+          margin-bottom: 25px;
         }
         .cantiere-info p {
-          margin: 5px 0;
-          font-size: 11pt;
+          margin: 4px 0;
+          font-size: 10pt;
         }
-        /* Dichiarazione styling */
         .dichiarazione-intro {
           text-align: justify;
-          margin-bottom: 20px;
-          line-height: 1.8;
+          margin-bottom: 15px;
+          line-height: 1.6;
         }
         .dichiarazione-premessa {
           text-align: justify;
-          margin-bottom: 25px;
-          line-height: 1.8;
+          margin-bottom: 20px;
+          line-height: 1.6;
           font-style: italic;
         }
         .dichiarazione-titolo {
           text-align: center;
           font-weight: bold;
-          font-size: 14pt;
-          margin: 35px 0;
+          font-size: 12pt;
+          margin: 25px 0;
           letter-spacing: 2px;
         }
         .dichiarazione-corpo {
           text-align: justify;
-          margin-bottom: 20px;
-          line-height: 1.8;
-          text-indent: 30px;
+          margin-bottom: 15px;
+          line-height: 1.6;
+          text-indent: 25px;
         }
         .nomina-ruolo {
           text-align: center;
           font-weight: bold;
-          font-size: 12pt;
-          margin: 25px 0;
+          font-size: 11pt;
+          margin: 20px 0;
           text-transform: uppercase;
           letter-spacing: 1px;
         }
         .note-aggiuntive {
-          margin-top: 25px;
-          padding: 15px;
+          margin-top: 20px;
+          padding: 12px;
           background: #fafafa;
-          border-left: 3px solid #666;
+          border-left: 2px solid #666;
         }
         .signature-area {
-          margin-top: 80px;
+          margin-top: 60px;
           display: flex;
           justify-content: space-between;
           page-break-inside: avoid;
@@ -466,60 +475,65 @@ const generateProfessionalPDF = (
         }
         .signature-line {
           border-top: 1px solid #333;
-          margin-top: 60px;
-          padding-top: 8px;
-          font-size: 10pt;
+          margin-top: 50px;
+          padding-top: 5px;
+          font-size: 9pt;
         }
         .date-place {
           text-align: right;
-          margin: 40px 0;
-          font-size: 11pt;
+          margin: 30px 0;
+          font-size: 10pt;
         }
         .footer {
           margin-top: auto;
-          padding-top: 20px;
+          padding-top: 15px;
           border-top: 1px solid #ccc;
           text-align: center;
-          font-size: 9pt;
+          font-size: 8pt;
           color: #666;
         }
         .footer-image {
           max-width: 100%;
-          max-height: 60px;
+          max-height: 50px;
           object-fit: contain;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
         .stamp {
           position: absolute;
-          right: 80px;
-          bottom: 180px;
-          max-width: 140px;
-          max-height: 140px;
+          right: 60px;
+          bottom: 150px;
+          max-width: 120px;
+          max-height: 120px;
           opacity: 0.9;
         }
         strong {
           font-weight: bold;
         }
+        p {
+          margin: 0 0 10px 0;
+        }
       </style>
     </head>
     <body>
       <div class="page-container">
-        <!-- Header -->
+        ${!hasWordTemplate ? `
+        <!-- Header generata da dati azienda -->
         <div class="header">
-          ${datiAzienda.cartaIntestataHeader 
-            ? `<img src="${datiAzienda.cartaIntestataHeader}" class="header-image" alt="Intestazione" />`
-            : `<div class="header-text">
-                <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
-                <div class="company-info">
-                  ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
-                  ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
-                  ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
-                  ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
-                  ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
-                </div>
-              </div>`
-          }
+          <div class="header-text">
+            <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
+            <div class="company-info">
+              ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
+              ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
+              ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
+              ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
+              ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
+            </div>
+          </div>
         </div>
+        ` : `
+        <!-- Spazio per intestazione da template Word caricato -->
+        <div style="height: 80px; margin-bottom: 20px;"></div>
+        `}
 
         <!-- Document Title -->
         <div class="document-title">${moduloInfo?.nome || 'DICHIARAZIONE'}</div>
@@ -541,35 +555,34 @@ const generateProfessionalPDF = (
 
         <!-- Date and Place -->
         <div class="date-place">
-          ${datiAzienda.citta || '_______________'}, lì ${formatDate(modulo.dataCompilazione)}
+          ${datiAzienda.citta || '_______________'}, li ${formatDate(modulo.dataCompilazione)}
         </div>
 
         <!-- Signatures -->
         <div class="signature-area">
           <div class="signature-box">
             <p>Il Datore di Lavoro / Legale Rappresentante</p>
-            <p style="font-size: 10pt;">(${titolareNomeCompleto || '_______________'})</p>
+            <p style="font-size: 9pt;">(${titolareNomeCompleto || '_______________'})</p>
             <div class="signature-line">Firma</div>
           </div>
           <div class="signature-box">
             <p>${lavoratore ? 'Il Lavoratore / Nominato' : 'Per accettazione'}</p>
-            ${lavoratore ? `<p style="font-size: 10pt;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 10pt;">&nbsp;</p>'}
+            ${lavoratore ? `<p style="font-size: 9pt;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 9pt;">&nbsp;</p>'}
             <div class="signature-line">Firma</div>
           </div>
         </div>
 
         ${modulo.firmato && datiAzienda.timbro ? `
-        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 80}px; bottom: ${datiAzienda.timbroPositionY || 180}px;" />
+        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 60}px; bottom: ${datiAzienda.timbroPositionY || 150}px;" />
         ` : ''}
 
+        ${!hasWordTemplate ? `
         <!-- Footer -->
         <div class="footer">
-          ${datiAzienda.cartaIntestataFooter 
-            ? `<img src="${datiAzienda.cartaIntestataFooter}" class="footer-image" alt="Footer" />`
-            : `<p>${datiAzienda.ragioneSociale || ''} ${datiAzienda.partitaIva ? `- P.IVA ${datiAzienda.partitaIva}` : ''}</p>`
-          }
+          <p>${datiAzienda.ragioneSociale || ''} ${datiAzienda.partitaIva ? `- P.IVA ${datiAzienda.partitaIva}` : ''}</p>
           <p>Documento generato il ${formatDate(new Date().toISOString().slice(0, 10))}</p>
         </div>
+        ` : ''}
       </div>
     </body>
     </html>
