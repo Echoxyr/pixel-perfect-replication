@@ -9,14 +9,14 @@ import {
   generateId
 } from '@/types/workhub';
 
-// Sample Cantieri
+// Sample Cantieri - Solo UNIPD
 export const sampleCantieri: Cantiere[] = [
   {
     id: 'cant-001',
     nome: 'UNIPD - Nuovo Polo Scientifico',
     codiceCommessa: '2550_25',
     indirizzo: 'Via Marzolo 9, Padova',
-    committente: 'Università degli Studi di Padova',
+    committente: 'Universita degli Studi di Padova',
     direttoreLavori: 'Ing. Marco Rossi',
     cse: 'Ing. Laura Bianchi',
     csp: 'Ing. Laura Bianchi',
@@ -28,38 +28,10 @@ export const sampleCantieri: Cantiere[] = [
     stato: 'attivo',
     createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'cant-002',
-    nome: 'San Biagio - Ristrutturazione Chiesa',
-    codiceCommessa: '2504_25',
-    indirizzo: 'Piazza San Biagio 12, Venezia',
-    committente: 'Diocesi di Venezia',
-    direttoreLavori: 'Arch. Francesca Moretto',
-    cse: 'Ing. Roberto Zanetti',
-    dataApertura: '2025-02-01',
-    dataChiusuraPrevista: '2025-12-31',
-    stato: 'attivo',
-    createdAt: new Date(Date.now() - 86400000 * 20).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'cant-003',
-    nome: 'IRCCS Pavia - Ampliamento Reparto',
-    codiceCommessa: '2561_25',
-    indirizzo: 'Viale Golgi 19, Pavia',
-    committente: 'IRCCS Policlinico San Matteo',
-    direttoreLavori: 'Ing. Alessandro Ferretti',
-    cse: 'Ing. Maria Colombo',
-    dataApertura: '2025-03-01',
-    dataChiusuraPrevista: '2026-03-31',
-    stato: 'attivo',
-    createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
-// Sample Imprese
+// Sample Imprese - Solo quelle del cantiere UNIPD
 export const sampleImprese: Impresa[] = [
   {
     id: 'imp-001',
@@ -75,7 +47,7 @@ export const sampleImprese: Impresa[] = [
     ccnlApplicato: 'CCNL Edilizia',
     tipo: 'subappaltatore',
     lavorazioniPrincipali: ['Strutture', 'Finiture', 'Cartongesso'],
-    cantieriIds: ['cant-001', 'cant-002'],
+    cantieriIds: ['cant-001'],
     createdAt: new Date(Date.now() - 86400000 * 60).toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -92,7 +64,7 @@ export const sampleImprese: Impresa[] = [
     ccnlApplicato: 'CCNL Metalmeccanici',
     tipo: 'subappaltatore',
     lavorazioniPrincipali: ['Impianti idraulici', 'Riscaldamento', 'Climatizzazione'],
-    cantieriIds: ['cant-001', 'cant-003'],
+    cantieriIds: ['cant-001'],
     createdAt: new Date(Date.now() - 86400000 * 45).toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -111,25 +83,10 @@ export const sampleImprese: Impresa[] = [
     cantieriIds: ['cant-001'],
     createdAt: new Date(Date.now() - 86400000 * 30).toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'imp-004',
-    ragioneSociale: 'Noleggi Edili Nord S.r.l.',
-    partitaIva: '06789012345',
-    sedeLegale: 'Via Industriale 100, Brescia',
-    referenteNome: 'Andrea Colombo',
-    referenteRuolo: 'Commerciale',
-    referenteTelefono: '+39 030 567890',
-    referenteEmail: 'acolombo@noleggiedili.it',
-    tipo: 'nolo_caldo',
-    lavorazioniPrincipali: ['Noleggio gru', 'Noleggio PLE', 'Trasporti speciali'],
-    cantieriIds: ['cant-002', 'cant-003'],
-    createdAt: new Date(Date.now() - 86400000 * 15).toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
-// Sample Lavoratori
+// Sample Lavoratori - Solo quelli del cantiere UNIPD
 export const sampleLavoratori: Lavoratore[] = [
   {
     id: 'lav-001',
@@ -140,7 +97,7 @@ export const sampleLavoratori: Lavoratore[] = [
     impresaId: 'imp-001',
     tipo: 'dipendente',
     mansione: 'Muratore specializzato',
-    qualifica: 'Operaio 4° livello',
+    qualifica: 'Operaio 4 livello',
     cantieriIds: ['cant-001'],
     medicoCompetente: 'Dr. Luigi Medici',
     dataVisitaMedica: '2025-06-15',
@@ -158,8 +115,8 @@ export const sampleLavoratori: Lavoratore[] = [
     impresaId: 'imp-001',
     tipo: 'dipendente',
     mansione: 'Carpentiere',
-    qualifica: 'Operaio 3° livello',
-    cantieriIds: ['cant-001', 'cant-002'],
+    qualifica: 'Operaio 3 livello',
+    cantieriIds: ['cant-001'],
     medicoCompetente: 'Dr. Luigi Medici',
     dataVisitaMedica: '2025-03-10',
     giudizioIdoneita: 'idoneo',
@@ -177,7 +134,7 @@ export const sampleLavoratori: Lavoratore[] = [
     tipo: 'dipendente',
     mansione: 'Idraulico',
     qualifica: 'Tecnico specializzato',
-    cantieriIds: ['cant-001', 'cant-003'],
+    cantieriIds: ['cant-001'],
     medicoCompetente: 'Dr. Anna Salute',
     dataVisitaMedica: '2025-01-20',
     giudizioIdoneita: 'idoneo_limitazioni',
@@ -202,46 +159,10 @@ export const sampleLavoratori: Lavoratore[] = [
     dataScadenzaIdoneita: '2025-11-15',
     createdAt: new Date(Date.now() - 86400000 * 100).toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'lav-005',
-    nome: 'Francesco',
-    cognome: 'Gialli',
-    codiceFiscale: 'GLLFNC92E05E005E',
-    dataNascita: '1992-05-05',
-    impresaId: 'imp-002',
-    tipo: 'dipendente',
-    mansione: 'Termoidraulico',
-    qualifica: 'Operaio 4° livello',
-    cantieriIds: ['cant-003'],
-    medicoCompetente: 'Dr. Anna Salute',
-    dataVisitaMedica: '2025-08-01',
-    giudizioIdoneita: 'idoneo',
-    dataScadenzaIdoneita: '2026-08-01',
-    createdAt: new Date(Date.now() - 86400000 * 50).toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'lav-006',
-    nome: 'Roberto',
-    cognome: 'Colombo',
-    codiceFiscale: 'CLMRBT87F06F006F',
-    dataNascita: '1987-06-06',
-    impresaId: 'imp-004',
-    tipo: 'dipendente',
-    mansione: 'Gruista',
-    qualifica: 'Operatore macchine',
-    cantieriIds: ['cant-002', 'cant-003'],
-    medicoCompetente: 'Dr. Paolo Check',
-    dataVisitaMedica: '2025-02-28',
-    giudizioIdoneita: 'idoneo',
-    dataScadenzaIdoneita: '2026-02-28',
-    createdAt: new Date(Date.now() - 86400000 * 40).toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
-// Sample Documenti
+// Sample Documenti - Solo cantiere UNIPD
 export const sampleDocumenti: Documento[] = [
   {
     id: 'doc-001',
@@ -327,20 +248,10 @@ export const sampleDocumenti: Documento[] = [
     stato: 'approvato',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'doc-009',
-    tipo: 'Verbale coordinamento',
-    nome: 'Verbale riunione 15/11/2025',
-    cantiereId: 'cant-001',
-    dataEmissione: '2025-11-15',
-    stato: 'approvato',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
-// Sample Formazioni
+// Sample Formazioni - Solo lavoratori UNIPD
 export const sampleFormazioni: Formazione[] = [
   {
     id: 'form-001',
@@ -407,19 +318,6 @@ export const sampleFormazioni: Formazione[] = [
   },
   {
     id: 'form-006',
-    lavoratoreId: 'lav-006',
-    tipoCorso: 'Gru a torre',
-    categoria: 'attrezzature',
-    dataCorso: '2024-01-15',
-    durataOre: 14,
-    dataScadenza: '2029-01-15',
-    esito: 'Superato',
-    stato: 'fatto',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'form-007',
     lavoratoreId: 'lav-004',
     tipoCorso: 'PES PAV PEI',
     categoria: 'altro',
@@ -432,7 +330,7 @@ export const sampleFormazioni: Formazione[] = [
   }
 ];
 
-// Sample DPI
+// Sample DPI - Solo lavoratori UNIPD
 export const sampleDPI: DPI[] = [
   {
     id: 'dpi-001',
@@ -479,19 +377,10 @@ export const sampleDPI: DPI[] = [
     stato: 'consegnato',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'dpi-006',
-    lavoratoreId: 'lav-006',
-    tipo: 'Gilet alta visibilità',
-    dataConsegna: '2025-03-01',
-    stato: 'consegnato',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
-// Sample Tasks
+// Sample Tasks - Solo cantiere UNIPD
 export const sampleTasks: Task[] = [
   {
     id: generateId(),
@@ -552,71 +441,6 @@ export const sampleTasks: Task[] = [
     subtasks: [],
     createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
     updatedAt: new Date(Date.now() - 86400000).toISOString()
-  },
-  {
-    id: generateId(),
-    title: 'Installazione caldaia',
-    cantiereId: 'cant-002',
-    impresaId: 'imp-002',
-    lavoratoreId: 'lav-003',
-    status: 'in_attesa',
-    priority: 'critica',
-    startDate: '2025-11-28',
-    dueDate: '2025-12-03',
-    note: 'In attesa DL',
-    updates: [
-      { id: generateId(), text: 'Richiesta autorizzazione DL', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() }
-    ],
-    check: false,
-    tags: ['installazione'],
-    subtasks: [
-      { id: generateId(), title: 'Preparazione locale', done: true },
-      { id: generateId(), title: 'Collegamento gas', done: false },
-      { id: generateId(), title: 'Collaudo', done: false }
-    ],
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000 * 2).toISOString()
-  },
-  {
-    id: generateId(),
-    title: 'Verifica impianto esistente',
-    cantiereId: 'cant-002',
-    impresaId: 'imp-003',
-    status: 'bloccato',
-    priority: 'urgente',
-    startDate: '2025-11-26',
-    dueDate: '2025-12-01',
-    note: 'Mancano documenti storici',
-    updates: [],
-    check: false,
-    tags: [],
-    subtasks: [],
-    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000 * 4).toISOString()
-  },
-  {
-    id: generateId(),
-    title: 'Progetto impianto clima',
-    cantiereId: 'cant-003',
-    impresaId: 'imp-002',
-    status: 'in_corso',
-    priority: 'alta',
-    startDate: '2025-11-20',
-    dueDate: '2025-12-15',
-    note: 'Rev.2 in lavorazione',
-    updates: [
-      { id: generateId(), text: 'Iniziata rev.2 progetto', createdAt: new Date().toISOString() }
-    ],
-    fileInfo: '5 DWG + 2 PDF',
-    check: false,
-    tags: ['progetto', 'clima'],
-    subtasks: [
-      { id: generateId(), title: 'Schema P&ID', done: true },
-      { id: generateId(), title: 'Calcolo carichi', done: true },
-      { id: generateId(), title: 'Disegni esecutivi', done: false }
-    ],
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-    updatedAt: new Date().toISOString()
   },
   {
     id: generateId(),
