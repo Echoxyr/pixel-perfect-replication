@@ -41,14 +41,14 @@
     --ring: 217 91% 60%;
     --radius: 0.75rem;
     
-    /* Sidebar */
-    --sidebar-background: 222 47% 11%;
+    /* Sidebar - Lighter with glass effect */
+    --sidebar-background: 222 47% 14%;
     --sidebar-foreground: 220 14% 96%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 16%;
+    --sidebar-accent: 222 47% 20%;
     --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 222 47% 16%;
+    --sidebar-border: 222 47% 22%;
     --sidebar-ring: 217 91% 60%;
     
     /* Custom Status Colors */
@@ -97,13 +97,13 @@
     --input: 224 71% 12%;
     --ring: 217 91% 60%;
     
-    --sidebar-background: 224 71% 4%;
+    --sidebar-background: 224 50% 10%;
     --sidebar-foreground: 220 14% 96%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 71% 10%;
+    --sidebar-accent: 224 50% 16%;
     --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 224 71% 10%;
+    --sidebar-border: 224 50% 18%;
     --sidebar-ring: 217 91% 60%;
     
     --shadow-glow: 0 0 30px -5px hsl(217 91% 60% / 0.4);

@@ -68,6 +68,8 @@ export function Layout() {
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cantieriExpanded, setCantieriExpanded] = useState(true);
+  const [hseExpanded, setHseExpanded] = useState(true);
+  const [complianceExpanded, setComplianceExpanded] = useState(true);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
@@ -189,9 +191,10 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar - Desktop */}
+      {/* Sidebar - Desktop with Glass Effect */}
       <aside className={cn(
-        'hidden md:flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300',
+        'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300',
+        'bg-sidebar/95 backdrop-blur-xl backdrop-saturate-150',
         sidebarCollapsed ? 'w-[72px]' : 'w-64'
       )}>
         {/* Logo Header */}
@@ -311,80 +314,98 @@ export function Layout() {
             </div>
           </div>
 
-          {/* HSE Section */}
+          {/* HSE Section - Collapsible */}
           <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2">
-                Sicurezza & HSE
-              </p>
+            {!sidebarCollapsed ? (
+              <button
+                onClick={() => setHseExpanded(!hseExpanded)}
+                className="w-full flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2 hover:text-foreground transition-colors"
+              >
+                <span>Sicurezza & HSE</span>
+                <ChevronDown className={cn('w-3 h-3 transition-transform', !hseExpanded && '-rotate-90')} />
+              </button>
+            ) : (
+              <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
             )}
-            <div className="space-y-1">
-              <NavItem 
-                to="/imprese" 
-                icon={Building2} 
-                label="Imprese Esterne" 
-                badge={hseStats.impreseCritical}
-                badgeColor="danger"
-                isActive={location.pathname === '/imprese'} 
-              />
-              <NavItem 
-                to="/lavoratori" 
-                icon={HardHat} 
-                label="Dipendenti" 
-                badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
-                badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
-                isActive={location.pathname === '/lavoratori'} 
-              />
-              <NavItem 
-                to="/hse" 
-                icon={ShieldCheck} 
-                label="Dashboard HSE" 
-                badge={totalAlerts}
-                badgeColor="danger"
-                isActive={location.pathname === '/hse'} 
-              />
-            </div>
+            
+            {(sidebarCollapsed || hseExpanded) && (
+              <div className="space-y-1">
+                <NavItem 
+                  to="/imprese" 
+                  icon={Building2} 
+                  label="Imprese Esterne" 
+                  badge={hseStats.impreseCritical}
+                  badgeColor="danger"
+                  isActive={location.pathname === '/imprese'} 
+                />
+                <NavItem 
+                  to="/lavoratori" 
+                  icon={HardHat} 
+                  label="Dipendenti" 
+                  badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
+                  badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
+                  isActive={location.pathname === '/lavoratori'} 
+                />
+                <NavItem 
+                  to="/hse" 
+                  icon={ShieldCheck} 
+                  label="Dashboard HSE" 
+                  badge={totalAlerts}
+                  badgeColor="danger"
+                  isActive={location.pathname === '/hse'} 
+                />
+              </div>
+            )}
           </div>
 
-          {/* Compliance Section */}
+          {/* Compliance Section - Collapsible */}
           <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2">
-                Compliance & Qualità
-              </p>
+            {!sidebarCollapsed ? (
+              <button
+                onClick={() => setComplianceExpanded(!complianceExpanded)}
+                className="w-full flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2 hover:text-foreground transition-colors"
+              >
+                <span>Compliance & Qualità</span>
+                <ChevronDown className={cn('w-3 h-3 transition-transform', !complianceExpanded && '-rotate-90')} />
+              </button>
+            ) : (
+              <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
             )}
-            <div className="space-y-1">
-              <NavItem 
-                to="/compliance/gdpr" 
-                icon={Shield} 
-                label="GDPR Privacy" 
-                isActive={location.pathname === '/compliance/gdpr'} 
-              />
-              <NavItem 
-                to="/compliance/qualita" 
-                icon={Award} 
-                label="ISO 9001 Qualità" 
-                isActive={location.pathname === '/compliance/qualita'} 
-              />
-              <NavItem 
-                to="/compliance/sicurezza" 
-                icon={FileCheck} 
-                label="D.Lgs 81/2008" 
-                isActive={location.pathname === '/compliance/sicurezza'} 
-              />
-              <NavItem 
-                to="/compliance/ambiente" 
-                icon={Leaf} 
-                label="ISO 14001 Ambiente" 
-                isActive={location.pathname === '/compliance/ambiente'} 
-              />
-              <NavItem 
-                to="/compliance/bi" 
-                icon={BarChart3} 
-                label="Business Intelligence" 
-                isActive={location.pathname === '/compliance/bi'} 
-              />
-            </div>
+            
+            {(sidebarCollapsed || complianceExpanded) && (
+              <div className="space-y-1">
+                <NavItem 
+                  to="/compliance/gdpr" 
+                  icon={Shield} 
+                  label="GDPR Privacy" 
+                  isActive={location.pathname === '/compliance/gdpr'} 
+                />
+                <NavItem 
+                  to="/compliance/qualita" 
+                  icon={Award} 
+                  label="ISO 9001 Qualità" 
+                  isActive={location.pathname === '/compliance/qualita'} 
+                />
+                <NavItem 
+                  to="/compliance/sicurezza" 
+                  icon={FileCheck} 
+                  label="D.Lgs 81/2008" 
+                  isActive={location.pathname === '/compliance/sicurezza'} 
+                />
+                <NavItem 
+                  to="/compliance/ambiente" 
+                  icon={Leaf} 
+                  label="ISO 14001 Ambiente" 
+                  isActive={location.pathname === '/compliance/ambiente'} 
+                />
+                <NavItem 
+                  to="/compliance/bi" 
+                  icon={BarChart3} 
+                  label="Business Intelligence" 
+                  isActive={location.pathname === '/compliance/bi'} 
+                />
+              </div>
+            )}
           </div>
         </nav>
 
