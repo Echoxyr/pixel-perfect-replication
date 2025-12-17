@@ -317,6 +317,20 @@ export interface SAL {
   updatedAt: string;
 }
 
+// === SAL PREVISIONE (Forecast) ===
+
+export interface PrevisioneSAL {
+  id: string;
+  cantiereId: string;
+  tipoLavorazione: TipoLavorazione;
+  mese: string; // YYYY-MM
+  importoPrevisto: number;
+  percentualePrevista: number;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ContrattoLavorazione {
   id: string;
   cantiereId: string;

@@ -10,6 +10,7 @@ import {
   SAL,
   ContrattoLavorazione,
   Presenza,
+  PrevisioneSAL,
   HSEStats,
   generateId,
   daysUntil
@@ -37,6 +38,7 @@ interface WorkHubData {
   sal: SAL[];
   contratti: ContrattoLavorazione[];
   presenze: Presenza[];
+  previsioni: PrevisioneSAL[];
 }
 
 const loadFromStorage = (): WorkHubData | null => {
@@ -67,7 +69,8 @@ export function useWorkHubData() {
     tasks: sampleTasks,
     sal: [],
     contratti: [],
-    presenze: []
+    presenze: [],
+    previsioni: []
   };
 
   const [cantieri, setCantieri] = useState<Cantiere[]>(initialData.cantieri);
@@ -80,11 +83,12 @@ export function useWorkHubData() {
   const [sal, setSal] = useState<SAL[]>(initialData.sal || []);
   const [contratti, setContratti] = useState<ContrattoLavorazione[]>(initialData.contratti || []);
   const [presenze, setPresenze] = useState<Presenza[]>(initialData.presenze || []);
+  const [previsioni, setPrevisioni] = useState<PrevisioneSAL[]>(initialData.previsioni || []);
 
   // Auto-save to localStorage
   const saveData = useCallback(() => {
-    saveToStorage({ cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze });
-  }, [cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze]);
+    saveToStorage({ cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze, previsioni });
+  }, [cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze, previsioni]);
 
   // === CANTIERI CRUD ===
   const addCantiere = useCallback((cantiere: Omit<Cantiere, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -426,6 +430,40 @@ export function useWorkHubData() {
     });
   }, [saveData]);
 
+  // === PREVISIONI CRUD ===
+  const addPrevisione = useCallback((previsione: Omit<PrevisioneSAL, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newPrevisione: PrevisioneSAL = {
+      ...previsione,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setPrevisioni(prev => {
+      const updated = [...prev, newPrevisione];
+      setTimeout(saveData, 0);
+      return updated;
+    });
+    return newPrevisione;
+  }, [saveData]);
+
+  const updatePrevisione = useCallback((id: string, updates: Partial<PrevisioneSAL>) => {
+    setPrevisioni(prev => {
+      const updated = prev.map(p => 
+        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+      );
+      setTimeout(saveData, 0);
+      return updated;
+    });
+  }, [saveData]);
+
+  const deletePrevisione = useCallback((id: string) => {
+    setPrevisioni(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      setTimeout(saveData, 0);
+      return updated;
+    });
+  }, [saveData]);
+
   // Get presenze for a cantiere
   const getPresenzeCantiere = useCallback((cantiereId: string, data?: string) => {
     return presenze.filter(p => {
@@ -444,6 +482,11 @@ export function useWorkHubData() {
   const getContrattiCantiere = useCallback((cantiereId: string) => {
     return contratti.filter(c => c.cantiereId === cantiereId);
   }, [contratti]);
+
+  // Get previsioni for a cantiere
+  const getPrevisioniCantiere = useCallback((cantiereId: string) => {
+    return previsioni.filter(p => p.cantiereId === cantiereId);
+  }, [previsioni]);
 
   // === COMPUTED VALUES ===
   
@@ -614,6 +657,12 @@ export function useWorkHubData() {
     updatePresenza,
     deletePresenza,
     
+    // Previsioni SAL
+    previsioni,
+    addPrevisione,
+    updatePrevisione,
+    deletePrevisione,
+    
     // Computed
     getDocumentiImpresa,
     getDocumentiCantiere,
@@ -627,6 +676,7 @@ export function useWorkHubData() {
     getPresenzeCantiere,
     getSALCantiere,
     getContrattiCantiere,
+    getPrevisioniCantiere,
     hseStats
   };
 }
