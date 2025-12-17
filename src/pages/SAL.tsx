@@ -1,0 +1,748 @@
+import { useState, useMemo } from 'react';
+import { useWorkHub } from '@/contexts/WorkHubContext';
+import { 
+  SAL, 
+  ContrattoLavorazione, 
+  TipoLavorazione,
+  StatoSAL,
+  generateId, 
+  formatCurrency, 
+  formatDateFull,
+  TIPO_LAVORAZIONE_LABELS,
+  STATO_SAL_LABELS,
+  STATO_SAL_COLORS
+} from '@/types/workhub';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Plus,
+  Search,
+  TrendingUp,
+  Euro,
+  Calendar,
+  FileText,
+  BarChart3,
+  GanttChart,
+  Trash2,
+  Edit,
+  Building2,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+
+export default function SALPage() {
+  const { cantieri, sal, contratti, addSAL, updateSAL, deleteSAL, addContratto, updateContratto, deleteContratto } = useWorkHub();
+  const { toast } = useToast();
+  
+  const [selectedCantiereId, setSelectedCantiereId] = useState<string>('all');
+  const [selectedTipoLavorazione, setSelectedTipoLavorazione] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNewSALDialog, setShowNewSALDialog] = useState(false);
+  const [showNewContrattoDialog, setShowNewContrattoDialog] = useState(false);
+  const [editingSAL, setEditingSAL] = useState<SAL | null>(null);
+  
+  // SAL Form
+  const [salForm, setSalForm] = useState({
+    cantiereId: '',
+    numeroSAL: 1,
+    mese: new Date().toISOString().slice(0, 7),
+    tipoLavorazione: 'elettrico' as TipoLavorazione,
+    stato: 'in_preparazione' as StatoSAL,
+    importoContratto: 0,
+    importoLavoriEseguiti: 0,
+    importoLavoriPrecedenti: 0,
+    importoLavoriPeriodo: 0,
+    note: ''
+  });
+
+  // Contratto Form
+  const [contrattoForm, setContrattoForm] = useState({
+    cantiereId: '',
+    tipoLavorazione: 'elettrico' as TipoLavorazione,
+    descrizione: '',
+    importoContratto: 0,
+    importoVarianti: 0,
+    dataInizio: '',
+    dataFine: ''
+  });
+
+  const activeCantieri = cantieri.filter(c => c.stato === 'attivo');
+
+  // Filter SAL
+  const filteredSAL = useMemo(() => {
+    return sal.filter(s => {
+      if (selectedCantiereId !== 'all' && s.cantiereId !== selectedCantiereId) return false;
+      if (selectedTipoLavorazione !== 'all' && s.tipoLavorazione !== selectedTipoLavorazione) return false;
+      return true;
+    });
+  }, [sal, selectedCantiereId, selectedTipoLavorazione]);
+
+  // Filter Contratti
+  const filteredContratti = useMemo(() => {
+    return contratti.filter(c => {
+      if (selectedCantiereId !== 'all' && c.cantiereId !== selectedCantiereId) return false;
+      if (selectedTipoLavorazione !== 'all' && c.tipoLavorazione !== selectedTipoLavorazione) return false;
+      return true;
+    });
+  }, [contratti, selectedCantiereId, selectedTipoLavorazione]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const filtered = selectedCantiereId !== 'all' 
+      ? sal.filter(s => s.cantiereId === selectedCantiereId)
+      : sal;
+    
+    const filteredContr = selectedCantiereId !== 'all'
+      ? contratti.filter(c => c.cantiereId === selectedCantiereId)
+      : contratti;
+
+    const totaleContratti = filteredContr.reduce((sum, c) => sum + c.importoTotale, 0);
+    const totaleLavoriEseguiti = filtered.reduce((sum, s) => sum + s.importoLavoriEseguiti, 0);
+    const avanzamentoMedio = totaleContratti > 0 ? (totaleLavoriEseguiti / totaleContratti) * 100 : 0;
+    const salApprovati = filtered.filter(s => s.stato === 'approvato' || s.stato === 'pagato').length;
+    const salInAttesa = filtered.filter(s => s.stato === 'presentato').length;
+
+    return {
+      totaleContratti,
+      totaleLavoriEseguiti,
+      avanzamentoMedio,
+      salApprovati,
+      salInAttesa,
+      totaleSAL: filtered.length
+    };
+  }, [sal, contratti, selectedCantiereId]);
+
+  const getCantiereName = (id: string) => {
+    const c = cantieri.find(c => c.id === id);
+    return c ? `${c.codiceCommessa} - ${c.nome}` : '-';
+  };
+
+  const handleCreateSAL = () => {
+    if (!salForm.cantiereId) {
+      toast({ title: "Errore", description: "Seleziona un cantiere", variant: "destructive" });
+      return;
+    }
+
+    const percentuale = salForm.importoContratto > 0 
+      ? (salForm.importoLavoriEseguiti / salForm.importoContratto) * 100 
+      : 0;
+
+    addSAL({
+      ...salForm,
+      percentualeAvanzamento: percentuale,
+      vociSAL: []
+    });
+
+    toast({ title: "SAL creato", description: `SAL n.${salForm.numeroSAL} aggiunto` });
+    setSalForm({
+      cantiereId: '',
+      numeroSAL: sal.length + 1,
+      mese: new Date().toISOString().slice(0, 7),
+      tipoLavorazione: 'elettrico',
+      stato: 'in_preparazione',
+      importoContratto: 0,
+      importoLavoriEseguiti: 0,
+      importoLavoriPrecedenti: 0,
+      importoLavoriPeriodo: 0,
+      note: ''
+    });
+    setShowNewSALDialog(false);
+  };
+
+  const handleCreateContratto = () => {
+    if (!contrattoForm.cantiereId || !contrattoForm.descrizione) {
+      toast({ title: "Errore", description: "Compila i campi obbligatori", variant: "destructive" });
+      return;
+    }
+
+    addContratto({
+      ...contrattoForm,
+      importoTotale: contrattoForm.importoContratto + contrattoForm.importoVarianti,
+      percentualeAvanzamento: 0
+    });
+
+    toast({ title: "Contratto creato", description: "Contratto lavorazione aggiunto" });
+    setContrattoForm({
+      cantiereId: '',
+      tipoLavorazione: 'elettrico',
+      descrizione: '',
+      importoContratto: 0,
+      importoVarianti: 0,
+      dataInizio: '',
+      dataFine: ''
+    });
+    setShowNewContrattoDialog(false);
+  };
+
+  const handleDeleteSAL = (id: string) => {
+    if (confirm('Eliminare questo SAL?')) {
+      deleteSAL(id);
+      toast({ title: "SAL eliminato" });
+    }
+  };
+
+  const handleUpdateSALStatus = (id: string, newStatus: StatoSAL) => {
+    updateSAL(id, { stato: newStatus });
+    toast({ title: "Stato aggiornato" });
+  };
+
+  // Gantt data for timeline
+  const ganttData = useMemo(() => {
+    return filteredContratti.map(c => ({
+      id: c.id,
+      name: `${TIPO_LAVORAZIONE_LABELS[c.tipoLavorazione]} - ${getCantiereName(c.cantiereId).split(' - ')[0]}`,
+      start: c.dataInizio || new Date().toISOString().slice(0, 10),
+      end: c.dataFine || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      progress: c.percentualeAvanzamento,
+      tipo: c.tipoLavorazione
+    }));
+  }, [filteredContratti, cantieri]);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">SAL - Stato Avanzamento Lavori</h1>
+          <p className="text-muted-foreground">Gestione contabilità lavori e SAL mensili</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowNewContrattoDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Nuovo Contratto
+          </Button>
+          <Button onClick={() => setShowNewSALDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Nuovo SAL
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <Select value={selectedCantiereId} onValueChange={setSelectedCantiereId}>
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Seleziona cantiere" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutti i cantieri</SelectItem>
+            {activeCantieri.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={selectedTipoLavorazione} onValueChange={setSelectedTipoLavorazione}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Tipo lavorazione" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutte le lavorazioni</SelectItem>
+            {Object.entries(TIPO_LAVORAZIONE_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-5 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Euro className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-sm text-muted-foreground">Importo Contratti</span>
+          </div>
+          <p className="text-2xl font-bold">{formatCurrency(stats.totaleContratti)}</p>
+        </div>
+        <div className="p-5 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+            </div>
+            <span className="text-sm text-muted-foreground">Lavori Eseguiti</span>
+          </div>
+          <p className="text-2xl font-bold text-emerald-500">{formatCurrency(stats.totaleLavoriEseguiti)}</p>
+        </div>
+        <div className="p-5 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-sky-500/10">
+              <BarChart3 className="w-5 h-5 text-sky-500" />
+            </div>
+            <span className="text-sm text-muted-foreground">Avanzamento Medio</span>
+          </div>
+          <p className="text-2xl font-bold text-sky-500">{stats.avanzamentoMedio.toFixed(1)}%</p>
+          <Progress value={stats.avanzamentoMedio} className="h-2 mt-2" />
+        </div>
+        <div className="p-5 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-amber-500/10">
+              <FileText className="w-5 h-5 text-amber-500" />
+            </div>
+            <span className="text-sm text-muted-foreground">SAL Totali</span>
+          </div>
+          <p className="text-2xl font-bold">{stats.totaleSAL}</p>
+          <div className="flex gap-2 mt-1 text-xs">
+            <span className="text-emerald-500">{stats.salApprovati} approvati</span>
+            <span className="text-amber-500">{stats.salInAttesa} in attesa</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="sal" className="w-full">
+        <TabsList>
+          <TabsTrigger value="sal">SAL Mensili</TabsTrigger>
+          <TabsTrigger value="contratti">Contratti Lavorazioni</TabsTrigger>
+          <TabsTrigger value="gantt">Timeline Gantt</TabsTrigger>
+        </TabsList>
+
+        {/* SAL Tab */}
+        <TabsContent value="sal" className="mt-6">
+          <div className="space-y-4">
+            {filteredSAL.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessun SAL trovato</p>
+                <Button onClick={() => setShowNewSALDialog(true)} variant="outline" className="mt-4">
+                  Crea il primo SAL
+                </Button>
+              </div>
+            ) : (
+              filteredSAL.map(s => (
+                <div key={s.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className={cn(
+                        'p-3 rounded-lg',
+                        s.tipoLavorazione === 'elettrico' ? 'bg-yellow-500/10' :
+                        s.tipoLavorazione === 'meccanico' ? 'bg-blue-500/10' :
+                        s.tipoLavorazione === 'idraulico' ? 'bg-cyan-500/10' :
+                        'bg-gray-500/10'
+                      )}>
+                        <Building2 className={cn(
+                          'w-6 h-6',
+                          s.tipoLavorazione === 'elettrico' ? 'text-yellow-500' :
+                          s.tipoLavorazione === 'meccanico' ? 'text-blue-500' :
+                          s.tipoLavorazione === 'idraulico' ? 'text-cyan-500' :
+                          'text-gray-500'
+                        )} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">SAL n.{s.numeroSAL} - {s.mese}</h3>
+                          <span className={cn(
+                            'px-2 py-0.5 text-xs font-medium rounded-full',
+                            s.stato === 'approvato' ? 'bg-emerald-500/20 text-emerald-500' :
+                            s.stato === 'pagato' ? 'bg-green-600/20 text-green-500' :
+                            s.stato === 'presentato' ? 'bg-blue-500/20 text-blue-500' :
+                            s.stato === 'contestato' ? 'bg-red-500/20 text-red-500' :
+                            'bg-gray-500/20 text-gray-500'
+                          )}>
+                            {STATO_SAL_LABELS[s.stato]}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{getCantiereName(s.cantiereId)}</p>
+                        <p className="text-sm text-muted-foreground">{TIPO_LAVORAZIONE_LABELS[s.tipoLavorazione]}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold">{formatCurrency(s.importoLavoriPeriodo)}</p>
+                      <p className="text-sm text-muted-foreground">Lavori periodo</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Progress value={s.percentualeAvanzamento} className="w-24 h-2" />
+                        <span className="text-sm font-medium">{s.percentualeAvanzamento.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 mt-4 pt-4 border-t border-border">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Importo Contratto</p>
+                      <p className="font-medium">{formatCurrency(s.importoContratto)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Lavori Precedenti</p>
+                      <p className="font-medium">{formatCurrency(s.importoLavoriPrecedenti)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Totale Eseguito</p>
+                      <p className="font-medium text-emerald-500">{formatCurrency(s.importoLavoriEseguiti)}</p>
+                    </div>
+                    <div className="flex-1" />
+                    <Select 
+                      value={s.stato} 
+                      onValueChange={(v) => handleUpdateSALStatus(s.id, v as StatoSAL)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATO_SAL_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteSAL(s.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Contratti Tab */}
+        <TabsContent value="contratti" className="mt-6">
+          <div className="space-y-4">
+            {filteredContratti.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Euro className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessun contratto lavorazione trovato</p>
+                <Button onClick={() => setShowNewContrattoDialog(true)} variant="outline" className="mt-4">
+                  Crea il primo contratto
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredContratti.map(c => (
+                  <div key={c.id} className="p-4 rounded-xl border border-border bg-card">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            'px-2 py-0.5 text-xs font-medium rounded-full',
+                            c.tipoLavorazione === 'elettrico' ? 'bg-yellow-500/20 text-yellow-500' :
+                            c.tipoLavorazione === 'meccanico' ? 'bg-blue-500/20 text-blue-500' :
+                            c.tipoLavorazione === 'idraulico' ? 'bg-cyan-500/20 text-cyan-500' :
+                            'bg-gray-500/20 text-gray-500'
+                          )}>
+                            {TIPO_LAVORAZIONE_LABELS[c.tipoLavorazione]}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold">{c.descrizione}</h3>
+                        <p className="text-sm text-muted-foreground">{getCantiereName(c.cantiereId)}</p>
+                        {c.dataInizio && c.dataFine && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            <Calendar className="w-3 h-3 inline mr-1" />
+                            {formatDateFull(c.dataInizio)} → {formatDateFull(c.dataFine)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Importo Totale</p>
+                        <p className="text-xl font-bold">{formatCurrency(c.importoTotale)}</p>
+                        <div className="flex items-center gap-2 mt-2 justify-end">
+                          <Progress value={c.percentualeAvanzamento} className="w-24 h-2" />
+                          <span className="text-sm">{c.percentualeAvanzamento.toFixed(1)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 mt-4 pt-4 border-t border-border text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Contratto base</p>
+                        <p className="font-medium">{formatCurrency(c.importoContratto)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Varianti</p>
+                        <p className="font-medium">{formatCurrency(c.importoVarianti)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Gantt Tab */}
+        <TabsContent value="gantt" className="mt-6">
+          <div className="p-4 rounded-xl border border-border bg-card">
+            <div className="flex items-center gap-2 mb-4">
+              <GanttChart className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold">Timeline Lavorazioni</h3>
+            </div>
+            {ganttData.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Nessuna lavorazione con date definite</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {ganttData.map(item => {
+                  const start = new Date(item.start);
+                  const end = new Date(item.end);
+                  const today = new Date();
+                  const totalDays = Math.max(1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                  const elapsed = Math.max(0, (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                  const timeProgress = Math.min(100, (elapsed / totalDays) * 100);
+                  
+                  return (
+                    <div key={item.id} className="flex items-center gap-4">
+                      <div className="w-48 flex-shrink-0">
+                        <p className="text-sm font-medium truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateFull(item.start)} - {formatDateFull(item.end)}
+                        </p>
+                      </div>
+                      <div className="flex-1 relative h-8 bg-muted rounded-lg overflow-hidden">
+                        {/* Time progress */}
+                        <div 
+                          className="absolute inset-y-0 left-0 bg-muted-foreground/20"
+                          style={{ width: `${timeProgress}%` }}
+                        />
+                        {/* Work progress */}
+                        <div 
+                          className={cn(
+                            'absolute inset-y-0 left-0 rounded-r-lg transition-all',
+                            item.tipo === 'elettrico' ? 'bg-yellow-500' :
+                            item.tipo === 'meccanico' ? 'bg-blue-500' :
+                            item.tipo === 'idraulico' ? 'bg-cyan-500' :
+                            'bg-primary'
+                          )}
+                          style={{ width: `${item.progress}%` }}
+                        />
+                        {/* Progress label */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xs font-medium text-foreground drop-shadow-sm">
+                            {item.progress.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-20 text-right">
+                        {item.progress >= timeProgress ? (
+                          <span className="text-xs text-emerald-500 flex items-center gap-1 justify-end">
+                            <CheckCircle className="w-3 h-3" /> In linea
+                          </span>
+                        ) : (
+                          <span className="text-xs text-amber-500 flex items-center gap-1 justify-end">
+                            <AlertCircle className="w-3 h-3" /> Ritardo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* New SAL Dialog */}
+      <Dialog open={showNewSALDialog} onOpenChange={setShowNewSALDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuovo SAL</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Cantiere *</label>
+              <Select value={salForm.cantiereId} onValueChange={(v) => setSalForm({ ...salForm, cantiereId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona cantiere" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeCantieri.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Numero SAL</label>
+                <Input
+                  type="number"
+                  value={salForm.numeroSAL}
+                  onChange={(e) => setSalForm({ ...salForm, numeroSAL: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Mese</label>
+                <Input
+                  type="month"
+                  value={salForm.mese}
+                  onChange={(e) => setSalForm({ ...salForm, mese: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Tipo Lavorazione</label>
+              <Select value={salForm.tipoLavorazione} onValueChange={(v) => setSalForm({ ...salForm, tipoLavorazione: v as TipoLavorazione })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIPO_LAVORAZIONE_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Importo Contratto €</label>
+                <Input
+                  type="number"
+                  value={salForm.importoContratto}
+                  onChange={(e) => setSalForm({ ...salForm, importoContratto: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Lavori Precedenti €</label>
+                <Input
+                  type="number"
+                  value={salForm.importoLavoriPrecedenti}
+                  onChange={(e) => setSalForm({ ...salForm, importoLavoriPrecedenti: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Lavori Periodo €</label>
+                <Input
+                  type="number"
+                  value={salForm.importoLavoriPeriodo}
+                  onChange={(e) => {
+                    const periodo = parseFloat(e.target.value) || 0;
+                    setSalForm({ 
+                      ...salForm, 
+                      importoLavoriPeriodo: periodo,
+                      importoLavoriEseguiti: salForm.importoLavoriPrecedenti + periodo
+                    });
+                  }}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Totale Eseguito €</label>
+                <Input
+                  type="number"
+                  value={salForm.importoLavoriEseguiti}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Note</label>
+              <Textarea
+                value={salForm.note}
+                onChange={(e) => setSalForm({ ...salForm, note: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewSALDialog(false)}>Annulla</Button>
+            <Button onClick={handleCreateSAL}>Crea SAL</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Contratto Dialog */}
+      <Dialog open={showNewContrattoDialog} onOpenChange={setShowNewContrattoDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuovo Contratto Lavorazione</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Cantiere *</label>
+              <Select value={contrattoForm.cantiereId} onValueChange={(v) => setContrattoForm({ ...contrattoForm, cantiereId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona cantiere" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeCantieri.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Tipo Lavorazione</label>
+              <Select value={contrattoForm.tipoLavorazione} onValueChange={(v) => setContrattoForm({ ...contrattoForm, tipoLavorazione: v as TipoLavorazione })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIPO_LAVORAZIONE_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Descrizione *</label>
+              <Input
+                value={contrattoForm.descrizione}
+                onChange={(e) => setContrattoForm({ ...contrattoForm, descrizione: e.target.value })}
+                placeholder="Es. Impianto elettrico edificio A"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Importo Contratto €</label>
+                <Input
+                  type="number"
+                  value={contrattoForm.importoContratto}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, importoContratto: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Varianti €</label>
+                <Input
+                  type="number"
+                  value={contrattoForm.importoVarianti}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, importoVarianti: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Data Inizio</label>
+                <Input
+                  type="date"
+                  value={contrattoForm.dataInizio}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, dataInizio: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Data Fine</label>
+                <Input
+                  type="date"
+                  value={contrattoForm.dataFine}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, dataFine: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewContrattoDialog(false)}>Annulla</Button>
+            <Button onClick={handleCreateContratto}>Crea Contratto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
