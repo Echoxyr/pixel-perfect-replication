@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { formatDateFull, daysUntil, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,9 @@ import {
   Mail,
   Edit,
   Trash2,
-  GraduationCap
+  GraduationCap,
+  Upload,
+  Download
 } from 'lucide-react';
 
 // Tipi di visita medica secondo D.Lgs 81/2008
@@ -97,6 +99,15 @@ interface MedicoCompetente {
   ordine: string;
   numeroIscrizione: string;
   corsiCompletati: CorsoMedico[];
+  documentiUrl: DocumentoMedico[];
+}
+
+interface DocumentoMedico {
+  id: string;
+  nome: string;
+  tipo: string;
+  dataCaricamento: string;
+  url: string;
 }
 
 interface CorsoMedico {
@@ -111,6 +122,7 @@ interface CorsoMedico {
 export default function SorveglianzaSanitaria() {
   const { lavoratori, imprese } = useWorkHub();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterImpresa, setFilterImpresa] = useState<string>('all');
@@ -119,6 +131,7 @@ export default function SorveglianzaSanitaria() {
   const [showNewVisitaDialog, setShowNewVisitaDialog] = useState(false);
   const [showNewMedicoDialog, setShowNewMedicoDialog] = useState(false);
   const [showCorsiMedicoDialog, setShowCorsiMedicoDialog] = useState(false);
+  const [showDocumentiMedicoDialog, setShowDocumentiMedicoDialog] = useState(false);
   const [selectedMedico, setSelectedMedico] = useState<MedicoCompetente | null>(null);
   const [editingMedico, setEditingMedico] = useState<MedicoCompetente | null>(null);
 
@@ -248,7 +261,8 @@ export default function SorveglianzaSanitaria() {
       const nuovoMedico: MedicoCompetente = {
         id: generateId(),
         ...newMedico,
-        corsiCompletati: []
+        corsiCompletati: [],
+        documentiUrl: []
       };
       setMedici([...medici, nuovoMedico]);
       toast({ title: 'Medico competente aggiunto con successo' });
@@ -322,6 +336,53 @@ export default function SorveglianzaSanitaria() {
     
     setSelectedMedico({ ...selectedMedico, corsiCompletati: updatedCorsi });
     toast({ title: 'Corso rimosso' });
+  };
+
+  const handleOpenDocumenti = (medico: MedicoCompetente) => {
+    setSelectedMedico(medico);
+    setShowDocumentiMedicoDialog(true);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedMedico || !event.target.files?.length) return;
+    
+    const file = event.target.files[0];
+    const documento: DocumentoMedico = {
+      id: generateId(),
+      nome: file.name,
+      tipo: file.type,
+      dataCaricamento: new Date().toISOString().slice(0, 10),
+      url: URL.createObjectURL(file)
+    };
+
+    const updatedDocs = [...selectedMedico.documentiUrl, documento];
+    
+    setMedici(medici.map(m => 
+      m.id === selectedMedico.id 
+        ? { ...m, documentiUrl: updatedDocs }
+        : m
+    ));
+    
+    setSelectedMedico({ ...selectedMedico, documentiUrl: updatedDocs });
+    toast({ title: 'Documento caricato', description: file.name });
+    
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeleteDocumento = (docId: string) => {
+    if (!selectedMedico) return;
+    
+    const updatedDocs = selectedMedico.documentiUrl.filter(d => d.id !== docId);
+    
+    setMedici(medici.map(m => 
+      m.id === selectedMedico.id 
+        ? { ...m, documentiUrl: updatedDocs }
+        : m
+    ));
+    
+    setSelectedMedico({ ...selectedMedico, documentiUrl: updatedDocs });
+    toast({ title: 'Documento rimosso' });
   };
 
   const getCorsoInfo = (corsoId: string) => CORSI_MEDICO_COMPETENTE.find(c => c.id === corsoId);
@@ -714,6 +775,10 @@ export default function SorveglianzaSanitaria() {
                           )}
                         </div>
                         <div className="flex gap-2 mt-3">
+                          <Button size="sm" variant="outline" onClick={() => handleOpenDocumenti(medico)} className="gap-1">
+                            <FileText className="w-3 h-3" />
+                            Documenti ({medico.documentiUrl.length})
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handleOpenCorsi(medico)} className="gap-1">
                             <GraduationCap className="w-3 h-3" />
                             Corsi ({medico.corsiCompletati.length})
@@ -1023,6 +1088,93 @@ export default function SorveglianzaSanitaria() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCorsiMedicoDialog(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Documenti Medico */}
+      <Dialog open={showDocumentiMedicoDialog} onOpenChange={setShowDocumentiMedicoDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Documenti - Dr. {selectedMedico?.cognome} {selectedMedico?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Documenti Obbligatori Reference */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Documenti Obbligatori per Medico Competente
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {CORSI_MEDICO_COMPETENTE.map(corso => (
+                  <div key={corso.id} className="flex items-start gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <span>{corso.nome}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Upload */}
+            <div className="p-4 border border-dashed border-border rounded-lg text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Carica documenti (PDF, Word, Immagini)
+              </p>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                Seleziona File
+              </Button>
+            </div>
+
+            {/* Lista Documenti */}
+            <div>
+              <h3 className="font-medium mb-4">Documenti Caricati</h3>
+              {selectedMedico?.documentiUrl.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nessun documento caricato</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedMedico?.documentiUrl.map(doc => (
+                    <div key={doc.id} className="p-3 rounded-lg bg-muted/30 border border-border flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="font-medium">{doc.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Caricato: {formatDateFull(doc.dataCaricamento)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doc.url} download={doc.nome}>
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteDocumento(doc.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDocumentiMedicoDialog(false)}>Chiudi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
