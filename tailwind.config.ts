@@ -78,6 +78,7 @@ export default {
           DEFAULT: "hsl(var(--status-info))",
           light: "hsl(217 91% 60% / 0.15)",
         },
+        "content-glass": "hsl(var(--content-glass) / 0.85)",
       },
       borderRadius: {
         lg: "var(--radius)",

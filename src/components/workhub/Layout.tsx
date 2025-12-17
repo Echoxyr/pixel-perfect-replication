@@ -760,7 +760,7 @@ export function Layout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto scrollbar-thin">
+        <main className="flex-1 p-4 md:p-6 overflow-auto scrollbar-thin bg-content-glass backdrop-blur-sm">
           <Outlet />
         </main>
       </div>
