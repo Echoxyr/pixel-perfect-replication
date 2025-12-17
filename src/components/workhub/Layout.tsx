@@ -30,7 +30,12 @@ import {
   CheckCircle2,
   Clock,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Shield,
+  Award,
+  Leaf,
+  BarChart3,
+  FileCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -340,6 +345,47 @@ export function Layout() {
               />
             </div>
           </div>
+
+          {/* Compliance Section */}
+          <div>
+            {!sidebarCollapsed && (
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+                Compliance & Qualità
+              </p>
+            )}
+            <div className="space-y-1">
+              <NavItem 
+                to="/compliance/gdpr" 
+                icon={Shield} 
+                label="GDPR Privacy" 
+                isActive={location.pathname === '/compliance/gdpr'} 
+              />
+              <NavItem 
+                to="/compliance/qualita" 
+                icon={Award} 
+                label="ISO 9001 Qualità" 
+                isActive={location.pathname === '/compliance/qualita'} 
+              />
+              <NavItem 
+                to="/compliance/sicurezza" 
+                icon={FileCheck} 
+                label="D.Lgs 81/2008" 
+                isActive={location.pathname === '/compliance/sicurezza'} 
+              />
+              <NavItem 
+                to="/compliance/ambiente" 
+                icon={Leaf} 
+                label="ISO 14001 Ambiente" 
+                isActive={location.pathname === '/compliance/ambiente'} 
+              />
+              <NavItem 
+                to="/compliance/bi" 
+                icon={BarChart3} 
+                label="Business Intelligence" 
+                isActive={location.pathname === '/compliance/bi'} 
+              />
+            </div>
+          </div>
         </nav>
 
         {/* HSE Status Widget */}
@@ -484,6 +530,34 @@ export function Layout() {
                     {item.badge && item.badge > 0 && (
                       <Badge variant="destructive" className="ml-auto">{item.badge}</Badge>
                     )}
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="h-px bg-sidebar-border" />
+              
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Compliance</p>
+                {[
+                  { to: '/compliance/gdpr', icon: Shield, label: 'GDPR Privacy' },
+                  { to: '/compliance/qualita', icon: Award, label: 'ISO 9001 Qualità' },
+                  { to: '/compliance/sicurezza', icon: FileCheck, label: 'D.Lgs 81/2008' },
+                  { to: '/compliance/ambiente', icon: Leaf, label: 'ISO 14001 Ambiente' },
+                  { to: '/compliance/bi', icon: BarChart3, label: 'Business Intelligence' },
+                ].map(item => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
+                      location.pathname === item.to
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
                   </Link>
                 ))}
               </div>

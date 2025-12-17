@@ -5,13 +5,15 @@ import {
   ContrattoLavorazione, 
   TipoLavorazione,
   StatoSAL,
+  StatoContratto,
   PrevisioneSAL,
   generateId, 
   formatCurrency, 
   formatDateFull,
   TIPO_LAVORAZIONE_LABELS,
   STATO_SAL_LABELS,
-  STATO_SAL_COLORS
+  STATO_SAL_COLORS,
+  STATO_CONTRATTO_LABELS
 } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +59,7 @@ import { SALComparisonChart } from '@/components/workhub/SALComparisonChart';
 import * as XLSX from 'xlsx';
 
 export default function SALPage() {
-  const { cantieri, sal, contratti, previsioni, addSAL, updateSAL, deleteSAL, addContratto, updateContratto, deleteContratto, addPrevisione } = useWorkHub();
+  const { cantieri, imprese, sal, contratti, previsioni, addSAL, updateSAL, deleteSAL, addContratto, updateContratto, deleteContratto, addPrevisione } = useWorkHub();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -163,9 +165,11 @@ export default function SALPage() {
     setShowNewPrevisioneDialog(false);
   };
   
-  // SAL Form
+  // SAL Form - now with contrattoId for auto-population
   const [salForm, setSalForm] = useState({
     cantiereId: '',
+    contrattoId: '', // NEW: select existing contract
+    impresaId: '',
     numeroSAL: 1,
     mese: new Date().toISOString().slice(0, 7),
     tipoLavorazione: 'elettrico' as TipoLavorazione,
@@ -177,16 +181,51 @@ export default function SALPage() {
     note: ''
   });
 
-  // Contratto Form
+  // Contratto Form - with all new fields
   const [contrattoForm, setContrattoForm] = useState({
+    codiceContratto: '',
     cantiereId: '',
+    impresaId: '',
     tipoLavorazione: 'elettrico' as TipoLavorazione,
     descrizione: '',
     importoContratto: 0,
     importoVarianti: 0,
+    ritenute: 5, // default 5%
+    anticipi: 0,
+    stato: 'attivo' as StatoContratto,
     dataInizio: '',
-    dataFine: ''
+    dataFine: '',
+    note: ''
   });
+
+  // Get contracts for selected cantiere
+  const contrattiForCantiere = useMemo(() => {
+    if (!salForm.cantiereId) return [];
+    return contratti.filter(c => c.cantiereId === salForm.cantiereId);
+  }, [contratti, salForm.cantiereId]);
+
+  // Handle contract selection - auto-populate amounts
+  const handleContrattoSelect = (contrattoId: string) => {
+    const selectedContratto = contratti.find(c => c.id === contrattoId);
+    if (selectedContratto) {
+      // Calculate lavori precedenti from existing SAL for this contract
+      const previousSAL = sal.filter(s => 
+        s.cantiereId === selectedContratto.cantiereId && 
+        s.tipoLavorazione === selectedContratto.tipoLavorazione
+      );
+      const lavoriPrecedenti = previousSAL.reduce((sum, s) => sum + s.importoLavoriPeriodo, 0);
+      
+      setSalForm({
+        ...salForm,
+        contrattoId,
+        impresaId: selectedContratto.impresaId,
+        tipoLavorazione: selectedContratto.tipoLavorazione,
+        importoContratto: selectedContratto.importoTotale,
+        importoLavoriPrecedenti: lavoriPrecedenti,
+        importoLavoriEseguiti: lavoriPrecedenti
+      });
+    }
+  };
 
   const activeCantieri = cantieri.filter(c => c.stato === 'attivo');
 
@@ -258,7 +297,9 @@ export default function SALPage() {
     toast({ title: "SAL creato", description: `SAL n.${salForm.numeroSAL} aggiunto` });
     setSalForm({
       cantiereId: '',
-      numeroSAL: sal.length + 1,
+      contrattoId: '',
+      impresaId: '',
+      numeroSAL: sal.length + 2,
       mese: new Date().toISOString().slice(0, 7),
       tipoLavorazione: 'elettrico',
       stato: 'in_preparazione',
@@ -272,28 +313,51 @@ export default function SALPage() {
   };
 
   const handleCreateContratto = () => {
-    if (!contrattoForm.cantiereId || !contrattoForm.descrizione) {
-      toast({ title: "Errore", description: "Compila i campi obbligatori", variant: "destructive" });
+    if (!contrattoForm.cantiereId || !contrattoForm.impresaId || !contrattoForm.descrizione) {
+      toast({ title: "Errore", description: "Compila i campi obbligatori (Cantiere, Impresa, Descrizione)", variant: "destructive" });
       return;
     }
 
     addContratto({
-      ...contrattoForm,
+      codiceContratto: contrattoForm.codiceContratto || `CTR-${Date.now()}`,
+      cantiereId: contrattoForm.cantiereId,
+      impresaId: contrattoForm.impresaId,
+      tipoLavorazione: contrattoForm.tipoLavorazione,
+      descrizione: contrattoForm.descrizione,
+      importoContratto: contrattoForm.importoContratto,
+      importoVarianti: contrattoForm.importoVarianti,
       importoTotale: contrattoForm.importoContratto + contrattoForm.importoVarianti,
+      ritenute: contrattoForm.ritenute,
+      anticipi: contrattoForm.anticipi,
+      stato: contrattoForm.stato,
+      dataInizio: contrattoForm.dataInizio,
+      dataFine: contrattoForm.dataFine,
+      note: contrattoForm.note,
       percentualeAvanzamento: 0
     });
 
-    toast({ title: "Contratto creato", description: "Contratto lavorazione aggiunto" });
+    toast({ title: "Contratto creato", description: `Contratto ${contrattoForm.codiceContratto || 'nuovo'} aggiunto` });
     setContrattoForm({
+      codiceContratto: '',
       cantiereId: '',
+      impresaId: '',
       tipoLavorazione: 'elettrico',
       descrizione: '',
       importoContratto: 0,
       importoVarianti: 0,
+      ritenute: 5,
+      anticipi: 0,
+      stato: 'attivo',
       dataInizio: '',
-      dataFine: ''
+      dataFine: '',
+      note: ''
     });
     setShowNewContrattoDialog(false);
+  };
+
+  const getImpresaName = (id: string) => {
+    const i = imprese.find(imp => imp.id === id);
+    return i ? i.ragioneSociale : '-';
   };
 
   const handleDeleteSAL = (id: string) => {
@@ -754,7 +818,10 @@ export default function SALPage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Cantiere *</label>
-              <Select value={salForm.cantiereId} onValueChange={(v) => setSalForm({ ...salForm, cantiereId: v })}>
+              <Select 
+                value={salForm.cantiereId} 
+                onValueChange={(v) => setSalForm({ ...salForm, cantiereId: v, contrattoId: '', importoContratto: 0 })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona cantiere" />
                 </SelectTrigger>
@@ -765,6 +832,59 @@ export default function SALPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Contract Selection - NEW */}
+            {salForm.cantiereId && (
+              <div>
+                <label className="text-sm font-medium mb-1 block">Contratto *</label>
+                <Select value={salForm.contrattoId} onValueChange={handleContrattoSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona contratto esistente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contrattiForCantiere.length === 0 ? (
+                      <SelectItem value="" disabled>Nessun contratto - creane uno prima</SelectItem>
+                    ) : (
+                      contrattiForCantiere.map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.codiceContratto} - {TIPO_LAVORAZIONE_LABELS[c.tipoLavorazione]} - {formatCurrency(c.importoTotale)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {contrattiForCantiere.length === 0 && (
+                  <p className="text-xs text-amber-500 mt-1">
+                    Devi prima creare un contratto per questo cantiere
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Show impresa when contract is selected */}
+            {salForm.contrattoId && (
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Impresa:</span>
+                    <p className="font-medium">{getImpresaName(salForm.impresaId)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Tipo Lavorazione:</span>
+                    <p className="font-medium">{TIPO_LAVORAZIONE_LABELS[salForm.tipoLavorazione]}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Importo Contratto:</span>
+                    <p className="font-medium text-primary">{formatCurrency(salForm.importoContratto)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Lavori Precedenti:</span>
+                    <p className="font-medium">{formatCurrency(salForm.importoLavoriPrecedenti)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Numero SAL</label>
@@ -783,40 +903,10 @@ export default function SALPage() {
                 />
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">Tipo Lavorazione</label>
-              <Select value={salForm.tipoLavorazione} onValueChange={(v) => setSalForm({ ...salForm, tipoLavorazione: v as TipoLavorazione })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TIPO_LAVORAZIONE_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Importo Contratto €</label>
-                <Input
-                  type="number"
-                  value={salForm.importoContratto}
-                  onChange={(e) => setSalForm({ ...salForm, importoContratto: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Lavori Precedenti €</label>
-                <Input
-                  type="number"
-                  value={salForm.importoLavoriPrecedenti}
-                  onChange={(e) => setSalForm({ ...salForm, importoLavoriPrecedenti: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Lavori Periodo €</label>
+                <label className="text-sm font-medium mb-1 block">Lavori Periodo € *</label>
                 <Input
                   type="number"
                   value={salForm.importoLavoriPeriodo}
@@ -840,6 +930,18 @@ export default function SALPage() {
                 />
               </div>
             </div>
+
+            {salForm.importoContratto > 0 && (
+              <div className="p-2 rounded-lg bg-primary/10">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Avanzamento:</span>
+                  <span className="font-bold text-primary">
+                    {((salForm.importoLavoriEseguiti / salForm.importoContratto) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium mb-1 block">Note</label>
               <Textarea
@@ -851,31 +953,71 @@ export default function SALPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewSALDialog(false)}>Annulla</Button>
-            <Button onClick={handleCreateSAL}>Crea SAL</Button>
+            <Button onClick={handleCreateSAL} disabled={!salForm.contrattoId}>Crea SAL</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* New Contratto Dialog */}
       <Dialog open={showNewContrattoDialog} onOpenChange={setShowNewContrattoDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nuovo Contratto Lavorazione</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block">Cantiere *</label>
-              <Select value={contrattoForm.cantiereId} onValueChange={(v) => setContrattoForm({ ...contrattoForm, cantiereId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona cantiere" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeCantieri.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Codice Contratto</label>
+                <Input
+                  value={contrattoForm.codiceContratto}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, codiceContratto: e.target.value })}
+                  placeholder="Es. CTR-2024-001"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Stato</label>
+                <Select value={contrattoForm.stato} onValueChange={(v) => setContrattoForm({ ...contrattoForm, stato: v as StatoContratto })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATO_CONTRATTO_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Cantiere *</label>
+                <Select value={contrattoForm.cantiereId} onValueChange={(v) => setContrattoForm({ ...contrattoForm, cantiereId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona cantiere" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeCantieri.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Impresa *</label>
+                <Select value={contrattoForm.impresaId} onValueChange={(v) => setContrattoForm({ ...contrattoForm, impresaId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona impresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {imprese.map(i => (
+                      <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
               <label className="text-sm font-medium mb-1 block">Tipo Lavorazione</label>
               <Select value={contrattoForm.tipoLavorazione} onValueChange={(v) => setContrattoForm({ ...contrattoForm, tipoLavorazione: v as TipoLavorazione })}>
@@ -889,6 +1031,7 @@ export default function SALPage() {
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <label className="text-sm font-medium mb-1 block">Descrizione *</label>
               <Input
@@ -897,9 +1040,10 @@ export default function SALPage() {
                 placeholder="Es. Impianto elettrico edificio A"
               />
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Importo Contratto €</label>
+                <label className="text-sm font-medium mb-1 block">Importo Contratto € *</label>
                 <Input
                   type="number"
                   value={contrattoForm.importoContratto}
@@ -915,6 +1059,28 @@ export default function SALPage() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Ritenuta Garanzia %</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={contrattoForm.ritenute}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, ritenute: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Anticipo €</label>
+                <Input
+                  type="number"
+                  value={contrattoForm.anticipi}
+                  onChange={(e) => setContrattoForm({ ...contrattoForm, anticipi: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">Data Inizio</label>
@@ -931,6 +1097,26 @@ export default function SALPage() {
                   value={contrattoForm.dataFine}
                   onChange={(e) => setContrattoForm({ ...contrattoForm, dataFine: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 block">Note</label>
+              <Textarea
+                value={contrattoForm.note}
+                onChange={(e) => setContrattoForm({ ...contrattoForm, note: e.target.value })}
+                rows={2}
+                placeholder="Note aggiuntive..."
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Importo Totale Contratto:</span>
+                <span className="text-xl font-bold text-primary">
+                  {formatCurrency(contrattoForm.importoContratto + contrattoForm.importoVarianti)}
+                </span>
               </div>
             </div>
           </div>

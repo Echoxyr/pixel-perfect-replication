@@ -331,17 +331,33 @@ export interface PrevisioneSAL {
   updatedAt: string;
 }
 
+export type StatoContratto = 'attivo' | 'sospeso' | 'completato' | 'annullato';
+
+export const STATO_CONTRATTO_LABELS: Record<StatoContratto, string> = {
+  attivo: 'Attivo',
+  sospeso: 'Sospeso',
+  completato: 'Completato',
+  annullato: 'Annullato'
+};
+
 export interface ContrattoLavorazione {
   id: string;
+  codiceContratto: string;
   cantiereId: string;
+  impresaId: string;
   tipoLavorazione: TipoLavorazione;
   descrizione: string;
   importoContratto: number;
   importoVarianti: number;
   importoTotale: number;
+  ritenute: number; // % ritenuta garanzia
+  anticipi: number; // importo anticipo
+  stato: StatoContratto;
   dataInizio?: string;
   dataFine?: string;
   percentualeAvanzamento: number;
+  note?: string;
+  allegatiUrl?: string[];
   createdAt: string;
   updatedAt: string;
 }
