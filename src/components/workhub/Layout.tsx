@@ -4,6 +4,7 @@ import { useWorkHub } from '@/contexts/WorkHubContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EgestLogo } from './EgestLogo';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -131,14 +132,8 @@ export function Layout() {
       <aside className="hidden md:flex flex-col w-56 bg-sidebar-background border-r border-sidebar-border">
         {/* Logo */}
         <div className="p-4 border-b border-sidebar-border">
-          <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <Construction className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <span className="font-bold text-lg text-sidebar-foreground">E-gest</span>
-              <p className="text-[10px] text-muted-foreground leading-none">la commessa a portata di mano</p>
-            </div>
+          <Link to="/dashboard">
+            <EgestLogo size="md" />
           </Link>
         </div>
 
