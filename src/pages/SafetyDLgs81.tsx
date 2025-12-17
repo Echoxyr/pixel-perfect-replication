@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import {
   POSDigitale,
@@ -45,13 +45,69 @@ import {
   Download,
   Building2,
   HardHat,
-  ClipboardList
+  ClipboardList,
+  User,
+  Phone,
+  Mail,
+  Edit,
+  Trash2,
+  GraduationCap,
+  Upload,
+  Shield,
+  Users
 } from 'lucide-react';
 import SafetyFormsModule from '@/components/workhub/SafetyFormsModule';
+
+// Corsi obbligatori RSPP
+const CORSI_RSPP = [
+  { id: 'rspp_mod_a', nome: 'Modulo A (28 ore)', obbligatorio: true, scadenza: null, descrizione: 'Formazione base per RSPP' },
+  { id: 'rspp_mod_b', nome: 'Modulo B (48 ore min.)', obbligatorio: true, scadenza: null, descrizione: 'Formazione specifica settore' },
+  { id: 'rspp_mod_c', nome: 'Modulo C (24 ore)', obbligatorio: true, scadenza: null, descrizione: 'Competenze relazionali' },
+  { id: 'rspp_agg', nome: 'Aggiornamento quinquennale (40 ore)', obbligatorio: true, scadenza: '5 anni', descrizione: 'Aggiornamento obbligatorio' },
+];
+
+// Corsi obbligatori RLS
+const CORSI_RLS = [
+  { id: 'rls_base', nome: 'Formazione RLS (32 ore)', obbligatorio: true, scadenza: null, descrizione: 'Formazione iniziale RLS' },
+  { id: 'rls_agg_4', nome: 'Aggiornamento annuale (4 ore)', obbligatorio: true, scadenza: '1 anno', descrizione: 'Aziende 15-50 dipendenti' },
+  { id: 'rls_agg_8', nome: 'Aggiornamento annuale (8 ore)', obbligatorio: true, scadenza: '1 anno', descrizione: 'Aziende > 50 dipendenti' },
+];
+
+interface FiguraSicurezza {
+  id: string;
+  tipo: 'rspp' | 'rls';
+  nome: string;
+  cognome: string;
+  codiceFiscale: string;
+  dataNomina: string;
+  telefono: string;
+  email: string;
+  note?: string;
+  corsiCompletati: CorsoFigura[];
+  documentiUrl: DocumentoFigura[];
+}
+
+interface CorsoFigura {
+  id: string;
+  corsoId: string;
+  dataConseguimento: string;
+  dataScadenza?: string;
+  ente: string;
+  attestatoUrl?: string;
+}
+
+interface DocumentoFigura {
+  id: string;
+  nome: string;
+  tipo: string;
+  dataCaricamento: string;
+  url: string;
+}
 
 export default function SafetyDLgs81() {
   const { cantieri, imprese, lavoratori } = useWorkHub();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [posDigitali, setPosDigitali] = useState<POSDigitale[]>([
     {
@@ -105,8 +161,37 @@ export default function SafetyDLgs81() {
     }))
   );
 
+  // Figure Sicurezza (RSPP e RLS)
+  const [figureSicurezza, setFigureSicurezza] = useState<FiguraSicurezza[]>([]);
+  const [showNewFiguraDialog, setShowNewFiguraDialog] = useState(false);
+  const [showCorsiFiguraDialog, setShowCorsiFiguraDialog] = useState(false);
+  const [showDocumentiFiguraDialog, setShowDocumentiFiguraDialog] = useState(false);
+  const [selectedFigura, setSelectedFigura] = useState<FiguraSicurezza | null>(null);
+  const [editingFigura, setEditingFigura] = useState<FiguraSicurezza | null>(null);
+  const [figuraType, setFiguraType] = useState<'rspp' | 'rls'>('rspp');
+
+  const [newFigura, setNewFigura] = useState({
+    nome: '',
+    cognome: '',
+    codiceFiscale: '',
+    dataNomina: '',
+    telefono: '',
+    email: '',
+    note: ''
+  });
+
+  const [newCorso, setNewCorso] = useState({
+    corsoId: '',
+    dataConseguimento: '',
+    dataScadenza: '',
+    ente: ''
+  });
+
   const [showNewPOSDialog, setShowNewPOSDialog] = useState(false);
   const [showNewInfortunioDialog, setShowNewInfortunioDialog] = useState(false);
+
+  const rsppList = figureSicurezza.filter(f => f.tipo === 'rspp');
+  const rlsList = figureSicurezza.filter(f => f.tipo === 'rls');
 
   const stats = useMemo(() => {
     const visiteScadute = visiteMediche.filter(v => daysUntil(v.dataScadenza) < 0).length;
@@ -123,9 +208,11 @@ export default function SafetyDLgs81() {
       giorniSenzaInfortuni: infortuni.length === 0 ? 365 : Math.floor((Date.now() - new Date(infortuni[infortuni.length - 1]?.dataInfortunio || 0).getTime()) / (24 * 60 * 60 * 1000)),
       visiteScadute,
       visiteInScadenza,
-      visiteOk: visiteMediche.length - visiteScadute - visiteInScadenza
+      visiteOk: visiteMediche.length - visiteScadute - visiteInScadenza,
+      rsppCount: rsppList.length,
+      rlsCount: rlsList.length
     };
-  }, [posDigitali, duvri, infortuni, visiteMediche]);
+  }, [posDigitali, duvri, infortuni, visiteMediche, rsppList, rlsList]);
 
   const getCantiereName = (id: string) => {
     const c = cantieri.find(c => c.id === id);
@@ -137,6 +224,362 @@ export default function SafetyDLgs81() {
     return i?.ragioneSociale || '-';
   };
 
+  // Handlers per Figure Sicurezza
+  const handleAddFigura = () => {
+    if (!newFigura.nome || !newFigura.cognome) {
+      toast({ title: 'Errore', description: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const figura: FiguraSicurezza = {
+      id: generateId(),
+      tipo: figuraType,
+      nome: newFigura.nome,
+      cognome: newFigura.cognome,
+      codiceFiscale: newFigura.codiceFiscale,
+      dataNomina: newFigura.dataNomina,
+      telefono: newFigura.telefono,
+      email: newFigura.email,
+      note: newFigura.note,
+      corsiCompletati: [],
+      documentiUrl: []
+    };
+
+    if (editingFigura) {
+      setFigureSicurezza(prev => prev.map(f => f.id === editingFigura.id ? { ...figura, id: editingFigura.id, corsiCompletati: editingFigura.corsiCompletati, documentiUrl: editingFigura.documentiUrl } : f));
+      toast({ title: 'Figura aggiornata', description: `${figuraType.toUpperCase()} aggiornato con successo` });
+    } else {
+      setFigureSicurezza(prev => [...prev, figura]);
+      toast({ title: 'Figura aggiunta', description: `${figuraType.toUpperCase()} aggiunto con successo` });
+    }
+
+    setNewFigura({ nome: '', cognome: '', codiceFiscale: '', dataNomina: '', telefono: '', email: '', note: '' });
+    setEditingFigura(null);
+    setShowNewFiguraDialog(false);
+  };
+
+  const handleDeleteFigura = (id: string) => {
+    setFigureSicurezza(prev => prev.filter(f => f.id !== id));
+    toast({ title: 'Figura eliminata', description: 'Figura rimossa con successo' });
+  };
+
+  const handleEditFigura = (figura: FiguraSicurezza) => {
+    setEditingFigura(figura);
+    setFiguraType(figura.tipo);
+    setNewFigura({
+      nome: figura.nome,
+      cognome: figura.cognome,
+      codiceFiscale: figura.codiceFiscale,
+      dataNomina: figura.dataNomina,
+      telefono: figura.telefono,
+      email: figura.email,
+      note: figura.note || ''
+    });
+    setShowNewFiguraDialog(true);
+  };
+
+  const handleAddCorso = () => {
+    if (!selectedFigura || !newCorso.corsoId || !newCorso.dataConseguimento) {
+      toast({ title: 'Errore', description: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const corso: CorsoFigura = {
+      id: generateId(),
+      corsoId: newCorso.corsoId,
+      dataConseguimento: newCorso.dataConseguimento,
+      dataScadenza: newCorso.dataScadenza || undefined,
+      ente: newCorso.ente
+    };
+
+    setFigureSicurezza(prev => prev.map(f => {
+      if (f.id === selectedFigura.id) {
+        return { ...f, corsiCompletati: [...f.corsiCompletati, corso] };
+      }
+      return f;
+    }));
+
+    setNewCorso({ corsoId: '', dataConseguimento: '', dataScadenza: '', ente: '' });
+    toast({ title: 'Corso aggiunto', description: 'Attestato corso registrato' });
+  };
+
+  const handleDeleteCorso = (figuraId: string, corsoId: string) => {
+    setFigureSicurezza(prev => prev.map(f => {
+      if (f.id === figuraId) {
+        return { ...f, corsiCompletati: f.corsiCompletati.filter(c => c.id !== corsoId) };
+      }
+      return f;
+    }));
+    toast({ title: 'Corso rimosso' });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedFigura || !event.target.files?.length) return;
+    
+    const file = event.target.files[0];
+    const documento: DocumentoFigura = {
+      id: generateId(),
+      nome: file.name,
+      tipo: file.type,
+      dataCaricamento: new Date().toISOString().slice(0, 10),
+      url: URL.createObjectURL(file)
+    };
+
+    setFigureSicurezza(prev => prev.map(f => {
+      if (f.id === selectedFigura.id) {
+        return { ...f, documentiUrl: [...f.documentiUrl, documento] };
+      }
+      return f;
+    }));
+
+    toast({ title: 'Documento caricato', description: file.name });
+  };
+
+  const handleDeleteDocumento = (figuraId: string, docId: string) => {
+    setFigureSicurezza(prev => prev.map(f => {
+      if (f.id === figuraId) {
+        return { ...f, documentiUrl: f.documentiUrl.filter(d => d.id !== docId) };
+      }
+      return f;
+    }));
+    toast({ title: 'Documento rimosso' });
+  };
+
+  const getCorsiForType = (tipo: 'rspp' | 'rls') => {
+    return tipo === 'rspp' ? CORSI_RSPP : CORSI_RLS;
+  };
+
+  const getCorsoNome = (tipo: 'rspp' | 'rls', corsoId: string) => {
+    const corsi = getCorsiForType(tipo);
+    return corsi.find(c => c.id === corsoId)?.nome || corsoId;
+  };
+
+  const getCorsiComplianceStatus = (figura: FiguraSicurezza) => {
+    const corsiObbligatori = getCorsiForType(figura.tipo).filter(c => c.obbligatorio);
+    const completati = figura.corsiCompletati.length;
+    const totale = corsiObbligatori.length;
+    const percentage = totale > 0 ? (completati / totale) * 100 : 0;
+    
+    // Check for expired courses
+    const scaduti = figura.corsiCompletati.filter(c => c.dataScadenza && daysUntil(c.dataScadenza) < 0).length;
+    const inScadenza = figura.corsiCompletati.filter(c => {
+      if (!c.dataScadenza) return false;
+      const days = daysUntil(c.dataScadenza);
+      return days >= 0 && days <= 30;
+    }).length;
+
+    return { completati, totale, percentage, scaduti, inScadenza };
+  };
+
+  const renderFiguraSection = (tipo: 'rspp' | 'rls', lista: FiguraSicurezza[]) => {
+    const tipoLabel = tipo === 'rspp' ? 'RSPP' : 'RLS';
+    const tipoDesc = tipo === 'rspp' 
+      ? 'Responsabile del Servizio di Prevenzione e Protezione' 
+      : 'Rappresentante dei Lavoratori per la Sicurezza';
+    const corsi = getCorsiForType(tipo);
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              {tipo === 'rspp' ? <Shield className="w-5 h-5 text-primary" /> : <Users className="w-5 h-5 text-primary" />}
+              {tipoLabel}
+            </h2>
+            <p className="text-sm text-muted-foreground">{tipoDesc}</p>
+          </div>
+          <Button 
+            onClick={() => {
+              setFiguraType(tipo);
+              setEditingFigura(null);
+              setNewFigura({ nome: '', cognome: '', codiceFiscale: '', dataNomina: '', telefono: '', email: '', note: '' });
+              setShowNewFiguraDialog(true);
+            }}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nuovo {tipoLabel}
+          </Button>
+        </div>
+
+        {/* Corsi Obbligatori Reference */}
+        <div className="p-4 rounded-xl border border-border bg-muted/30">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <GraduationCap className="w-4 h-4" />
+            Corsi/Attestati Obbligatori per {tipoLabel}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {corsi.map(corso => (
+              <div key={corso.id} className="flex items-start gap-2 text-sm">
+                <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <span className="font-medium">{corso.nome}</span>
+                  {corso.scadenza && <span className="text-muted-foreground"> - Rinnovo: {corso.scadenza}</span>}
+                  <p className="text-xs text-muted-foreground">{corso.descrizione}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Lista Figure */}
+        {lista.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Nessun {tipoLabel} registrato</p>
+            <p className="text-sm">Aggiungi il nominativo {tipoLabel} dell'azienda</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {lista.map(figura => {
+              const compliance = getCorsiComplianceStatus(figura);
+              
+              return (
+                <div key={figura.id} className="p-4 rounded-xl border border-border bg-card">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className={cn(
+                        'p-3 rounded-lg',
+                        compliance.scaduti > 0 ? 'bg-red-500/10' :
+                        compliance.inScadenza > 0 ? 'bg-amber-500/10' :
+                        compliance.percentage === 100 ? 'bg-emerald-500/10' :
+                        'bg-blue-500/10'
+                      )}>
+                        {tipo === 'rspp' ? (
+                          <Shield className={cn(
+                            'w-5 h-5',
+                            compliance.scaduti > 0 ? 'text-red-500' :
+                            compliance.inScadenza > 0 ? 'text-amber-500' :
+                            compliance.percentage === 100 ? 'text-emerald-500' :
+                            'text-blue-500'
+                          )} />
+                        ) : (
+                          <Users className={cn(
+                            'w-5 h-5',
+                            compliance.scaduti > 0 ? 'text-red-500' :
+                            compliance.inScadenza > 0 ? 'text-amber-500' :
+                            compliance.percentage === 100 ? 'text-emerald-500' :
+                            'text-blue-500'
+                          )} />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{figura.nome} {figura.cognome}</h3>
+                        <p className="text-sm text-muted-foreground">CF: {figura.codiceFiscale}</p>
+                        <p className="text-sm text-muted-foreground">Nominato il: {formatDateFull(figura.dataNomina)}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm">
+                          {figura.telefono && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> {figura.telefono}
+                            </span>
+                          )}
+                          {figura.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="w-3 h-3" /> {figura.email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFigura(figura);
+                          setShowDocumentiFiguraDialog(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Documenti ({figura.documentiUrl.length})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedFigura(figura);
+                          setShowCorsiFiguraDialog(true);
+                        }}
+                        className="gap-1"
+                      >
+                        <GraduationCap className="w-4 h-4" />
+                        Corsi
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => handleEditFigura(figura)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => handleDeleteFigura(figura.id)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Progress Corsi */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Completamento Formazione</span>
+                      <span className="text-sm text-muted-foreground">
+                        {compliance.completati}/{compliance.totale} corsi
+                        {compliance.scaduti > 0 && (
+                          <Badge variant="destructive" className="ml-2">{compliance.scaduti} scaduti</Badge>
+                        )}
+                        {compliance.inScadenza > 0 && (
+                          <Badge className="ml-2 bg-amber-500/20 text-amber-500">{compliance.inScadenza} in scadenza</Badge>
+                        )}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={compliance.percentage} 
+                      className={cn(
+                        'h-2',
+                        compliance.scaduti > 0 && '[&>div]:bg-red-500',
+                        compliance.inScadenza > 0 && compliance.scaduti === 0 && '[&>div]:bg-amber-500'
+                      )}
+                    />
+                  </div>
+
+                  {/* Lista Corsi Completati */}
+                  {figura.corsiCompletati.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm font-medium">Attestati Registrati:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {figura.corsiCompletati.map(corso => {
+                          const isExpired = corso.dataScadenza && daysUntil(corso.dataScadenza) < 0;
+                          const isExpiring = corso.dataScadenza && daysUntil(corso.dataScadenza) >= 0 && daysUntil(corso.dataScadenza) <= 30;
+                          
+                          return (
+                            <div key={corso.id} className={cn(
+                              'p-2 rounded-lg text-sm flex items-center justify-between',
+                              isExpired ? 'bg-red-500/10 border border-red-500/30' :
+                              isExpiring ? 'bg-amber-500/10 border border-amber-500/30' :
+                              'bg-muted/30'
+                            )}>
+                              <div>
+                                <p className="font-medium">{getCorsoNome(figura.tipo, corso.corsoId)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatDateFull(corso.dataConseguimento)}
+                                  {corso.dataScadenza && ` - Scade: ${formatDateFull(corso.dataScadenza)}`}
+                                </p>
+                              </div>
+                              {isExpired && <Badge variant="destructive">Scaduto</Badge>}
+                              {isExpiring && <Badge className="bg-amber-500/20 text-amber-500">In scadenza</Badge>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -146,7 +589,7 @@ export default function SafetyDLgs81() {
             <ShieldAlert className="w-6 h-6 text-primary" />
             Sicurezza D.Lgs 81/2008
           </h1>
-          <p className="text-muted-foreground">POS digitali, DUVRI, Registro infortuni e Visite mediche</p>
+          <p className="text-muted-foreground">POS digitali, DUVRI, Registro infortuni, Figure sicurezza e Visite mediche</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowNewInfortunioDialog(true)} className="gap-2">
@@ -161,7 +604,7 @@ export default function SafetyDLgs81() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-4">
         <div className="p-4 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="w-4 h-4 text-primary" />
@@ -199,6 +642,20 @@ export default function SafetyDLgs81() {
         </div>
         <div className="p-4 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground">RSPP</span>
+          </div>
+          <p className="text-xl font-bold">{stats.rsppCount}</p>
+        </div>
+        <div className="p-4 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-primary" />
+            <span className="text-xs text-muted-foreground">RLS</span>
+          </div>
+          <p className="text-xl font-bold">{stats.rlsCount}</p>
+        </div>
+        <div className="p-4 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-2 mb-2">
             <Stethoscope className="w-4 h-4 text-red-500" />
             <span className="text-xs text-muted-foreground">Visite Scadute</span>
           </div>
@@ -215,10 +672,18 @@ export default function SafetyDLgs81() {
 
       {/* Tabs */}
       <Tabs defaultValue="pos" className="w-full">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="pos">POS Digitali</TabsTrigger>
           <TabsTrigger value="duvri">DUVRI</TabsTrigger>
           <TabsTrigger value="infortuni">Registro Infortuni</TabsTrigger>
+          <TabsTrigger value="rspp" className="gap-1">
+            <Shield className="w-4 h-4" />
+            RSPP
+          </TabsTrigger>
+          <TabsTrigger value="rls" className="gap-1">
+            <Users className="w-4 h-4" />
+            RLS
+          </TabsTrigger>
           <TabsTrigger value="visite">Visite Mediche</TabsTrigger>
           <TabsTrigger value="moduli" className="gap-1">
             <ClipboardList className="w-4 h-4" />
@@ -377,6 +842,16 @@ export default function SafetyDLgs81() {
           )}
         </TabsContent>
 
+        {/* RSPP Tab */}
+        <TabsContent value="rspp" className="mt-6">
+          {renderFiguraSection('rspp', rsppList)}
+        </TabsContent>
+
+        {/* RLS Tab */}
+        <TabsContent value="rls" className="mt-6">
+          {renderFiguraSection('rls', rlsList)}
+        </TabsContent>
+
         {/* Visite Mediche Tab */}
         <TabsContent value="visite" className="mt-6">
           <div className="space-y-4">
@@ -451,6 +926,274 @@ export default function SafetyDLgs81() {
           <SafetyFormsModule />
         </TabsContent>
       </Tabs>
+
+      {/* New Figura Dialog */}
+      <Dialog open={showNewFiguraDialog} onOpenChange={setShowNewFiguraDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingFigura ? 'Modifica' : 'Nuovo'} {figuraType.toUpperCase()}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Nome *</Label>
+                <Input 
+                  value={newFigura.nome}
+                  onChange={(e) => setNewFigura({...newFigura, nome: e.target.value})}
+                  placeholder="Nome"
+                />
+              </div>
+              <div>
+                <Label>Cognome *</Label>
+                <Input 
+                  value={newFigura.cognome}
+                  onChange={(e) => setNewFigura({...newFigura, cognome: e.target.value})}
+                  placeholder="Cognome"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Codice Fiscale</Label>
+              <Input 
+                value={newFigura.codiceFiscale}
+                onChange={(e) => setNewFigura({...newFigura, codiceFiscale: e.target.value.toUpperCase()})}
+                placeholder="RSSMRA80A01H501A"
+                maxLength={16}
+              />
+            </div>
+            <div>
+              <Label>Data Nomina</Label>
+              <Input 
+                type="date"
+                value={newFigura.dataNomina}
+                onChange={(e) => setNewFigura({...newFigura, dataNomina: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Telefono</Label>
+                <Input 
+                  value={newFigura.telefono}
+                  onChange={(e) => setNewFigura({...newFigura, telefono: e.target.value})}
+                  placeholder="+39 xxx xxx xxxx"
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={newFigura.email}
+                  onChange={(e) => setNewFigura({...newFigura, email: e.target.value})}
+                  placeholder="email@esempio.it"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Note</Label>
+              <Textarea 
+                value={newFigura.note}
+                onChange={(e) => setNewFigura({...newFigura, note: e.target.value})}
+                placeholder="Note aggiuntive..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowNewFiguraDialog(false);
+              setEditingFigura(null);
+            }}>Annulla</Button>
+            <Button onClick={handleAddFigura}>
+              {editingFigura ? 'Aggiorna' : 'Aggiungi'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Corsi Figura Dialog */}
+      <Dialog open={showCorsiFiguraDialog} onOpenChange={setShowCorsiFiguraDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Corsi e Attestati - {selectedFigura?.nome} {selectedFigura?.cognome} ({selectedFigura?.tipo.toUpperCase()})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Add New Corso */}
+            <div className="p-4 border border-border rounded-lg bg-muted/30">
+              <h3 className="font-medium mb-4">Aggiungi Attestato</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Corso *</Label>
+                  <Select value={newCorso.corsoId} onValueChange={(v) => setNewCorso({...newCorso, corsoId: v})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona corso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedFigura && getCorsiForType(selectedFigura.tipo).map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Ente Formatore</Label>
+                  <Input 
+                    value={newCorso.ente}
+                    onChange={(e) => setNewCorso({...newCorso, ente: e.target.value})}
+                    placeholder="Nome ente"
+                  />
+                </div>
+                <div>
+                  <Label>Data Conseguimento *</Label>
+                  <Input 
+                    type="date"
+                    value={newCorso.dataConseguimento}
+                    onChange={(e) => setNewCorso({...newCorso, dataConseguimento: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Data Scadenza</Label>
+                  <Input 
+                    type="date"
+                    value={newCorso.dataScadenza}
+                    onChange={(e) => setNewCorso({...newCorso, dataScadenza: e.target.value})}
+                  />
+                </div>
+              </div>
+              <Button onClick={handleAddCorso} className="mt-4 gap-2">
+                <Plus className="w-4 h-4" />
+                Aggiungi Attestato
+              </Button>
+            </div>
+
+            {/* Lista Corsi */}
+            <div>
+              <h3 className="font-medium mb-4">Attestati Registrati</h3>
+              {selectedFigura?.corsiCompletati.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nessun attestato registrato</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedFigura?.corsiCompletati.map(corso => {
+                    const isExpired = corso.dataScadenza && daysUntil(corso.dataScadenza) < 0;
+                    const isExpiring = corso.dataScadenza && daysUntil(corso.dataScadenza) >= 0 && daysUntil(corso.dataScadenza) <= 30;
+                    
+                    return (
+                      <div key={corso.id} className={cn(
+                        'p-3 rounded-lg flex items-center justify-between',
+                        isExpired ? 'bg-red-500/10 border border-red-500/30' :
+                        isExpiring ? 'bg-amber-500/10 border border-amber-500/30' :
+                        'bg-muted/30 border border-border'
+                      )}>
+                        <div>
+                          <p className="font-medium">{getCorsoNome(selectedFigura.tipo, corso.corsoId)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Conseguito: {formatDateFull(corso.dataConseguimento)}
+                            {corso.ente && ` | Ente: ${corso.ente}`}
+                          </p>
+                          {corso.dataScadenza && (
+                            <p className={cn(
+                              'text-sm',
+                              isExpired ? 'text-red-500' : isExpiring ? 'text-amber-500' : 'text-muted-foreground'
+                            )}>
+                              Scadenza: {formatDateFull(corso.dataScadenza)}
+                              {isExpired && ' (SCADUTO)'}
+                              {isExpiring && ` (${daysUntil(corso.dataScadenza)} giorni)`}
+                            </p>
+                          )}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteCorso(selectedFigura.id, corso.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCorsiFiguraDialog(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Documenti Figura Dialog */}
+      <Dialog open={showDocumentiFiguraDialog} onOpenChange={setShowDocumentiFiguraDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Documenti - {selectedFigura?.nome} {selectedFigura?.cognome} ({selectedFigura?.tipo.toUpperCase()})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Upload */}
+            <div className="p-4 border border-dashed border-border rounded-lg text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Carica documenti (PDF, Word, Immagini)
+              </p>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                Seleziona File
+              </Button>
+            </div>
+
+            {/* Lista Documenti */}
+            <div>
+              <h3 className="font-medium mb-4">Documenti Caricati</h3>
+              {selectedFigura?.documentiUrl.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nessun documento caricato</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedFigura?.documentiUrl.map(doc => (
+                    <div key={doc.id} className="p-3 rounded-lg bg-muted/30 border border-border flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="font-medium">{doc.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Caricato: {formatDateFull(doc.dataCaricamento)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doc.url} download={doc.nome}>
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteDocumento(selectedFigura.id, doc.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDocumentiFiguraDialog(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New POS Dialog */}
       <Dialog open={showNewPOSDialog} onOpenChange={setShowNewPOSDialog}>
