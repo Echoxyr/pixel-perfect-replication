@@ -18,6 +18,13 @@ import SALPage from "./pages/SAL";
 import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 
+// Compliance Pages
+import GDPRCompliance from "./pages/GDPRCompliance";
+import QualityISO from "./pages/QualityISO";
+import SafetyDLgs81 from "./pages/SafetyDLgs81";
+import EnvironmentalISO from "./pages/EnvironmentalISO";
+import BusinessIntelligence from "./pages/BusinessIntelligence";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -39,6 +46,12 @@ const App = () => (
               <Route path="/hse" element={<HSEDashboard />} />
               <Route path="/sal" element={<SALPage />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
+              {/* Compliance Routes */}
+              <Route path="/compliance/gdpr" element={<GDPRCompliance />} />
+              <Route path="/compliance/qualita" element={<QualityISO />} />
+              <Route path="/compliance/sicurezza" element={<SafetyDLgs81 />} />
+              <Route path="/compliance/ambiente" element={<EnvironmentalISO />} />
+              <Route path="/compliance/bi" element={<BusinessIntelligence />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
