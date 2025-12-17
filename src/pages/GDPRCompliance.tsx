@@ -5,7 +5,6 @@ import {
   RegistroTrattamento,
   AuditLog,
   RichiestaPortabilita,
-  generateComplianceId
 } from '@/types/compliance';
 import { formatDateFull, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -51,19 +50,19 @@ import {
   X,
   AlertTriangle,
   Search,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 
 export default function GDPRCompliance() {
   const { lavoratori, imprese } = useWorkHub();
   const { toast } = useToast();
   
-  // Sample data - in production would come from backend
   const [consensi, setConsensi] = useState<ConsensoGDPR[]>([
     {
       id: '1',
       entityType: 'lavoratore',
-      entityId: 'lav-1',
+      entityId: lavoratori[0]?.id || 'lav-1',
       tipoConsenso: 'trattamento_dati',
       acconsentito: true,
       dataConsenso: '2024-01-15',
@@ -107,6 +106,27 @@ export default function GDPRCompliance() {
   const [showNewTrattamentoDialog, setShowNewTrattamentoDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Form state for new consenso
+  const [newConsenso, setNewConsenso] = useState({
+    entityType: '' as 'lavoratore' | 'impresa' | '',
+    entityId: '',
+    tipoConsenso: '' as 'trattamento_dati' | 'comunicazione_terzi' | 'marketing' | 'profilazione' | '',
+    acconsentito: true,
+    note: ''
+  });
+
+  // Form state for new trattamento
+  const [newTrattamento, setNewTrattamento] = useState({
+    finalita: '',
+    categorieDati: '',
+    baseGiuridica: '',
+    destinatari: '',
+    trasferimentoEstero: false,
+    termineCancellazione: '',
+    misureSicurezza: '',
+    responsabileTitolare: ''
+  });
+
   const stats = useMemo(() => ({
     totaleConsensi: consensi.length,
     consensiAttivi: consensi.filter(c => c.acconsentito && !c.dataRevoca).length,
@@ -121,7 +141,6 @@ export default function GDPRCompliance() {
   }), [consensi, registroTrattamenti, richiestePortabilita, auditLogs]);
 
   const handleExportData = (entityId: string, entityType: 'lavoratore' | 'impresa') => {
-    // Create export package
     const entity = entityType === 'lavoratore' 
       ? lavoratori.find(l => l.id === entityId)
       : imprese.find(i => i.id === entityId);
@@ -143,7 +162,121 @@ export default function GDPRCompliance() {
     a.click();
     URL.revokeObjectURL(url);
 
+    // Add audit log
+    const entityName = entityType === 'lavoratore'
+      ? `${(entity as any).nome} ${(entity as any).cognome}`
+      : (entity as any).ragioneSociale;
+    
+    setAuditLogs(prev => [{
+      id: generateId(),
+      userId: 'current-user',
+      userName: 'Utente Corrente',
+      action: 'export',
+      entityType,
+      entityId,
+      entityName,
+      timestamp: new Date().toISOString(),
+      details: 'Export dati GDPR'
+    }, ...prev]);
+
     toast({ title: 'Export completato', description: 'Dati esportati in formato JSON' });
+  };
+
+  const handleSaveConsenso = () => {
+    if (!newConsenso.entityType || !newConsenso.entityId || !newConsenso.tipoConsenso) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const consenso: ConsensoGDPR = {
+      id: generateId(),
+      entityType: newConsenso.entityType,
+      entityId: newConsenso.entityId,
+      tipoConsenso: newConsenso.tipoConsenso,
+      acconsentito: newConsenso.acconsentito,
+      dataConsenso: new Date().toISOString().slice(0, 10),
+      note: newConsenso.note || undefined
+    };
+
+    setConsensi(prev => [consenso, ...prev]);
+    
+    // Add audit log
+    const entity = newConsenso.entityType === 'lavoratore'
+      ? lavoratori.find(l => l.id === newConsenso.entityId)
+      : imprese.find(i => i.id === newConsenso.entityId);
+    const entityName = newConsenso.entityType === 'lavoratore'
+      ? `${(entity as any)?.nome} ${(entity as any)?.cognome}`
+      : (entity as any)?.ragioneSociale || 'N/A';
+
+    setAuditLogs(prev => [{
+      id: generateId(),
+      userId: 'current-user',
+      userName: 'Utente Corrente',
+      action: 'create',
+      entityType: 'consenso',
+      entityId: consenso.id,
+      entityName: `Consenso ${entityName}`,
+      timestamp: new Date().toISOString(),
+      details: `Registrato consenso ${newConsenso.tipoConsenso}`
+    }, ...prev]);
+
+    toast({ title: 'Consenso registrato con successo' });
+    setShowNewConsensoDialog(false);
+    setNewConsenso({ entityType: '', entityId: '', tipoConsenso: '', acconsentito: true, note: '' });
+  };
+
+  const handleSaveTrattamento = () => {
+    if (!newTrattamento.finalita || !newTrattamento.baseGiuridica || !newTrattamento.responsabileTitolare) {
+      toast({ title: 'Compila tutti i campi obbligatori', variant: 'destructive' });
+      return;
+    }
+
+    const trattamento: RegistroTrattamento = {
+      id: generateId(),
+      finalita: newTrattamento.finalita,
+      categorieDati: newTrattamento.categorieDati.split(',').map(s => s.trim()).filter(Boolean),
+      baseGiuridica: newTrattamento.baseGiuridica,
+      destinatari: newTrattamento.destinatari.split(',').map(s => s.trim()).filter(Boolean),
+      trasferimentoEstero: newTrattamento.trasferimentoEstero,
+      termineCancellazione: newTrattamento.termineCancellazione,
+      misureSicurezza: newTrattamento.misureSicurezza.split(',').map(s => s.trim()).filter(Boolean),
+      responsabileTitolare: newTrattamento.responsabileTitolare,
+      dataCreazione: new Date().toISOString().slice(0, 10),
+      dataUltimaModifica: new Date().toISOString().slice(0, 10)
+    };
+
+    setRegistroTrattamenti(prev => [trattamento, ...prev]);
+    
+    setAuditLogs(prev => [{
+      id: generateId(),
+      userId: 'current-user',
+      userName: 'Utente Corrente',
+      action: 'create',
+      entityType: 'trattamento',
+      entityId: trattamento.id,
+      entityName: trattamento.finalita,
+      timestamp: new Date().toISOString(),
+      details: 'Creato nuovo trattamento dati'
+    }, ...prev]);
+
+    toast({ title: 'Trattamento registrato con successo' });
+    setShowNewTrattamentoDialog(false);
+    setNewTrattamento({
+      finalita: '', categorieDati: '', baseGiuridica: '', destinatari: '',
+      trasferimentoEstero: false, termineCancellazione: '', misureSicurezza: '', responsabileTitolare: ''
+    });
+  };
+
+  const handleRevokeConsenso = (consensoId: string) => {
+    setConsensi(prev => prev.map(c => 
+      c.id === consensoId ? { ...c, acconsentito: false, dataRevoca: new Date().toISOString().slice(0, 10) } : c
+    ));
+    toast({ title: 'Consenso revocato' });
+  };
+
+  const handleDeleteTrattamento = (trattamentoId: string) => {
+    setRegistroTrattamenti(prev => prev.filter(t => t.id !== trattamentoId));
+    toast({ title: 'Trattamento eliminato' });
   };
 
   const handleCreateRichiestaPortabilita = (entityId: string, entityType: 'lavoratore' | 'impresa') => {
@@ -165,9 +298,25 @@ export default function GDPRCompliance() {
       formatoExport: 'json'
     };
 
-    setRichiestePortabilita([...richiestePortabilita, newRichiesta]);
+    setRichiestePortabilita(prev => [newRichiesta, ...prev]);
     toast({ title: 'Richiesta registrata', description: 'La richiesta di portabilità è stata registrata' });
   };
+
+  const handleCompleteRichiesta = (richiestaId: string) => {
+    const richiesta = richiestePortabilita.find(r => r.id === richiestaId);
+    if (richiesta) {
+      handleExportData(richiesta.richiedenteId, richiesta.richiedenteTipo);
+      setRichiestePortabilita(prev => prev.map(r => 
+        r.id === richiestaId ? { ...r, stato: 'completata', dataEvasione: new Date().toISOString().slice(0, 10) } : r
+      ));
+    }
+  };
+
+  const availableEntities = newConsenso.entityType === 'lavoratore' 
+    ? lavoratori.map(l => ({ id: l.id, name: `${l.nome} ${l.cognome}` }))
+    : newConsenso.entityType === 'impresa'
+    ? imprese.map(i => ({ id: i.id, name: i.ragioneSociale }))
+    : [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -301,9 +450,20 @@ export default function GDPRCompliance() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleExportData(consenso.entityId, consenso.entityType)}
+                            title="Esporta dati"
                           >
                             <Download className="w-4 h-4" />
                           </Button>
+                          {consenso.acconsentito && !consenso.dataRevoca && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevokeConsenso(consenso.id)}
+                              title="Revoca consenso"
+                            >
+                              <X className="w-4 h-4 text-red-500" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -326,7 +486,12 @@ export default function GDPRCompliance() {
                       Base giuridica: {trattamento.baseGiuridica}
                     </p>
                   </div>
-                  <Badge variant="outline">{trattamento.responsabileTitolare}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{trattamento.responsabileTitolare}</Badge>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteTrattamento(trattamento.id)}>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
@@ -372,7 +537,7 @@ export default function GDPRCompliance() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => toast({ title: 'Log aggiornati' })}>
               <RefreshCw className="w-4 h-4" />
               Aggiorna
             </Button>
@@ -424,6 +589,16 @@ export default function GDPRCompliance() {
 
         {/* Portabilità Tab */}
         <TabsContent value="portabilita" className="mt-6">
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground mb-3">Crea nuova richiesta di portabilità selezionando un soggetto:</p>
+            <div className="flex gap-3 flex-wrap">
+              {lavoratori.slice(0, 5).map(l => (
+                <Button key={l.id} variant="outline" size="sm" onClick={() => handleCreateRichiestaPortabilita(l.id, 'lavoratore')}>
+                  {l.nome} {l.cognome}
+                </Button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-4">
             {richiestePortabilita.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -452,7 +627,7 @@ export default function GDPRCompliance() {
                       {richiesta.stato !== 'completata' && (
                         <Button
                           size="sm"
-                          onClick={() => handleExportData(richiesta.richiedenteId, richiesta.richiedenteTipo)}
+                          onClick={() => handleCompleteRichiesta(richiesta.id)}
                         >
                           Esporta Dati
                         </Button>
@@ -474,8 +649,11 @@ export default function GDPRCompliance() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Tipo Soggetto</Label>
-              <Select>
+              <Label>Tipo Soggetto *</Label>
+              <Select 
+                value={newConsenso.entityType} 
+                onValueChange={(v) => setNewConsenso(prev => ({ ...prev, entityType: v as 'lavoratore' | 'impresa', entityId: '' }))}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona tipo" />
                 </SelectTrigger>
@@ -485,9 +663,30 @@ export default function GDPRCompliance() {
                 </SelectContent>
               </Select>
             </div>
+            {newConsenso.entityType && (
+              <div>
+                <Label>Soggetto *</Label>
+                <Select 
+                  value={newConsenso.entityId} 
+                  onValueChange={(v) => setNewConsenso(prev => ({ ...prev, entityId: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona soggetto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableEntities.map(e => (
+                      <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
-              <Label>Tipo Consenso</Label>
-              <Select>
+              <Label>Tipo Consenso *</Label>
+              <Select 
+                value={newConsenso.tipoConsenso} 
+                onValueChange={(v) => setNewConsenso(prev => ({ ...prev, tipoConsenso: v as any }))}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona tipo consenso" />
                 </SelectTrigger>
@@ -501,19 +700,112 @@ export default function GDPRCompliance() {
             </div>
             <div className="flex items-center justify-between">
               <Label>Consenso Accordato</Label>
-              <Switch />
+              <Switch 
+                checked={newConsenso.acconsentito} 
+                onCheckedChange={(v) => setNewConsenso(prev => ({ ...prev, acconsentito: v }))} 
+              />
             </div>
             <div>
               <Label>Note</Label>
-              <Textarea placeholder="Note aggiuntive..." />
+              <Textarea 
+                placeholder="Note aggiuntive..." 
+                value={newConsenso.note}
+                onChange={(e) => setNewConsenso(prev => ({ ...prev, note: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewConsensoDialog(false)}>Annulla</Button>
-            <Button onClick={() => {
-              toast({ title: 'Consenso registrato' });
-              setShowNewConsensoDialog(false);
-            }}>Registra</Button>
+            <Button onClick={handleSaveConsenso}>Registra</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Trattamento Dialog */}
+      <Dialog open={showNewTrattamentoDialog} onOpenChange={setShowNewTrattamentoDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nuovo Trattamento Dati</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            <div>
+              <Label>Finalità del trattamento *</Label>
+              <Input 
+                placeholder="Es: Gestione rapporto di lavoro"
+                value={newTrattamento.finalita}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, finalita: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Categorie di dati (separate da virgola)</Label>
+              <Input 
+                placeholder="Es: Dati anagrafici, Dati di contatto"
+                value={newTrattamento.categorieDati}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, categorieDati: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Base giuridica *</Label>
+              <Select 
+                value={newTrattamento.baseGiuridica} 
+                onValueChange={(v) => setNewTrattamento(prev => ({ ...prev, baseGiuridica: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona base giuridica" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Consenso">Consenso dell'interessato</SelectItem>
+                  <SelectItem value="Esecuzione contratto">Esecuzione di un contratto</SelectItem>
+                  <SelectItem value="Obbligo legale">Obbligo legale</SelectItem>
+                  <SelectItem value="Interesse vitale">Interesse vitale</SelectItem>
+                  <SelectItem value="Interesse pubblico">Interesse pubblico</SelectItem>
+                  <SelectItem value="Legittimo interesse">Legittimo interesse</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Destinatari (separati da virgola)</Label>
+              <Input 
+                placeholder="Es: INPS, INAIL, Consulente del lavoro"
+                value={newTrattamento.destinatari}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, destinatari: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Trasferimento dati all'estero</Label>
+              <Switch 
+                checked={newTrattamento.trasferimentoEstero} 
+                onCheckedChange={(v) => setNewTrattamento(prev => ({ ...prev, trasferimentoEstero: v }))} 
+              />
+            </div>
+            <div>
+              <Label>Termine di cancellazione</Label>
+              <Input 
+                placeholder="Es: 10 anni dalla cessazione del rapporto"
+                value={newTrattamento.termineCancellazione}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, termineCancellazione: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Misure di sicurezza (separate da virgola)</Label>
+              <Input 
+                placeholder="Es: Crittografia, Backup, Controllo accessi"
+                value={newTrattamento.misureSicurezza}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, misureSicurezza: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Responsabile/Titolare *</Label>
+              <Input 
+                placeholder="Es: Responsabile HR"
+                value={newTrattamento.responsabileTitolare}
+                onChange={(e) => setNewTrattamento(prev => ({ ...prev, responsabileTitolare: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewTrattamentoDialog(false)}>Annulla</Button>
+            <Button onClick={handleSaveTrattamento}>Crea Trattamento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
