@@ -12,6 +12,7 @@ import {
   Building2,
   HardHat,
   ShieldCheck,
+  ShieldAlert,
   TrendingUp,
   Settings,
   Menu,
@@ -35,7 +36,9 @@ import {
   Award,
   Leaf,
   BarChart3,
-  FileCheck
+  FileCheck,
+  GraduationCap,
+  Stethoscope
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -331,6 +334,20 @@ export function Layout() {
             {(sidebarCollapsed || hseExpanded) && (
               <div className="space-y-1">
                 <NavItem 
+                  to="/hse" 
+                  icon={ShieldCheck} 
+                  label="Dashboard HSE" 
+                  badge={totalAlerts}
+                  badgeColor="danger"
+                  isActive={location.pathname === '/hse'} 
+                />
+                <NavItem 
+                  to="/compliance/sicurezza" 
+                  icon={FileCheck} 
+                  label="D.Lgs 81/2008" 
+                  isActive={location.pathname === '/compliance/sicurezza'} 
+                />
+                <NavItem 
                   to="/imprese" 
                   icon={Building2} 
                   label="Imprese Esterne" 
@@ -347,25 +364,35 @@ export function Layout() {
                   isActive={location.pathname === '/lavoratori'} 
                 />
                 <NavItem 
-                  to="/hse" 
-                  icon={ShieldCheck} 
-                  label="Dashboard HSE" 
-                  badge={totalAlerts}
-                  badgeColor="danger"
-                  isActive={location.pathname === '/hse'} 
+                  to="/formazione" 
+                  icon={GraduationCap} 
+                  label="Formazione" 
+                  isActive={location.pathname === '/formazione'} 
+                />
+                <NavItem 
+                  to="/dpi" 
+                  icon={ShieldAlert} 
+                  label="DPI" 
+                  isActive={location.pathname === '/dpi'} 
+                />
+                <NavItem 
+                  to="/sorveglianza-sanitaria" 
+                  icon={Stethoscope} 
+                  label="Sorveglianza Sanitaria" 
+                  isActive={location.pathname === '/sorveglianza-sanitaria'} 
                 />
               </div>
             )}
           </div>
 
-          {/* Compliance Section - Collapsible */}
+          {/* Conformità Section - Collapsible */}
           <div>
             {!sidebarCollapsed ? (
               <button
                 onClick={() => setComplianceExpanded(!complianceExpanded)}
                 className="w-full flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-2 hover:text-foreground transition-colors"
               >
-                <span>Compliance & Qualità</span>
+                <span>Conformità & Certificazioni</span>
                 <ChevronDown className={cn('w-3 h-3 transition-transform', !complianceExpanded && '-rotate-90')} />
               </button>
             ) : (
@@ -385,12 +412,6 @@ export function Layout() {
                   icon={Award} 
                   label="ISO 9001 Qualità" 
                   isActive={location.pathname === '/compliance/qualita'} 
-                />
-                <NavItem 
-                  to="/compliance/sicurezza" 
-                  icon={FileCheck} 
-                  label="D.Lgs 81/2008" 
-                  isActive={location.pathname === '/compliance/sicurezza'} 
                 />
                 <NavItem 
                   to="/compliance/ambiente" 

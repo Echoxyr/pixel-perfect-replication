@@ -18,6 +18,11 @@ import SALPage from "./pages/SAL";
 import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 
+// HSE Pages
+import Formazione from "./pages/Formazione";
+import DPI from "./pages/DPI";
+import SorveglianzaSanitaria from "./pages/SorveglianzaSanitaria";
+
 // Compliance Pages
 import GDPRCompliance from "./pages/GDPRCompliance";
 import QualityISO from "./pages/QualityISO";
@@ -46,6 +51,10 @@ const App = () => (
               <Route path="/hse" element={<HSEDashboard />} />
               <Route path="/sal" element={<SALPage />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
+              {/* HSE Routes */}
+              <Route path="/formazione" element={<Formazione />} />
+              <Route path="/dpi" element={<DPI />} />
+              <Route path="/sorveglianza-sanitaria" element={<SorveglianzaSanitaria />} />
               {/* Compliance Routes */}
               <Route path="/compliance/gdpr" element={<GDPRCompliance />} />
               <Route path="/compliance/qualita" element={<QualityISO />} />
