@@ -12,6 +12,7 @@ import {
   Presenza,
   PrevisioneSAL,
   HSEStats,
+  DatiAzienda,
   generateId,
   daysUntil
 } from '@/types/workhub';
@@ -26,6 +27,35 @@ import {
 } from '@/data/sampleData';
 
 const STORAGE_KEY = 'workhub_data_v2';
+const AZIENDA_STORAGE_KEY = 'workhub_dati_azienda';
+
+const defaultDatiAzienda: DatiAzienda = {
+  ragioneSociale: '',
+  partitaIva: '',
+  codiceFiscaleAzienda: '',
+  iscrizioneREA: '',
+  sedeLegale: '',
+  cap: '',
+  citta: '',
+  provincia: '',
+  pec: '',
+  email: '',
+  telefono: '',
+  nomeTitolare: '',
+  cognomeTitolare: '',
+  codiceFiscaleTitolare: '',
+  dataNascitaTitolare: '',
+  luogoNascitaTitolare: '',
+  provinciaNascitaTitolare: '',
+  residenzaTitolare: '',
+  ciTitolare: '',
+  cellulareTitolare: '',
+  cartaIntestataHeader: undefined,
+  cartaIntestataFooter: undefined,
+  timbro: undefined,
+  timbroPositionX: 80,
+  timbroPositionY: 85
+};
 
 interface WorkHubData {
   cantieri: Cantiere[];
@@ -50,11 +80,28 @@ const loadFromStorage = (): WorkHubData | null => {
   }
 };
 
+const loadAziendaFromStorage = (): DatiAzienda => {
+  try {
+    const data = localStorage.getItem(AZIENDA_STORAGE_KEY);
+    return data ? { ...defaultDatiAzienda, ...JSON.parse(data) } : defaultDatiAzienda;
+  } catch {
+    return defaultDatiAzienda;
+  }
+};
+
 const saveToStorage = (data: WorkHubData) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) {
     console.error('Failed to save to localStorage', e);
+  }
+};
+
+const saveAziendaToStorage = (data: DatiAzienda) => {
+  try {
+    localStorage.setItem(AZIENDA_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save azienda to localStorage', e);
   }
 };
 
@@ -72,6 +119,8 @@ export function useWorkHubData() {
     presenze: [],
     previsioni: []
   };
+
+  const [datiAzienda, setDatiAziendaState] = useState<DatiAzienda>(loadAziendaFromStorage());
 
   const [cantieri, setCantieri] = useState<Cantiere[]>(initialData.cantieri);
   const [imprese, setImprese] = useState<Impresa[]>(initialData.imprese);
@@ -594,6 +643,15 @@ export function useWorkHubData() {
     };
   }, [imprese, lavoratori, documenti, formazioni, getDocumentiImpresa, getFormazioniLavoratore]);
 
+  // === DATI AZIENDA ===
+  const updateDatiAzienda = useCallback((updates: Partial<DatiAzienda>) => {
+    setDatiAziendaState(prev => {
+      const updated = { ...prev, ...updates };
+      saveAziendaToStorage(updated);
+      return updated;
+    });
+  }, []);
+
   return {
     // Data
     cantieri,
@@ -606,6 +664,7 @@ export function useWorkHubData() {
     sal,
     contratti,
     presenze,
+    datiAzienda,
     
     // Cantieri
     addCantiere,
@@ -662,6 +721,9 @@ export function useWorkHubData() {
     addPrevisione,
     updatePrevisione,
     deletePrevisione,
+    
+    // Dati Azienda
+    updateDatiAzienda,
     
     // Computed
     getDocumentiImpresa,

@@ -4,6 +4,41 @@
 // subcontractor, and safety management
 // ============================================
 
+// === DATI AZIENDA ===
+
+export interface DatiAzienda {
+  // Dati Azienda
+  ragioneSociale: string;
+  partitaIva: string;
+  codiceFiscaleAzienda: string;
+  iscrizioneREA: string;
+  sedeLegale: string;
+  cap: string;
+  citta: string;
+  provincia: string;
+  pec: string;
+  email: string;
+  telefono: string;
+  
+  // Dati Titolare/Legale Rappresentante
+  nomeTitolare: string;
+  cognomeTitolare: string;
+  codiceFiscaleTitolare: string;
+  dataNascitaTitolare: string;
+  luogoNascitaTitolare: string;
+  provinciaNascitaTitolare: string;
+  residenzaTitolare: string;
+  ciTitolare: string; // Carta d'identità
+  cellulareTitolare: string;
+  
+  // Carta Intestata e Timbro
+  cartaIntestataHeader?: string; // Base64 o URL immagine
+  cartaIntestataFooter?: string; // Base64 o URL immagine
+  timbro?: string; // Base64 o URL immagine
+  timbroPositionX?: number; // Posizione X in %
+  timbroPositionY?: number; // Posizione Y in %
+}
+
 // === ENUMS ===
 
 export type TaskStatus = 'da_iniziare' | 'in_corso' | 'in_attesa' | 'bloccato' | 'fatto';

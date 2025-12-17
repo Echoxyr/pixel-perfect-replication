@@ -1,20 +1,27 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Bell, Shield, Database, Palette, Save } from 'lucide-react';
+import { Settings, Bell, Shield, Database, Building2, Save, Upload, Image, Trash2, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkHub } from '@/contexts/WorkHubContext';
 
 export default function Impostazioni() {
   const { toast } = useToast();
+  const { datiAzienda, updateDatiAzienda } = useWorkHub();
+  
   const [notifications, setNotifications] = useState({
     emailScadenze: true,
     emailDocumenti: true,
     giorniAnticipo: 30
   });
+
+  const headerInputRef = useRef<HTMLInputElement>(null);
+  const footerInputRef = useRef<HTMLInputElement>(null);
+  const timbroInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     toast({
@@ -26,20 +33,48 @@ export default function Impostazioni() {
   const handleReset = () => {
     if (confirm('Sei sicuro di voler ripristinare tutti i dati di esempio?')) {
       localStorage.removeItem('workhub_data_v1');
+      localStorage.removeItem('workhub_data_v2');
       window.location.reload();
     }
   };
 
+  const handleImageUpload = (field: 'cartaIntestataHeader' | 'cartaIntestataFooter' | 'timbro') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File troppo grande', description: 'Dimensione massima 2MB', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      updateDatiAzienda({ [field]: reader.result as string });
+      toast({ title: 'Immagine caricata con successo' });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = (field: 'cartaIntestataHeader' | 'cartaIntestataFooter' | 'timbro') => {
+    updateDatiAzienda({ [field]: undefined });
+    toast({ title: 'Immagine rimossa' });
+  };
+
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl">
+    <div className="space-y-6 animate-fade-in max-w-5xl">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Impostazioni</h1>
         <p className="text-muted-foreground">Configura le preferenze dell'applicazione</p>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="azienda" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="azienda" className="gap-2">
+            <Building2 className="w-4 h-4" />
+            Dati Azienda
+          </TabsTrigger>
           <TabsTrigger value="general" className="gap-2">
             <Settings className="w-4 h-4" />
             Generali
@@ -58,43 +93,345 @@ export default function Impostazioni() {
           </TabsTrigger>
         </TabsList>
 
-        {/* General Settings */}
-        <TabsContent value="general" className="mt-6 space-y-6">
+        {/* Dati Azienda */}
+        <TabsContent value="azienda" className="mt-6 space-y-6">
+          {/* Dati Azienda */}
           <Card>
             <CardHeader>
-              <CardTitle>Informazioni Azienda</CardTitle>
+              <CardTitle>Dati Azienda</CardTitle>
               <CardDescription>
-                Configura i dati della tua azienda
+                Questi dati verranno utilizzati automaticamente nei moduli e documenti ufficiali
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Ragione Sociale</Label>
-                  <Input placeholder="Nome azienda" />
+                  <Label>Ragione Sociale *</Label>
+                  <Input 
+                    placeholder="Nome azienda" 
+                    value={datiAzienda.ragioneSociale}
+                    onChange={(e) => updateDatiAzienda({ ragioneSociale: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Partita IVA</Label>
-                  <Input placeholder="IT00000000000" />
+                  <Label>Partita IVA *</Label>
+                  <Input 
+                    placeholder="IT00000000000" 
+                    value={datiAzienda.partitaIva}
+                    onChange={(e) => updateDatiAzienda({ partitaIva: e.target.value })}
+                  />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Indirizzo</Label>
-                <Input placeholder="Via, Città, CAP" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" placeholder="info@azienda.it" />
+                  <Label>Codice Fiscale Azienda</Label>
+                  <Input 
+                    placeholder="00000000000" 
+                    value={datiAzienda.codiceFiscaleAzienda}
+                    onChange={(e) => updateDatiAzienda({ codiceFiscaleAzienda: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Telefono</Label>
-                  <Input placeholder="+39 000 0000000" />
+                  <Label>Iscrizione REA</Label>
+                  <Input 
+                    placeholder="TV-000000" 
+                    value={datiAzienda.iscrizioneREA}
+                    onChange={(e) => updateDatiAzienda({ iscrizioneREA: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Sede Legale</Label>
+                <Input 
+                  placeholder="Via/Piazza, n. civico" 
+                  value={datiAzienda.sedeLegale}
+                  onChange={(e) => updateDatiAzienda({ sedeLegale: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>CAP</Label>
+                  <Input 
+                    placeholder="00000" 
+                    value={datiAzienda.cap}
+                    onChange={(e) => updateDatiAzienda({ cap: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Città</Label>
+                  <Input 
+                    placeholder="Città" 
+                    value={datiAzienda.citta}
+                    onChange={(e) => updateDatiAzienda({ citta: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Provincia</Label>
+                  <Input 
+                    placeholder="TV" 
+                    value={datiAzienda.provincia}
+                    onChange={(e) => updateDatiAzienda({ provincia: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>PEC</Label>
+                  <Input 
+                    type="email" 
+                    placeholder="azienda@pec.it" 
+                    value={datiAzienda.pec}
+                    onChange={(e) => updateDatiAzienda({ pec: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input 
+                    type="email" 
+                    placeholder="info@azienda.it" 
+                    value={datiAzienda.email}
+                    onChange={(e) => updateDatiAzienda({ email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Telefono</Label>
+                <Input 
+                  placeholder="+39 000 0000000" 
+                  value={datiAzienda.telefono}
+                  onChange={(e) => updateDatiAzienda({ telefono: e.target.value })}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Dati Titolare */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Dati Titolare / Legale Rappresentante</CardTitle>
+              <CardDescription>
+                Dati del legale rappresentante per dichiarazioni e nomine
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome *</Label>
+                  <Input 
+                    placeholder="Nome" 
+                    value={datiAzienda.nomeTitolare}
+                    onChange={(e) => updateDatiAzienda({ nomeTitolare: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cognome *</Label>
+                  <Input 
+                    placeholder="Cognome" 
+                    value={datiAzienda.cognomeTitolare}
+                    onChange={(e) => updateDatiAzienda({ cognomeTitolare: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Codice Fiscale *</Label>
+                <Input 
+                  placeholder="RSSMRA80A01H501Z" 
+                  value={datiAzienda.codiceFiscaleTitolare}
+                  onChange={(e) => updateDatiAzienda({ codiceFiscaleTitolare: e.target.value.toUpperCase() })}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Data di Nascita</Label>
+                  <Input 
+                    type="date" 
+                    value={datiAzienda.dataNascitaTitolare}
+                    onChange={(e) => updateDatiAzienda({ dataNascitaTitolare: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Luogo di Nascita</Label>
+                  <Input 
+                    placeholder="Città" 
+                    value={datiAzienda.luogoNascitaTitolare}
+                    onChange={(e) => updateDatiAzienda({ luogoNascitaTitolare: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Provincia</Label>
+                  <Input 
+                    placeholder="TV" 
+                    value={datiAzienda.provinciaNascitaTitolare}
+                    onChange={(e) => updateDatiAzienda({ provinciaNascitaTitolare: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Residenza</Label>
+                <Input 
+                  placeholder="Via, n. civico - CAP Città (Prov.)" 
+                  value={datiAzienda.residenzaTitolare}
+                  onChange={(e) => updateDatiAzienda({ residenzaTitolare: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Carta d'Identità</Label>
+                  <Input 
+                    placeholder="CA00000AA" 
+                    value={datiAzienda.ciTitolare}
+                    onChange={(e) => updateDatiAzienda({ ciTitolare: e.target.value.toUpperCase() })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cellulare</Label>
+                  <Input 
+                    placeholder="+39 333 0000000" 
+                    value={datiAzienda.cellulareTitolare}
+                    onChange={(e) => updateDatiAzienda({ cellulareTitolare: e.target.value })}
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          {/* Carta Intestata e Timbro */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Carta Intestata e Timbro</CardTitle>
+              <CardDescription>
+                Carica l'intestazione e il timbro aziendale per i documenti ufficiali. Formati supportati: PNG, JPG, JPEG (max 2MB)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Header */}
+              <div className="space-y-3">
+                <Label className="font-semibold">Intestazione Superiore (Header)</Label>
+                <p className="text-sm text-muted-foreground">
+                  Inserisci un'immagine con il logo e i dati aziendali da visualizzare in alto nei documenti
+                </p>
+                {datiAzienda.cartaIntestataHeader ? (
+                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
+                    <img 
+                      src={datiAzienda.cartaIntestataHeader} 
+                      alt="Header" 
+                      className="max-h-32 w-auto mx-auto object-contain"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => handleRemoveImage('cartaIntestataHeader')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                    onClick={() => headerInputRef.current?.click()}
+                  >
+                    <Image className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Clicca per caricare l'intestazione</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB)</p>
+                  </div>
+                )}
+                <input
+                  ref={headerInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  className="hidden"
+                  onChange={handleImageUpload('cartaIntestataHeader')}
+                />
+              </div>
+
+              {/* Footer */}
+              <div className="space-y-3">
+                <Label className="font-semibold">Intestazione Inferiore (Footer)</Label>
+                <p className="text-sm text-muted-foreground">
+                  Inserisci un'immagine da visualizzare in basso nei documenti (es: contatti, social, ecc.)
+                </p>
+                {datiAzienda.cartaIntestataFooter ? (
+                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
+                    <img 
+                      src={datiAzienda.cartaIntestataFooter} 
+                      alt="Footer" 
+                      className="max-h-24 w-auto mx-auto object-contain"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => handleRemoveImage('cartaIntestataFooter')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                    onClick={() => footerInputRef.current?.click()}
+                  >
+                    <Image className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Clicca per caricare il footer</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB)</p>
+                  </div>
+                )}
+                <input
+                  ref={footerInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  className="hidden"
+                  onChange={handleImageUpload('cartaIntestataFooter')}
+                />
+              </div>
+
+              {/* Timbro */}
+              <div className="space-y-3">
+                <Label className="font-semibold">Timbro Aziendale</Label>
+                <p className="text-sm text-muted-foreground">
+                  Carica il timbro aziendale. Verrà inserito automaticamente nei documenti quando selezioni "Firma"
+                </p>
+                {datiAzienda.timbro ? (
+                  <div className="relative border border-border rounded-lg p-4 bg-muted/20">
+                    <img 
+                      src={datiAzienda.timbro} 
+                      alt="Timbro" 
+                      className="max-h-32 w-auto mx-auto object-contain"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => handleRemoveImage('timbro')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 cursor-pointer transition-colors"
+                    onClick={() => timbroInputRef.current?.click()}
+                  >
+                    <FileText className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Clicca per caricare il timbro</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG (max 2MB) - sfondo trasparente consigliato</p>
+                  </div>
+                )}
+                <input
+                  ref={timbroInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  className="hidden"
+                  onChange={handleImageUpload('timbro')}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* General Settings */}
+        <TabsContent value="general" className="mt-6 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Aspetto</CardTitle>

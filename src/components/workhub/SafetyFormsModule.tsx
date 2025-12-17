@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { formatDateFull, generateId } from '@/types/workhub';
+import { formatDateFull, generateId, DatiAzienda } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,8 @@ import {
   FileSignature,
   Users,
   Trash2,
-  Eye
+  Eye,
+  AlertCircle
 } from 'lucide-react';
 
 // Tipologie di moduli standard D.Lgs 81/2008
@@ -103,8 +104,369 @@ interface ModuloCustom {
   fileUrl: string;
 }
 
+// Generate professional PDF with letterhead
+const generateProfessionalPDF = (
+  modulo: ModuloCompilato,
+  moduloInfo: typeof MODULI_STANDARD[0] | undefined,
+  datiAzienda: DatiAzienda,
+  cantiere: any,
+  impresa: any,
+  lavoratore: any
+) => {
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  const titolareNomeCompleto = `${datiAzienda.nomeTitolare} ${datiAzienda.cognomeTitolare}`.trim();
+  const indirizzoCompleto = [datiAzienda.sedeLegale, datiAzienda.cap, datiAzienda.citta, datiAzienda.provincia ? `(${datiAzienda.provincia})` : ''].filter(Boolean).join(' ');
+
+  // Generate module-specific content
+  const generateModuleContent = () => {
+    switch (modulo.tipoModulo) {
+      case 'psc_accettazione':
+        return `
+          <p style="margin-bottom: 20px; line-height: 1.8;">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
+            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
+            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
+            in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
+          </p>
+          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
+          <ul style="line-height: 2; margin-left: 20px;">
+            <li>di aver preso visione del Piano di Sicurezza e Coordinamento (PSC) ${modulo.datiForm.revisionePSC ? `Rev. ${modulo.datiForm.revisionePSC}` : ''} ${modulo.datiForm.dataPSC ? `del ${formatDate(modulo.datiForm.dataPSC)}` : ''};</li>
+            <li>di accettarne integralmente i contenuti;</li>
+            <li>di impegnarsi a rispettare tutte le prescrizioni in esso contenute;</li>
+            <li>di aver trasmesso il PSC ai propri lavoratori prima dell'inizio dei lavori.</li>
+          </ul>
+          ${modulo.datiForm.note ? `<p style="margin-top: 20px;"><strong>Note:</strong> ${modulo.datiForm.note}</p>` : ''}
+        `;
+
+      case 'no_interdetti':
+        return `
+          <p style="margin-bottom: 20px; line-height: 1.8;">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
+            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
+            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
+            in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
+            consapevole delle sanzioni penali previste dall'art. 76 del D.P.R. 445/2000 in caso di dichiarazioni mendaci,
+          </p>
+          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
+          <p style="line-height: 1.8;">
+            che l'impresa non ha alle proprie dipendenze personale sottoposto a provvedimenti interdittivi o di sospensione 
+            ai sensi dell'art. 14 del D.Lgs. 81/2008 e s.m.i.
+          </p>
+        `;
+
+      case 'oma':
+        return `
+          <p style="margin-bottom: 20px; line-height: 1.8;">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Legale Rappresentante dell'impresa 
+            <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
+          </p>
+          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
+          <p style="margin-bottom: 15px;">che l'Organico Medio Annuo dell'impresa per l'anno <strong>${modulo.datiForm.annoRiferimento || new Date().getFullYear()}</strong> è il seguente:</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr>
+              <td style="border: 1px solid #333; padding: 10px; width: 50%;"><strong>Organico Medio Annuo Complessivo</strong></td>
+              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.organicoMedio || '___'}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #333; padding: 10px;">di cui Operai</td>
+              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.operai || '___'}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #333; padding: 10px;">di cui Impiegati</td>
+              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.impiegati || '___'}</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #333; padding: 10px;"><strong>CCNL Applicato</strong></td>
+              <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm.ccnl || '___'}</td>
+            </tr>
+          </table>
+        `;
+
+      case 'dichiarazione_81':
+        const checks = [
+          { key: 'check_0', label: 'Aver effettuato la valutazione dei rischi (DVR)' },
+          { key: 'check_1', label: 'Aver nominato il RSPP' },
+          { key: 'check_2', label: 'Aver nominato il Medico Competente (ove previsto)' },
+          { key: 'check_3', label: 'Aver designato gli addetti alle emergenze' },
+          { key: 'check_4', label: 'Aver formato i lavoratori secondo normativa' },
+          { key: 'check_5', label: 'Aver fornito i DPI necessari' },
+        ];
+        return `
+          <p style="margin-bottom: 20px; line-height: 1.8;">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) 
+            il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, 
+            C.F. <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, 
+            in qualità di Datore di Lavoro dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>,
+          </p>
+          <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">DICHIARA</p>
+          <p style="margin-bottom: 15px;">di ottemperare a tutti gli obblighi previsti dal D.Lgs. 81/2008 e successive modifiche e integrazioni in materia di tutela della salute e sicurezza nei luoghi di lavoro.</p>
+          <p style="margin-bottom: 15px;"><strong>In particolare dichiara di:</strong></p>
+          <ul style="line-height: 2; margin-left: 20px;">
+            ${checks.map(c => `<li>${modulo.datiForm[c.key] ? '☑' : '☐'} ${c.label}</li>`).join('')}
+          </ul>
+        `;
+
+      case 'consegna_dpi':
+        const dpiConsegnati = DPI_STANDARD.filter(dpi => modulo.datiForm[`dpi_${dpi.id}`]);
+        return `
+          <p style="margin-bottom: 20px; line-height: 1.8;">
+            In data <strong>${modulo.datiForm.dataConsegna ? formatDate(modulo.datiForm.dataConsegna) : formatDate(modulo.dataCompilazione)}</strong>, 
+            presso il cantiere <strong>${cantiere?.nome || '_______________'}</strong>,
+          </p>
+          <p style="margin-bottom: 15px;">il Datore di Lavoro <strong>${titolareNomeCompleto}</strong> dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> 
+          ha consegnato al lavoratore <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>, 
+          C.F. <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>, mansione <strong>${lavoratore?.mansione || '_______________'}</strong>,
+          i seguenti Dispositivi di Protezione Individuale:</p>
+          
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background: #f5f5f5;">
+              <th style="border: 1px solid #333; padding: 10px; text-align: left;">DPI</th>
+              <th style="border: 1px solid #333; padding: 10px; text-align: center;">Normativa</th>
+              <th style="border: 1px solid #333; padding: 10px; text-align: center;">Qtà</th>
+            </tr>
+            ${dpiConsegnati.map(dpi => `
+              <tr>
+                <td style="border: 1px solid #333; padding: 10px;">${dpi.nome}</td>
+                <td style="border: 1px solid #333; padding: 10px; text-align: center;">${dpi.normativa}</td>
+                <td style="border: 1px solid #333; padding: 10px; text-align: center;">${modulo.datiForm[`qty_${dpi.id}`] || '1'}</td>
+              </tr>
+            `).join('')}
+          </table>
+          
+          <p style="margin-top: 20px; line-height: 1.8;">
+            Il lavoratore dichiara di aver ricevuto i DPI sopra elencati e di essere stato informato sulle corrette modalità di utilizzo, 
+            manutenzione e conservazione degli stessi, nonché sui rischi dai quali il DPI lo protegge.
+          </p>
+        `;
+
+      default:
+        // Nomine
+        if (modulo.tipoModulo.startsWith('nomina_')) {
+          const tipoNomina = modulo.tipoModulo.replace('nomina_', '');
+          const titoloNomina = {
+            direttore: 'Direttore Tecnico di Cantiere',
+            antincendio: 'Addetto alla Lotta Antincendio e Gestione Emergenze',
+            primo_soccorso: 'Addetto al Primo Soccorso',
+            rls: 'Rappresentante dei Lavoratori per la Sicurezza (RLS)',
+            medico: 'Medico Competente',
+            rspp: 'Responsabile del Servizio di Prevenzione e Protezione (RSPP)'
+          }[tipoNomina] || 'Incaricato';
+
+          return `
+            <p style="margin-bottom: 20px; line-height: 1.8;">
+              Il sottoscritto <strong>${titolareNomeCompleto}</strong>, in qualità di Datore di Lavoro dell'impresa 
+              <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
+            </p>
+            <p style="text-align: center; font-weight: bold; font-size: 14px; margin: 30px 0;">NOMINA</p>
+            <p style="margin-bottom: 20px; line-height: 1.8;">
+              il Sig./Sig.ra <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>,
+              C.F. <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>,
+            </p>
+            <p style="text-align: center; font-weight: bold; margin: 20px 0;">${titoloNomina}</p>
+            <p style="margin-bottom: 15px;">con decorrenza dal <strong>${modulo.datiForm.dataDecorrenza ? formatDate(modulo.datiForm.dataDecorrenza) : '_______________'}</strong></p>
+            ${cantiere ? `<p style="margin-bottom: 15px;">per il cantiere: <strong>${cantiere.nome}</strong> - ${cantiere.indirizzo}</p>` : ''}
+            ${modulo.datiForm.compiti ? `<p style="margin-top: 20px;"><strong>Compiti e responsabilità:</strong><br/>${modulo.datiForm.compiti}</p>` : ''}
+          `;
+        }
+        return '<p>Contenuto del modulo</p>';
+    }
+  };
+
+  const content = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${moduloInfo?.nome || 'Documento'}</title>
+      <style>
+        @page {
+          size: A4;
+          margin: 15mm 20mm 25mm 20mm;
+        }
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 12px;
+          line-height: 1.5;
+          color: #000;
+          margin: 0;
+          padding: 0;
+        }
+        .page-container {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+        .header {
+          text-align: center;
+          padding-bottom: 15px;
+          border-bottom: 2px solid #333;
+          margin-bottom: 30px;
+        }
+        .header-image {
+          max-width: 100%;
+          max-height: 100px;
+          object-fit: contain;
+        }
+        .header-text {
+          margin-top: 10px;
+        }
+        .company-name {
+          font-size: 18px;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+        .company-info {
+          font-size: 10px;
+          color: #444;
+        }
+        .document-title {
+          text-align: center;
+          font-size: 16px;
+          font-weight: bold;
+          margin: 30px 0 10px 0;
+          text-transform: uppercase;
+        }
+        .document-subtitle {
+          text-align: center;
+          font-size: 11px;
+          color: #666;
+          margin-bottom: 30px;
+        }
+        .content {
+          flex: 1;
+          text-align: justify;
+        }
+        .cantiere-info {
+          background: #f8f8f8;
+          padding: 15px;
+          border-left: 3px solid #333;
+          margin-bottom: 25px;
+        }
+        .cantiere-info p {
+          margin: 5px 0;
+        }
+        .signature-area {
+          margin-top: 60px;
+          display: flex;
+          justify-content: space-between;
+          page-break-inside: avoid;
+        }
+        .signature-box {
+          width: 45%;
+          text-align: center;
+        }
+        .signature-line {
+          border-top: 1px solid #333;
+          margin-top: 50px;
+          padding-top: 5px;
+        }
+        .footer {
+          margin-top: auto;
+          padding-top: 20px;
+          border-top: 1px solid #ccc;
+          text-align: center;
+          font-size: 10px;
+          color: #666;
+        }
+        .footer-image {
+          max-width: 100%;
+          max-height: 60px;
+          object-fit: contain;
+          margin-bottom: 10px;
+        }
+        .stamp {
+          position: absolute;
+          right: 60px;
+          bottom: 150px;
+          max-width: 150px;
+          max-height: 150px;
+          opacity: 0.9;
+        }
+        .date-place {
+          text-align: right;
+          margin: 30px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="page-container">
+        <!-- Header -->
+        <div class="header">
+          ${datiAzienda.cartaIntestataHeader 
+            ? `<img src="${datiAzienda.cartaIntestataHeader}" class="header-image" alt="Intestazione" />`
+            : `<div class="header-text">
+                <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
+                <div class="company-info">
+                  ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
+                  ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
+                  ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''} ${datiAzienda.pec ? `- PEC: ${datiAzienda.pec}` : ''}
+                </div>
+              </div>`
+          }
+        </div>
+
+        <!-- Document Title -->
+        <div class="document-title">${moduloInfo?.nome || 'DICHIARAZIONE'}</div>
+        <div class="document-subtitle">ai sensi del D.Lgs 81/2008 e s.m.i.</div>
+
+        <!-- Cantiere Info -->
+        ${cantiere ? `
+        <div class="cantiere-info">
+          <p><strong>Cantiere:</strong> ${cantiere.nome}</p>
+          <p><strong>Codice Commessa:</strong> ${cantiere.codiceCommessa}</p>
+          <p><strong>Indirizzo:</strong> ${cantiere.indirizzo}</p>
+        </div>
+        ` : ''}
+
+        <!-- Content -->
+        <div class="content">
+          ${generateModuleContent()}
+        </div>
+
+        <!-- Date and Place -->
+        <div class="date-place">
+          ${datiAzienda.citta || '_______________'}, lì ${formatDate(modulo.dataCompilazione)}
+        </div>
+
+        <!-- Signatures -->
+        <div class="signature-area">
+          <div class="signature-box">
+            <p>Il Datore di Lavoro / Legale Rappresentante</p>
+            <p style="font-size: 10px;">(${titolareNomeCompleto || '_______________'})</p>
+            <div class="signature-line">Firma</div>
+          </div>
+          <div class="signature-box">
+            <p>${lavoratore ? 'Il Lavoratore' : 'Per accettazione'}</p>
+            ${lavoratore ? `<p style="font-size: 10px;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 10px;">&nbsp;</p>'}
+            <div class="signature-line">Firma</div>
+          </div>
+        </div>
+
+        ${modulo.firmato && datiAzienda.timbro ? `
+        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 60}px; bottom: ${datiAzienda.timbroPositionY || 150}px;" />
+        ` : ''}
+
+        <!-- Footer -->
+        <div class="footer">
+          ${datiAzienda.cartaIntestataFooter 
+            ? `<img src="${datiAzienda.cartaIntestataFooter}" class="footer-image" alt="Footer" />`
+            : `<p>${datiAzienda.ragioneSociale || ''} ${datiAzienda.partitaIva ? `- P.IVA ${datiAzienda.partitaIva}` : ''}</p>`
+          }
+          <p>Documento generato il ${formatDate(new Date().toISOString().slice(0, 10))}</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return content;
+};
+
 export default function SafetyFormsModule() {
-  const { cantieri, imprese, lavoratori } = useWorkHub();
+  const { cantieri, imprese, lavoratori, datiAzienda } = useWorkHub();
   const { toast } = useToast();
 
   const [activeModulo, setActiveModulo] = useState<string | null>(null);
@@ -118,12 +480,22 @@ export default function SafetyFormsModule() {
   const [selectedLavoratore, setSelectedLavoratore] = useState('');
   const [viewingModulo, setViewingModulo] = useState<ModuloCompilato | null>(null);
 
+  const isAziendaConfigured = datiAzienda.ragioneSociale && datiAzienda.partitaIva;
+
   const getModuloInfo = (id: string) => MODULI_STANDARD.find(m => m.id === id);
   const getCantiere = (id: string) => cantieri.find(c => c.id === id);
   const getImpresa = (id: string) => imprese.find(i => i.id === id);
   const getLavoratore = (id: string) => lavoratori.find(l => l.id === id);
 
   const handleOpenForm = (moduloId: string) => {
+    if (!isAziendaConfigured) {
+      toast({ 
+        title: 'Configura i dati aziendali', 
+        description: 'Vai in Impostazioni > Dati Azienda per inserire i dati della tua azienda',
+        variant: 'destructive' 
+      });
+      return;
+    }
     setActiveModulo(moduloId);
     setFormData({});
     setShowFormDialog(true);
@@ -153,91 +525,12 @@ export default function SafetyFormsModule() {
   };
 
   const handleDownloadPDF = (modulo: ModuloCompilato) => {
-    // Generate PDF content
     const moduloInfo = getModuloInfo(modulo.tipoModulo);
     const cantiere = getCantiere(modulo.cantiereId);
     const impresa = getImpresa(modulo.impresaId || '');
     const lavoratore = getLavoratore(modulo.lavoratoreId || '');
 
-    // Create printable content
-    const content = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>${moduloInfo?.nome}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: bold; }
-          .title { font-size: 18px; margin-top: 10px; }
-          .section { margin-bottom: 20px; }
-          .section-title { font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-          .field { margin-bottom: 8px; }
-          .field-label { font-weight: 500; }
-          .signature-area { margin-top: 50px; display: flex; justify-content: space-between; }
-          .signature-box { width: 45%; border-top: 1px solid #333; padding-top: 10px; text-align: center; }
-          table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-          td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">${impresa?.ragioneSociale || 'AZIENDA'}</div>
-          <div class="title">${moduloInfo?.nome?.toUpperCase()}</div>
-          <div>ai sensi del D.Lgs 81/2008 e s.m.i.</div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">DATI CANTIERE</div>
-          <div class="field"><span class="field-label">Cantiere:</span> ${cantiere?.nome || '-'}</div>
-          <div class="field"><span class="field-label">Codice Commessa:</span> ${cantiere?.codiceCommessa || '-'}</div>
-          <div class="field"><span class="field-label">Indirizzo:</span> ${cantiere?.indirizzo || '-'}</div>
-        </div>
-
-        ${impresa ? `
-        <div class="section">
-          <div class="section-title">DATI IMPRESA</div>
-          <div class="field"><span class="field-label">Ragione Sociale:</span> ${impresa.ragioneSociale}</div>
-          <div class="field"><span class="field-label">P.IVA:</span> ${impresa.partitaIva}</div>
-          <div class="field"><span class="field-label">Sede Legale:</span> ${impresa.sedeLegale}</div>
-        </div>
-        ` : ''}
-
-        ${lavoratore ? `
-        <div class="section">
-          <div class="section-title">DATI LAVORATORE</div>
-          <div class="field"><span class="field-label">Nome e Cognome:</span> ${lavoratore.nome} ${lavoratore.cognome}</div>
-          <div class="field"><span class="field-label">Codice Fiscale:</span> ${lavoratore.codiceFiscale}</div>
-          <div class="field"><span class="field-label">Mansione:</span> ${lavoratore.mansione}</div>
-        </div>
-        ` : ''}
-
-        <div class="section">
-          <div class="section-title">CONTENUTO DEL MODULO</div>
-          ${Object.entries(modulo.datiForm).map(([key, value]) => `
-            <div class="field"><span class="field-label">${key.replace(/_/g, ' ')}:</span> ${value}</div>
-          `).join('')}
-        </div>
-
-        <div class="signature-area">
-          <div class="signature-box">
-            <p>Il Datore di Lavoro / Legale Rappresentante</p>
-            <p style="margin-top: 40px;">_________________________</p>
-          </div>
-          <div class="signature-box">
-            <p>${lavoratore ? 'Il Lavoratore' : 'Per accettazione'}</p>
-            <p style="margin-top: 40px;">_________________________</p>
-          </div>
-        </div>
-
-        <div class="footer">
-          <p>Data compilazione: ${formatDateFull(modulo.dataCompilazione)}</p>
-          <p>Documento generato da E-gest - Sistema Gestione Cantieri</p>
-        </div>
-      </body>
-      </html>
-    `;
+    const content = generateProfessionalPDF(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
 
     const blob = new Blob([content], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -260,7 +553,7 @@ export default function SafetyFormsModule() {
     setModuliCompilati(moduliCompilati.map(m =>
       m.id === id ? { ...m, firmato: true, dataFirma: new Date().toISOString().slice(0, 10) } : m
     ));
-    toast({ title: 'Modulo firmato digitalmente' });
+    toast({ title: 'Modulo firmato - il timbro verrà inserito nel documento' });
   };
 
   const handleUploadCustom = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -614,6 +907,19 @@ export default function SafetyFormsModule() {
 
   return (
     <div className="space-y-6">
+      {/* Warning if company data not configured */}
+      {!isAziendaConfigured && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <p className="font-medium text-amber-600">Dati aziendali non configurati</p>
+            <p className="text-sm text-muted-foreground">
+              Per generare documenti con carta intestata, vai in <strong>Impostazioni &gt; Dati Azienda</strong> e compila i dati della tua azienda.
+            </p>
+          </div>
+        </div>
+      )}
+
       <Tabs defaultValue="standard" className="w-full">
         <TabsList>
           <TabsTrigger value="standard">Moduli Standard</TabsTrigger>
@@ -828,7 +1134,7 @@ export default function SafetyFormsModule() {
                   <SelectContent>
                     {cantieri.map(c => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.codiceCommessa} - {c.nome}
+                        {c.nome} ({c.codiceCommessa})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -842,19 +1148,33 @@ export default function SafetyFormsModule() {
                   </SelectTrigger>
                   <SelectContent>
                     {imprese.map(i => (
-                      <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+                      <SelectItem key={i.id} value={i.id}>
+                        {i.ragioneSociale}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
+
+            {/* Dati Azienda Preview */}
+            <div className="p-3 bg-muted/30 rounded-lg text-sm">
+              <p className="font-medium mb-1">Dati Azienda (da Impostazioni)</p>
+              <p className="text-muted-foreground">
+                {datiAzienda.ragioneSociale || 'Non configurato'} 
+                {datiAzienda.partitaIva && ` - P.IVA: ${datiAzienda.partitaIva}`}
+              </p>
+              <p className="text-muted-foreground">
+                Legale Rapp.: {datiAzienda.nomeTitolare} {datiAzienda.cognomeTitolare || 'Non configurato'}
+              </p>
+            </div>
+
             {/* Module-specific fields */}
             {renderFormFields()}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowFormDialog(false); resetForm(); }}>
+            <Button variant="outline" onClick={() => setShowFormDialog(false)}>
               Annulla
             </Button>
             <Button onClick={handleSaveForm} className="gap-2">
@@ -872,77 +1192,60 @@ export default function SafetyFormsModule() {
             <DialogTitle>Carica Modulo Personalizzato</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
-              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-4">
-                Trascina qui il file o clicca per selezionare
-              </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Formati supportati: PDF, DOC, DOCX
-              </p>
-              <Input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={handleUploadCustom}
-                className="max-w-xs mx-auto"
-              />
-            </div>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleUploadCustom}
+            />
+            <p className="text-sm text-muted-foreground mt-2">
+              Formati supportati: PDF, Word (.doc, .docx)
+            </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
-              Annulla
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* View Modulo Dialog */}
-      <Dialog open={!!viewingModulo} onOpenChange={() => setViewingModulo(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!viewingModulo} onOpenChange={(open) => !open && setViewingModulo(null)}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {viewingModulo && getModuloInfo(viewingModulo.tipoModulo)?.nome}
             </DialogTitle>
           </DialogHeader>
           {viewingModulo && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">Cantiere</p>
-                  <p className="font-medium">{getCantiere(viewingModulo.cantiereId)?.nome}</p>
+                  <span className="text-muted-foreground">Cantiere:</span>
+                  <p className="font-medium">{getCantiere(viewingModulo.cantiereId)?.nome || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Data compilazione:</span>
+                  <p className="font-medium">{formatDateFull(viewingModulo.dataCompilazione)}</p>
                 </div>
                 {viewingModulo.impresaId && (
                   <div>
-                    <p className="text-muted-foreground">Impresa</p>
-                    <p className="font-medium">{getImpresa(viewingModulo.impresaId)?.ragioneSociale}</p>
+                    <span className="text-muted-foreground">Impresa:</span>
+                    <p className="font-medium">{getImpresa(viewingModulo.impresaId)?.ragioneSociale || '-'}</p>
                   </div>
                 )}
                 {viewingModulo.lavoratoreId && (
                   <div>
-                    <p className="text-muted-foreground">Lavoratore</p>
+                    <span className="text-muted-foreground">Lavoratore:</span>
                     <p className="font-medium">
-                      {getLavoratore(viewingModulo.lavoratoreId)?.cognome} {getLavoratore(viewingModulo.lavoratoreId)?.nome}
+                      {(() => {
+                        const l = getLavoratore(viewingModulo.lavoratoreId);
+                        return l ? `${l.cognome} ${l.nome}` : '-';
+                      })()}
                     </p>
                   </div>
                 )}
-                <div>
-                  <p className="text-muted-foreground">Stato</p>
-                  <Badge className={viewingModulo.firmato ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}>
-                    {viewingModulo.firmato ? 'Firmato' : 'Da firmare'}
-                  </Badge>
-                </div>
               </div>
-              
               <div className="border-t pt-4">
-                <p className="text-sm font-medium mb-2">Dati del modulo:</p>
-                <div className="space-y-1 text-sm">
-                  {Object.entries(viewingModulo.datiForm).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
-                      <span>{String(value)}</span>
-                    </div>
-                  ))}
-                </div>
+                <h4 className="font-medium mb-2">Dati del modulo:</h4>
+                <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-60">
+                  {JSON.stringify(viewingModulo.datiForm, null, 2)}
+                </pre>
               </div>
             </div>
           )}
@@ -951,8 +1254,8 @@ export default function SafetyFormsModule() {
               Chiudi
             </Button>
             {viewingModulo && (
-              <Button onClick={() => { handleDownloadPDF(viewingModulo); setViewingModulo(null); }} className="gap-2">
-                <Download className="w-4 h-4" />
+              <Button onClick={() => { handleDownloadPDF(viewingModulo); setViewingModulo(null); }}>
+                <Download className="w-4 h-4 mr-2" />
                 Scarica PDF
               </Button>
             )}
