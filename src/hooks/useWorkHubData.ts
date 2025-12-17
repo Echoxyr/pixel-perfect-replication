@@ -26,8 +26,15 @@ import {
   sampleTasks
 } from '@/data/sampleData';
 
-const STORAGE_KEY = 'workhub_data_v2';
+const STORAGE_KEY = 'workhub_data_v3'; // Updated to clear old demo data
 const AZIENDA_STORAGE_KEY = 'workhub_dati_azienda';
+
+// Clear old storage keys on load
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('workhub_data_v2');
+  localStorage.removeItem('workhub_data_v1');
+  localStorage.removeItem('workhub_data');
+}
 
 const defaultDatiAzienda: DatiAzienda = {
   ragioneSociale: '',
