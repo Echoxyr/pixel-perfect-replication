@@ -843,7 +843,7 @@ export default function SALPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {contrattiForCantiere.length === 0 ? (
-                      <SelectItem value="" disabled>Nessun contratto - creane uno prima</SelectItem>
+                      <div className="py-2 px-3 text-sm text-muted-foreground">Nessun contratto - creane uno prima</div>
                     ) : (
                       contrattiForCantiere.map(c => (
                         <SelectItem key={c.id} value={c.id}>
