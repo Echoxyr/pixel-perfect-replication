@@ -60,7 +60,11 @@ import {
   CalendarDays,
   Truck,
   Printer,
-  Save
+  Save,
+  AlertTriangle,
+  Bell,
+  AlertCircle,
+  AlertOctagon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -422,6 +426,245 @@ export default function RepartoAmministrazione() {
     totaleNoteSpesaInAttesa: noteSpesa.filter(n => n.stato === 'presentata').reduce((sum, n) => sum + n.importo, 0)
   }), [fatture, noteSpesa, richiesteDipendenti]);
 
+  // Blacklist logic - fatture con scadenze critiche
+  const blacklistData = useMemo(() => {
+    const today = new Date();
+    const oneWeekFromNow = new Date(today);
+    oneWeekFromNow.setDate(today.getDate() + 7);
+    const oneMonthAgo = new Date(today);
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    const twoMonthsAgo = new Date(today);
+    twoMonthsAgo.setMonth(today.getMonth() - 2);
+
+    const fattureNonPagate = fatture.filter(f => f.stato !== 'pagata' && f.scadenza);
+
+    // Alert 1 settimana prima (preventivo)
+    const inScadenza1Settimana = fattureNonPagate.filter(f => {
+      const scadenza = new Date(f.scadenza);
+      const diffDays = Math.ceil((scadenza.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays > 0 && diffDays <= 7;
+    });
+
+    // Scadute da meno di 1 mese - Alert sollecito
+    const scaduteRecenti = fattureNonPagate.filter(f => {
+      const scadenza = new Date(f.scadenza);
+      return scadenza < today && scadenza >= oneMonthAgo;
+    });
+
+    // Scadute da 1-2 mesi - Alert urgente
+    const scadute1Mese = fattureNonPagate.filter(f => {
+      const scadenza = new Date(f.scadenza);
+      return scadenza < oneMonthAgo && scadenza >= twoMonthsAgo;
+    });
+
+    // Blacklist - scadute da più di 2 mesi
+    const blacklist = fattureNonPagate.filter(f => {
+      const scadenza = new Date(f.scadenza);
+      return scadenza < twoMonthsAgo;
+    });
+
+    return {
+      inScadenza1Settimana,
+      scaduteRecenti,
+      scadute1Mese,
+      blacklist,
+      totaleBlacklist: blacklist.length,
+      totaleAlerts: inScadenza1Settimana.length + scaduteRecenti.length + scadute1Mese.length
+    };
+  }, [fatture]);
+
+  // Render Blacklist View
+  const renderBlacklistView = () => {
+    const getDaysOverdue = (scadenza: string) => {
+      const today = new Date();
+      const scadenzaDate = new Date(scadenza);
+      return Math.ceil((today.getTime() - scadenzaDate.getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Alert in scadenza 1 settimana */}
+        {blacklistData.inScadenza1Settimana.length > 0 && (
+          <Card className="border-2 border-amber-500/50 bg-amber-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-amber-500">
+                <Bell className="w-5 h-5" />
+                In Scadenza Entro 1 Settimana ({blacklistData.inScadenza1Settimana.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {blacklistData.inScadenza1Settimana.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className={f.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                        {f.tipo === 'attiva' ? 'Attiva' : 'Passiva'}
+                      </Badge>
+                      <div>
+                        <span className="font-mono font-medium">{f.numero}</span>
+                        <span className="text-muted-foreground mx-2">•</span>
+                        <span>{f.cliente_fornitore}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold">{formatCurrency(f.totale)}</span>
+                      <Badge className="bg-amber-500/15 text-amber-500">Scade il {formatDate(f.scadenza)}</Badge>
+                      <Button size="sm" variant="outline" onClick={() => updateFatturaStatus.mutate({ id: f.id, stato: 'pagata' })}>
+                        <CheckCircle className="w-4 h-4 mr-1" />Segna Pagata
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Scadute recenti - sollecito */}
+        {blacklistData.scaduteRecenti.length > 0 && (
+          <Card className="border-2 border-orange-500/50 bg-orange-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-orange-500">
+                <AlertCircle className="w-5 h-5" />
+                Sollecito Pagamento - Scadute da meno di 1 mese ({blacklistData.scaduteRecenti.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {blacklistData.scaduteRecenti.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className={f.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                        {f.tipo === 'attiva' ? 'Da incassare' : 'Da pagare'}
+                      </Badge>
+                      <div>
+                        <span className="font-mono font-medium">{f.numero}</span>
+                        <span className="text-muted-foreground mx-2">•</span>
+                        <span>{f.cliente_fornitore}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold">{formatCurrency(f.totale)}</span>
+                      <Badge className="bg-orange-500/15 text-orange-500">Scaduta da {getDaysOverdue(f.scadenza)} giorni</Badge>
+                      <Button size="sm" variant="outline" onClick={() => updateFatturaStatus.mutate({ id: f.id, stato: 'pagata' })}>
+                        <CheckCircle className="w-4 h-4 mr-1" />Segna Pagata
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Scadute da 1-2 mesi - urgente */}
+        {blacklistData.scadute1Mese.length > 0 && (
+          <Card className="border-2 border-red-500/50 bg-red-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-red-500">
+                <AlertTriangle className="w-5 h-5" />
+                Urgente - Scadute da oltre 1 mese ({blacklistData.scadute1Mese.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {blacklistData.scadute1Mese.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-3 bg-background rounded-lg border border-red-500/30">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className={f.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                        {f.tipo === 'attiva' ? 'Da incassare' : 'Da pagare'}
+                      </Badge>
+                      <div>
+                        <span className="font-mono font-medium">{f.numero}</span>
+                        <span className="text-muted-foreground mx-2">•</span>
+                        <span>{f.cliente_fornitore}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-red-500">{formatCurrency(f.totale)}</span>
+                      <Badge className="bg-red-500/15 text-red-500">Scaduta da {getDaysOverdue(f.scadenza)} giorni</Badge>
+                      <Button size="sm" variant="outline" onClick={() => updateFatturaStatus.mutate({ id: f.id, stato: 'pagata' })}>
+                        <CheckCircle className="w-4 h-4 mr-1" />Segna Pagata
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* BLACKLIST - oltre 2 mesi */}
+        <Card className="border-2 border-destructive bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertOctagon className="w-5 h-5" />
+              BLACKLIST - Scadute da oltre 2 mesi ({blacklistData.blacklist.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {blacklistData.blacklist.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-emerald-500" />
+                <p className="text-lg font-medium">Nessuna fattura in blacklist</p>
+                <p className="text-sm">Tutte le fatture sono regolari</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {blacklistData.blacklist.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-3 bg-background rounded-lg border-2 border-destructive/50">
+                    <div className="flex items-center gap-4">
+                      <AlertOctagon className="w-5 h-5 text-destructive" />
+                      <Badge variant="outline" className={f.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                        {f.tipo === 'attiva' ? 'CREDITO' : 'DEBITO'}
+                      </Badge>
+                      <div>
+                        <span className="font-mono font-bold">{f.numero}</span>
+                        <span className="text-muted-foreground mx-2">•</span>
+                        <span className="font-medium">{f.cliente_fornitore}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-xl text-destructive">{formatCurrency(f.totale)}</span>
+                      <Badge variant="destructive">Scaduta da {getDaysOverdue(f.scadenza)} giorni</Badge>
+                      <Button size="sm" variant="outline" onClick={() => updateFatturaStatus.mutate({ id: f.id, stato: 'pagata' })}>
+                        <CheckCircle className="w-4 h-4 mr-1" />Segna Pagata
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Summary */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-4 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-amber-500">{blacklistData.inScadenza1Settimana.length}</p>
+                <p className="text-sm text-muted-foreground">In scadenza</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-orange-500">{blacklistData.scaduteRecenti.length}</p>
+                <p className="text-sm text-muted-foreground">Sollecito</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-500">{blacklistData.scadute1Mese.length}</p>
+                <p className="text-sm text-muted-foreground">Urgente</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-destructive">{blacklistData.blacklist.length}</p>
+                <p className="text-sm text-muted-foreground">Blacklist</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   // Calendar view for richieste
   const renderCalendarView = () => {
     const today = new Date();
@@ -661,57 +904,57 @@ export default function RepartoAmministrazione() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
+              <div className="p-2 rounded-lg bg-emerald-500/10 flex-shrink-0">
                 <ArrowUpRight className="w-5 h-5 text-emerald-500" />
               </div>
-              <div>
-                <p className="text-lg font-bold">{formatCurrency(stats.fattureAttiveEmesse)}</p>
-                <p className="text-xs text-muted-foreground">Crediti da incassare</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold truncate" title={formatCurrency(stats.fattureAttiveEmesse)}>{formatCurrency(stats.fattureAttiveEmesse)}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Crediti da incassare</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-500/10">
+              <div className="p-2 rounded-lg bg-red-500/10 flex-shrink-0">
                 <ArrowDownLeft className="w-5 h-5 text-red-500" />
               </div>
-              <div>
-                <p className="text-lg font-bold">{formatCurrency(stats.fatturePassiveDaPagare)}</p>
-                <p className="text-xs text-muted-foreground">Debiti da pagare</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold truncate" title={formatCurrency(stats.fatturePassiveDaPagare)}>{formatCurrency(stats.fatturePassiveDaPagare)}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Debiti da pagare</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
+              <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
                 <Receipt className="w-5 h-5 text-purple-500" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold">{stats.noteSpesaInAttesa}</p>
-                <p className="text-xs text-muted-foreground">Note spesa ({formatCurrency(stats.totaleNoteSpesaInAttesa)})</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap truncate" title={`Note spesa (${formatCurrency(stats.totaleNoteSpesaInAttesa)})`}>Note spesa ({formatCurrency(stats.totaleNoteSpesaInAttesa)})</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
+              <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
                 <MessageSquare className="w-5 h-5 text-amber-500" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold">{stats.richiesteInAttesa}</p>
-                <p className="text-xs text-muted-foreground">Richieste in attesa</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Richieste in attesa</p>
               </div>
             </div>
           </CardContent>
@@ -720,10 +963,19 @@ export default function RepartoAmministrazione() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="fatture" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Fatture
+          </TabsTrigger>
+          <TabsTrigger value="blacklist" className="flex items-center gap-2 relative">
+            <AlertTriangle className="w-4 h-4" />
+            Blacklist
+            {blacklistData.totaleAlerts + blacklistData.totaleBlacklist > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                {blacklistData.totaleAlerts + blacklistData.totaleBlacklist}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="notespesa" className="flex items-center gap-2">
             <Receipt className="w-4 h-4" />
@@ -917,6 +1169,11 @@ export default function RepartoAmministrazione() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Blacklist Tab */}
+        <TabsContent value="blacklist" className="mt-6">
+          {renderBlacklistView()}
         </TabsContent>
 
         {/* Note Spesa Tab */}
