@@ -93,7 +93,7 @@ export default function Timbrature() {
 
   // Create timbratura
   const createMutation = useMutation({
-    mutationFn: async (timbratura: Partial<Timbratura>) => {
+    mutationFn: async (timbratura: { lavoratore_nome: string; tipo: string; cantiere_id?: string | null; cantiere_nome?: string | null; note?: string | null; data: string; ora: string }) => {
       const { error } = await supabase.from('timbrature').insert([timbratura]);
       if (error) throw error;
     },

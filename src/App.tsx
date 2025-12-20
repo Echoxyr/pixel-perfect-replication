@@ -33,6 +33,8 @@ import BusinessIntelligence from "./pages/BusinessIntelligence";
 import UfficioCommerciale from "./pages/UfficioCommerciale";
 import ComputoMetrico from "./pages/ComputoMetrico";
 import RepartoAmministrazione from "./pages/RepartoAmministrazione";
+import Timbrature from "./pages/Timbrature";
+import Risorse from "./pages/Risorse";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,9 @@ const App = () => (
                 <Route path="/reparto-commerciale" element={<UfficioCommerciale />} />
                 <Route path="/computo-metrico" element={<ComputoMetrico />} />
                 <Route path="/reparto-amministrazione" element={<RepartoAmministrazione />} />
+                {/* New Features */}
+                <Route path="/timbrature" element={<Timbrature />} />
+                <Route path="/risorse" element={<Risorse />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
