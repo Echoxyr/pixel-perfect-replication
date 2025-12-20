@@ -332,71 +332,71 @@ export default function UfficioCommerciale() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                 <FileText className="w-5 h-5 text-primary" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.contrattiAttivi}</p>
-                <p className="text-xs text-muted-foreground">Contratti Attivi</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold truncate">{stats.contrattiAttivi}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Contratti Attivi</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
+              <div className="p-2 rounded-lg bg-emerald-500/10 flex-shrink-0">
                 <Euro className="w-5 h-5 text-emerald-500" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{formatCurrency(stats.valoreTotaleContratti)}</p>
-                <p className="text-xs text-muted-foreground">Valore Contratti</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xl font-bold truncate" title={formatCurrency(stats.valoreTotaleContratti)}>{formatCurrency(stats.valoreTotaleContratti)}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Valore Contratti</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
+              <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
                 <Receipt className="w-5 h-5 text-amber-500" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.preventiviInAttesa}</p>
-                <p className="text-xs text-muted-foreground">Preventivi in Attesa</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold truncate">{stats.preventiviInAttesa}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Preventivi in Attesa</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-sky-500/10">
+              <div className="p-2 rounded-lg bg-sky-500/10 flex-shrink-0">
                 <Truck className="w-5 h-5 text-sky-500" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.ordiniInCorso}</p>
-                <p className="text-xs text-muted-foreground">Ordini in Corso</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold truncate">{stats.ordiniInCorso}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Ordini in Corso</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
+        <Card className="border-2 border-primary/50 min-w-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10">
+              <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
                 <Building2 className="w-5 h-5 text-purple-500" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.fornitoriAttivi}</p>
-                <p className="text-xs text-muted-foreground">Fornitori Attivi</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-2xl font-bold truncate">{stats.fornitoriAttivi}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">Fornitori Attivi</p>
               </div>
             </div>
           </CardContent>
@@ -700,58 +700,87 @@ export default function UfficioCommerciale() {
         <TabsContent value="preventivi" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Preventivi Fornitori</CardTitle>
+              <CardTitle>Preventivi Ricevuti/Emessi</CardTitle>
               <div className="flex items-center gap-2">
                 <Dialog open={showNewPreventivo} onOpenChange={setShowNewPreventivo}>
                   <DialogTrigger asChild>
                     <Button className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Richiedi Preventivo
+                      <Upload className="w-4 h-4" />
+                      Carica Preventivo
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                      <DialogTitle>Richiesta Preventivo</DialogTitle>
+                      <DialogTitle>Carica Preventivo</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4 py-4">
                       <div className="space-y-2">
-                        <Label>Fornitore *</Label>
-                        <Select>
+                        <Label>Tipo *</Label>
+                        <Select defaultValue="ricevuto">
                           <SelectTrigger>
-                            <SelectValue placeholder="Seleziona fornitore" />
+                            <SelectValue placeholder="Seleziona tipo" />
                           </SelectTrigger>
                           <SelectContent>
-                            {fornitori.map(f => (
-                              <SelectItem key={f.id} value={f.id}>{f.ragioneSociale}</SelectItem>
-                            ))}
+                            <SelectItem value="ricevuto">Preventivo Ricevuto (da fornitore)</SelectItem>
+                            <SelectItem value="emesso">Preventivo Emesso (a cliente)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Data Scadenza</Label>
-                        <Input type="date" />
+                        <Label>Fornitore/Cliente *</Label>
+                        <Input placeholder="Nome fornitore o cliente" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Numero Preventivo</Label>
+                        <Input placeholder="PRV-2024-XXX" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Data</Label>
+                        <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
                       </div>
                       <div className="space-y-2 col-span-2">
                         <Label>Oggetto *</Label>
                         <Input placeholder="Oggetto del preventivo" />
                       </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Descrizione Richiesta</Label>
-                        <Textarea placeholder="Dettagli della richiesta..." rows={4} />
+                      <div className="space-y-2">
+                        <Label>Importo</Label>
+                        <Input type="number" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Scadenza</Label>
+                        <Input type="date" />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <Label>Allegati</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                          <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">Capitolato, specifiche tecniche, ecc.</p>
+                        <Label>Stato</Label>
+                        <Select defaultValue="ricevuto">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ricevuto">Ricevuto</SelectItem>
+                            <SelectItem value="approvato">Approvato</SelectItem>
+                            <SelectItem value="rifiutato">Rifiutato</SelectItem>
+                            <SelectItem value="scaduto">Scaduto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label>Allegato (PDF)</Label>
+                        <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                          <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" className="hidden" id="preventivo-upload" />
+                          <label htmlFor="preventivo-upload" className="cursor-pointer">
+                            <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">Carica il file del preventivo</p>
+                            <p className="text-xs text-muted-foreground mt-1">PDF, DOC, DOCX, XLS, XLSX</p>
+                          </label>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowNewPreventivo(false)}>Annulla</Button>
                       <Button className="gap-2">
-                        <Send className="w-4 h-4" />
-                        Invia Richiesta
+                        <FileCheck className="w-4 h-4" />
+                        Salva Preventivo
                       </Button>
                     </div>
                   </DialogContent>
@@ -764,7 +793,7 @@ export default function UfficioCommerciale() {
                   <TableRow>
                     <TableHead>Numero</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Fornitore</TableHead>
+                    <TableHead>Fornitore/Cliente</TableHead>
                     <TableHead>Oggetto</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Scadenza</TableHead>
@@ -778,7 +807,7 @@ export default function UfficioCommerciale() {
                       <TableCell className="font-medium">{preventivo.numero}</TableCell>
                       <TableCell>{formatDate(preventivo.data)}</TableCell>
                       <TableCell>{preventivo.fornitoreNome}</TableCell>
-                      <TableCell>{preventivo.oggetto}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{preventivo.oggetto}</TableCell>
                       <TableCell className="font-medium">{formatCurrency(preventivo.importo)}</TableCell>
                       <TableCell>{formatDate(preventivo.scadenza)}</TableCell>
                       <TableCell>
@@ -788,22 +817,21 @@ export default function UfficioCommerciale() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" title="Visualizza"><Eye className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" title="Scarica"><Download className="w-4 h-4" /></Button>
                           {preventivo.stato === 'ricevuto' && (
                             <>
-                              <Button variant="ghost" size="icon" className="text-emerald-500">
+                              <Button variant="ghost" size="icon" className="text-emerald-500" title="Approva">
                                 <CheckCircle className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="text-red-500">
+                              <Button variant="ghost" size="icon" className="text-red-500" title="Rifiuta">
                                 <AlertCircle className="w-4 h-4" />
                               </Button>
                             </>
                           )}
-                          {preventivo.stato === 'approvato' && (
-                            <Button variant="ghost" size="icon" className="text-primary">
-                              <ShoppingCart className="w-4 h-4" />
-                            </Button>
-                          )}
+                          <Button variant="ghost" size="icon" className="text-red-500" title="Elimina">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
