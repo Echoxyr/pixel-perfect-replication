@@ -431,7 +431,7 @@ export function Layout() {
             )}
           </div>
 
-          {/* Ufficio Commerciale Section */}
+          {/* Reparto Commerciale Section */}
           <div>
             {!sidebarCollapsed && (
               <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
@@ -441,16 +441,34 @@ export function Layout() {
             
             <div className="space-y-1">
               <NavItem 
-                to="/ufficio-commerciale" 
+                to="/reparto-commerciale" 
                 icon={Briefcase} 
-                label="Ufficio Commerciale" 
-                isActive={location.pathname === '/ufficio-commerciale'} 
+                label="Reparto Commerciale" 
+                isActive={location.pathname === '/reparto-commerciale'} 
               />
               <NavItem 
                 to="/computo-metrico" 
                 icon={Calculator} 
                 label="Computo Metrico" 
                 isActive={location.pathname === '/computo-metrico'} 
+              />
+            </div>
+          </div>
+
+          {/* Reparto Amministrazione Section */}
+          <div>
+            {!sidebarCollapsed && (
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                Amministrazione
+              </p>
+            )}
+            
+            <div className="space-y-1">
+              <NavItem 
+                to="/reparto-amministrazione" 
+                icon={FileText} 
+                label="Reparto Amministrazione" 
+                isActive={location.pathname === '/reparto-amministrazione'} 
               />
             </div>
           </div>

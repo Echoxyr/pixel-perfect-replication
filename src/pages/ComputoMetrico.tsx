@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,9 +55,13 @@ import {
   Printer,
   Sparkles,
   Wand2,
-  ListTree
+  ListTree,
+  FileArchive,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 // Types
 interface VoceComputo {
@@ -196,8 +200,11 @@ export default function ComputoMetrico() {
   ]);
 
   const [showNewVoce, setShowNewVoce] = useState(false);
-  const [showImportExcel, setShowImportExcel] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [importedFileName, setImportedFileName] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get current prezzario
   const currentPreziario = prezziariDisponibili.find(p => p.id === selectedPreziario);
@@ -275,6 +282,236 @@ export default function ComputoMetrico() {
     setVociComputo(prev => prev.filter(v => v.id !== id));
   };
 
+  // Import Primus file (.xpwe, .dcf)
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    setImportedFileName(file.name);
+
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      
+      if (extension === 'xpwe' || extension === 'dcf' || extension === 'xml') {
+        // Parse Primus/DCF XML file
+        const text = await file.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        
+        // Extract voci from XML
+        const vociElements = xmlDoc.querySelectorAll('Voce, voce, VOCE, Articolo, articolo');
+        const importedVoci: VoceComputo[] = [];
+        
+        vociElements.forEach((voceEl, index) => {
+          const codice = voceEl.querySelector('Codice, codice, CodicePreziario, CodArt')?.textContent || 
+                        voceEl.getAttribute('codice') || `IMP.${index + 1}`;
+          const descrizione = voceEl.querySelector('Descrizione, descrizione, Desc, DesArt')?.textContent || 
+                             voceEl.getAttribute('descrizione') || 'Voce importata';
+          const um = voceEl.querySelector('UM, um, UnitaMisura, Unita')?.textContent || 
+                    voceEl.getAttribute('um') || 'cad';
+          const quantita = parseFloat(voceEl.querySelector('Quantita, quantita, Qta')?.textContent || 
+                                      voceEl.getAttribute('quantita') || '1') || 1;
+          const prezzo = parseFloat(voceEl.querySelector('Prezzo, prezzo, PrezzoUnitario, PrzUnit')?.textContent || 
+                                   voceEl.getAttribute('prezzo') || '0') || 0;
+          
+          importedVoci.push({
+            id: `imp-${Date.now()}-${index}`,
+            codice: `IMP.${index + 1}`,
+            codicePreziario: codice,
+            descrizione: descrizione,
+            unitaMisura: um,
+            prezzoUnitario: prezzo,
+            quantita: quantita,
+            importo: prezzo * quantita,
+            categoriaId: 'cat1',
+            note: 'Importato da ' + file.name
+          });
+        });
+
+        if (importedVoci.length > 0) {
+          setVociComputo(prev => [...prev, ...importedVoci]);
+          toast({
+            title: "Importazione completata",
+            description: `Importate ${importedVoci.length} voci da ${file.name}`,
+          });
+        } else {
+          toast({
+            title: "Nessuna voce trovata",
+            description: "Il file non contiene voci riconoscibili",
+            variant: "destructive"
+          });
+        }
+      } else if (extension === 'xlsx' || extension === 'xls') {
+        toast({
+          title: "File Excel rilevato",
+          description: "Per i file Excel utilizzare l'Assistente AI per l'analisi automatica",
+        });
+      } else {
+        toast({
+          title: "Formato non supportato",
+          description: "Formati supportati: .xpwe, .dcf, .xml",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Errore importazione:', error);
+      toast({
+        title: "Errore importazione",
+        description: "Impossibile leggere il file. Verificare il formato.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+      setShowImportDialog(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Export to DCF format (Primus compatible)
+  const exportToDCF = () => {
+    const dcfContent = `<?xml version="1.0" encoding="UTF-8"?>
+<DCF version="1.0">
+  <Intestazione>
+    <Titolo>Computo Metrico</Titolo>
+    <Data>${new Date().toISOString().split('T')[0]}</Data>
+    <Prezzario>${currentPreziario?.nome || 'Non specificato'}</Prezzario>
+    <Oggetto>Computo Metrico Estimativo</Oggetto>
+  </Intestazione>
+  <Corpo>
+    <Categorie>
+${categorie.filter(c => !c.parentId).map(cat => {
+  const catVoci = vociComputo.filter(v => {
+    const vocecat = categorie.find(c => c.id === v.categoriaId);
+    return vocecat?.parentId === cat.id || vocecat?.id === cat.id;
+  });
+  return `      <Categoria codice="${cat.codice}" nome="${cat.nome}">
+${catVoci.map(voce => `        <Articolo>
+          <CodArt>${voce.codicePreziario}</CodArt>
+          <DesArt><![CDATA[${voce.descrizione}]]></DesArt>
+          <Unita>${voce.unitaMisura}</Unita>
+          <Qta>${voce.quantita}</Qta>
+          <PrzUnit>${voce.prezzoUnitario.toFixed(2)}</PrzUnit>
+          <Importo>${voce.importo.toFixed(2)}</Importo>
+        </Articolo>`).join('\n')}
+      </Categoria>`;
+}).join('\n')}
+    </Categorie>
+    <Riepilogo>
+      <TotaleImponibile>${totali.totale.toFixed(2)}</TotaleImponibile>
+    </Riepilogo>
+  </Corpo>
+</DCF>`;
+
+    const blob = new Blob([dcfContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'computo_metrico.dcf';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Esportazione DCF completata",
+      description: "File DCF compatibile con Primus scaricato",
+    });
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    // Create a printable HTML content
+    const printContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Computo Metrico</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; font-size: 10pt; }
+    h1 { font-size: 16pt; margin-bottom: 5px; }
+    h2 { font-size: 12pt; color: #333; margin-top: 20px; border-bottom: 1px solid #333; }
+    .info { color: #666; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    th { background-color: #f5f5f5; font-weight: bold; }
+    .right { text-align: right; }
+    .total-row { background-color: #e8f4ff; font-weight: bold; }
+    .grand-total { background-color: #1e40af; color: white; font-size: 12pt; }
+    @media print { 
+      .no-print { display: none; }
+      body { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>COMPUTO METRICO ESTIMATIVO</h1>
+  <div class="info">
+    <p><strong>Data:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+    <p><strong>Prezzario:</strong> ${currentPreziario?.nome || 'Non specificato'}</p>
+  </div>
+  
+  ${categorie.filter(c => !c.parentId).map(cat => {
+    const catVoci = vociComputo.filter(v => {
+      const vocecat = categorie.find(c => c.id === v.categoriaId);
+      return vocecat?.parentId === cat.id || vocecat?.id === cat.id;
+    });
+    if (catVoci.length === 0) return '';
+    
+    return `
+    <h2>${cat.codice} - ${cat.nome}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 15%">Codice</th>
+          <th>Descrizione</th>
+          <th style="width: 8%">U.M.</th>
+          <th style="width: 10%" class="right">Quantità</th>
+          <th style="width: 12%" class="right">Prezzo Unit.</th>
+          <th style="width: 12%" class="right">Importo</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${catVoci.map(voce => `
+        <tr>
+          <td>${voce.codicePreziario}</td>
+          <td>${voce.descrizione}</td>
+          <td>${voce.unitaMisura}</td>
+          <td class="right">${voce.quantita.toLocaleString('it-IT')}</td>
+          <td class="right">${formatCurrency(voce.prezzoUnitario)}</td>
+          <td class="right">${formatCurrency(voce.importo)}</td>
+        </tr>
+        `).join('')}
+        <tr class="total-row">
+          <td colspan="5" class="right">Subtotale ${cat.nome}:</td>
+          <td class="right">${formatCurrency(totali.byCategoria[cat.id] || 0)}</td>
+        </tr>
+      </tbody>
+    </table>
+    `;
+  }).join('')}
+  
+  <table style="margin-top: 30px;">
+    <tr class="grand-total">
+      <td colspan="5" class="right" style="padding: 15px;">TOTALE COMPLESSIVO:</td>
+      <td class="right" style="padding: 15px; width: 15%;">${formatCurrency(totali.totale)}</td>
+    </tr>
+  </table>
+  
+  <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+    
+    toast({
+      title: "Stampa PDF avviata",
+      description: "Seleziona 'Salva come PDF' nella finestra di stampa",
+    });
+  };
+
   // Export functions
   const exportToExcel = () => {
     // Generate Excel-compatible content
@@ -305,12 +542,13 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
     a.href = url;
     a.download = 'computo_metrico.txt';
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const exportToPrimus = () => {
-    // Generate Primus-compatible XML
+    // Generate Primus-compatible XPWE XML
     const primusXML = `<?xml version="1.0" encoding="UTF-8"?>
-<PrimusExport>
+<PrimusExport version="2.0">
   <Testata>
     <Titolo>Computo Metrico</Titolo>
     <Data>${new Date().toISOString().split('T')[0]}</Data>
@@ -324,7 +562,7 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
         ${vociComputo.filter(v => v.categoriaId === subcat.id).map(voce => `
         <Voce>
           <CodicePreziario>${voce.codicePreziario}</CodicePreziario>
-          <Descrizione>${voce.descrizione}</Descrizione>
+          <Descrizione><![CDATA[${voce.descrizione}]]></Descrizione>
           <UM>${voce.unitaMisura}</UM>
           <Quantita>${voce.quantita}</Quantita>
           <PrezzoUnitario>${voce.prezzoUnitario}</PrezzoUnitario>
@@ -343,8 +581,14 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'computo_metrico_primus.xml';
+    a.download = 'computo_metrico.xpwe';
     a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Esportazione Primus completata",
+      description: "File XPWE scaricato",
+    });
   };
 
   const renderCategorieTree = (parentId: string | null = null, level: number = 0): JSX.Element[] => {
@@ -564,17 +808,59 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                   </DialogContent>
                 </Dialog>
 
+                <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <FileUp className="w-4 h-4" />
+                      Importa Primus
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <FileArchive className="w-5 h-5 text-primary" />
+                        Importa file Primus
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <p className="text-sm text-muted-foreground">
+                        Carica un file Primus (.xpwe, .dcf) o XML per importare le voci del computo.
+                      </p>
+                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Formati supportati: .xpwe, .dcf, .xml
+                        </p>
+                        <Input 
+                          ref={fileInputRef}
+                          type="file" 
+                          accept=".xpwe,.dcf,.xml"
+                          onChange={handleFileImport}
+                          disabled={isProcessing}
+                        />
+                      </div>
+                      {isProcessing && (
+                        <p className="text-sm text-center text-primary">Elaborazione in corso...</p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <Button variant="outline" className="gap-2" onClick={exportToExcel}>
                   <FileDown className="w-4 h-4" />
                   Excel
                 </Button>
                 <Button variant="outline" className="gap-2" onClick={exportToPrimus}>
                   <FileDown className="w-4 h-4" />
-                  Primus
+                  XPWE
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" onClick={exportToDCF}>
+                  <FileDown className="w-4 h-4" />
+                  DCF
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={exportToPDF}>
                   <Printer className="w-4 h-4" />
-                  Stampa
+                  PDF
                 </Button>
               </div>
             </div>

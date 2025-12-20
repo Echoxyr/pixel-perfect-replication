@@ -31,6 +31,7 @@ import EnvironmentalISO from "./pages/EnvironmentalISO";
 import BusinessIntelligence from "./pages/BusinessIntelligence";
 import UfficioCommerciale from "./pages/UfficioCommerciale";
 import ComputoMetrico from "./pages/ComputoMetrico";
+import RepartoAmministrazione from "./pages/RepartoAmministrazione";
 
 const queryClient = new QueryClient();
 
@@ -63,8 +64,9 @@ const App = () => (
               <Route path="/compliance/sicurezza" element={<SafetyDLgs81 />} />
               <Route path="/compliance/ambiente" element={<EnvironmentalISO />} />
               <Route path="/compliance/bi" element={<BusinessIntelligence />} />
-              <Route path="/commerciale" element={<UfficioCommerciale />} />
+              <Route path="/reparto-commerciale" element={<UfficioCommerciale />} />
               <Route path="/computo-metrico" element={<ComputoMetrico />} />
+              <Route path="/reparto-amministrazione" element={<RepartoAmministrazione />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
