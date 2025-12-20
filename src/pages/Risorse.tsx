@@ -117,7 +117,7 @@ export default function Risorse() {
 
   // Create risorsa
   const createRisorsaMutation = useMutation({
-    mutationFn: async (risorsa: Partial<Risorsa>) => {
+    mutationFn: async (risorsa: { nome: string; tipo: string; descrizione?: string | null; targa?: string | null; matricola?: string | null; stato: string }) => {
       const { error } = await supabase.from('risorse').insert([risorsa]);
       if (error) throw error;
     },
@@ -131,7 +131,7 @@ export default function Risorse() {
 
   // Create prenotazione
   const createPrenotazioneMutation = useMutation({
-    mutationFn: async (prenotazione: Partial<Prenotazione>) => {
+    mutationFn: async (prenotazione: { risorsa_id: string; data_inizio: string; data_fine: string; cantiere_id?: string | null; cantiere_nome?: string | null; note?: string | null; stato: string }) => {
       const { error } = await supabase.from('prenotazioni_risorse').insert([prenotazione]);
       if (error) throw error;
     },

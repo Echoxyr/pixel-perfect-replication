@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EgestLogo } from './EgestLogo';
+import { NotificationCenter } from './NotificationCenter';
+import { GlobalSearch } from './GlobalSearch';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -39,7 +41,9 @@ import {
   GraduationCap,
   Stethoscope,
   Briefcase,
-  Calculator
+  Calculator,
+  Truck,
+  ClipboardList
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -469,6 +473,30 @@ export function Layout() {
                 label="Reparto Amministrazione" 
                 isActive={location.pathname === '/reparto-amministrazione'} 
               />
+              <NavItem 
+                to="/timbrature" 
+                icon={ClipboardList} 
+                label="Timbrature" 
+                isActive={location.pathname === '/timbrature'} 
+              />
+            </div>
+          </div>
+
+          {/* Logistica Section */}
+          <div>
+            {!sidebarCollapsed && (
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                Logistica
+              </p>
+            )}
+            
+            <div className="space-y-1">
+              <NavItem 
+                to="/risorse" 
+                icon={Truck} 
+                label="Risorse & Mezzi" 
+                isActive={location.pathname === '/risorse'} 
+              />
             </div>
           </div>
         </nav>
@@ -726,69 +754,8 @@ export function Layout() {
               </Tooltip>
             </TooltipProvider>
 
-            {/* Notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
-                  {totalAlerts > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                      {totalAlerts}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Notifiche</h3>
-                    {totalAlerts > 0 && (
-                      <Badge variant="destructive">{totalAlerts} nuove</Badge>
-                    )}
-                  </div>
-                  {totalAlerts > 0 ? (
-                    <div className="space-y-2">
-                      {hseStats.documentiScaduti > 0 && (
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/15 transition-colors cursor-pointer">
-                          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Documenti scaduti</p>
-                            <p className="text-xs text-muted-foreground">{hseStats.documentiScaduti} documenti richiedono attenzione</p>
-                          </div>
-                        </div>
-                      )}
-                      {hseStats.formazioniScadute > 0 && (
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 hover:bg-red-500/15 transition-colors cursor-pointer">
-                          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Formazioni scadute</p>
-                            <p className="text-xs text-muted-foreground">{hseStats.formazioniScadute} formazioni da rinnovare</p>
-                          </div>
-                        </div>
-                      )}
-                      {hseStats.visiteMedicheScadute > 0 && (
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/15 transition-colors cursor-pointer">
-                          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Visite mediche scadute</p>
-                            <p className="text-xs text-muted-foreground">{hseStats.visiteMedicheScadute} visite da programmare</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Tutto in ordine!</p>
-                    </div>
-                  )}
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/hse')} className="cursor-pointer justify-center">
-                  Vai alla Dashboard HSE
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Notifications - New Component */}
+            <NotificationCenter />
 
             {/* User Menu */}
             <DropdownMenu>
@@ -825,143 +792,8 @@ export function Layout() {
         </main>
       </div>
 
-      {/* Global Search Dialog */}
-      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Search className="w-5 h-5" />
-              Ricerca Globale
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Cerca cantieri, imprese, lavoratori, task..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-12 text-base"
-              autoFocus
-            />
-            {searchResults && (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto scrollbar-thin">
-                {searchResults.cantieri.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                      Cantieri
-                    </p>
-                    <div className="space-y-1">
-                      {searchResults.cantieri.map(c => (
-                        <button
-                          key={c.id}
-                          onClick={() => handleSearchSelect('cantiere', c.id)}
-                          className="w-full text-left p-3 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Construction className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{c.nome}</p>
-                            <p className="text-xs text-muted-foreground">{c.codiceCommessa}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {searchResults.imprese.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                      Imprese
-                    </p>
-                    <div className="space-y-1">
-                      {searchResults.imprese.map(i => (
-                        <button
-                          key={i.id}
-                          onClick={() => handleSearchSelect('impresa', i.id)}
-                          className="w-full text-left p-3 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                            <Building2 className="w-5 h-5 text-emerald-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{i.ragioneSociale}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{i.tipo}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {searchResults.lavoratori.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                      Lavoratori
-                    </p>
-                    <div className="space-y-1">
-                      {searchResults.lavoratori.map(l => (
-                        <button
-                          key={l.id}
-                          onClick={() => handleSearchSelect('lavoratore', l.id)}
-                          className="w-full text-left p-3 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                            <HardHat className="w-5 h-5 text-amber-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{l.cognome} {l.nome}</p>
-                            <p className="text-xs text-muted-foreground">{l.mansione}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {searchResults.tasks.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                      Task
-                    </p>
-                    <div className="space-y-1">
-                      {searchResults.tasks.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => handleSearchSelect('task', t.id)}
-                          className="w-full text-left p-3 rounded-lg hover:bg-muted flex items-center gap-3 transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-blue-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{t.title}</p>
-                            <p className="text-xs text-muted-foreground">{t.status}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {searchQuery && 
-                  searchResults.cantieri.length === 0 && 
-                  searchResults.imprese.length === 0 && 
-                  searchResults.lavoratori.length === 0 && 
-                  searchResults.tasks.length === 0 && (
-                  <div className="text-center py-8">
-                    <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Nessun risultato per "{searchQuery}"
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-            {!searchQuery && (
-              <div className="text-center py-6 text-sm text-muted-foreground">
-                <p>Digita per cercare in cantieri, imprese, lavoratori e task</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Global Search - New Component */}
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   );
 }
