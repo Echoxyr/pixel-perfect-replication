@@ -6,8 +6,16 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+// TODO: Impostare su false quando il sito sarà pronto per la produzione
+const DEVELOPMENT_MODE = true;
+
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+
+  // Bypass autenticazione in modalità sviluppo
+  if (DEVELOPMENT_MODE) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
