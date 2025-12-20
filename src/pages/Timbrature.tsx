@@ -481,7 +481,7 @@ export default function Timbrature() {
                       <SelectValue placeholder="Nessuna" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nessuna</SelectItem>
+                      <SelectItem value="nessuna">Nessuna</SelectItem>
                       {NON_CONFORMITA.map(nc => (
                         <SelectItem key={nc.value} value={nc.value}>
                           {nc.label}
