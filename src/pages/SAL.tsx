@@ -51,7 +51,8 @@ import {
   Clock,
   AlertCircle,
   Upload,
-  Download
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -144,6 +145,118 @@ export default function SALPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Previsioni');
     XLSX.writeFile(wb, 'template_previsioni_sal.xlsx');
+  };
+
+  // Export SAL as professional Excel with letterhead
+  const exportSALDocument = (salItem: SAL) => {
+    const cantiere = cantieri.find(c => c.id === salItem.cantiereId);
+    const contratto = contratti.find(c => c.cantiereId === salItem.cantiereId && c.tipoLavorazione === salItem.tipoLavorazione);
+    const impresa = contratto ? imprese.find(i => i.id === contratto.impresaId) : undefined;
+    
+    // Company header info
+    const companyName = 'GEST-E S.r.l.';
+    const companyAddress = 'Via Example 123, 35100 Padova (PD)';
+    const companyVat = 'P.IVA: IT01234567890';
+    const companyPhone = 'Tel: +39 049 1234567';
+    const companyEmail = 'info@gest-e.it';
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Create data for the SAL sheet
+    const salData: (string | number)[][] = [
+      // Header section
+      [companyName],
+      [companyAddress],
+      [`${companyVat} | ${companyPhone}`],
+      [companyEmail],
+      [],
+      ['STATO AVANZAMENTO LAVORI (SAL)'],
+      [],
+      // SAL Info
+      ['N. SAL:', salItem.numeroSAL, '', 'Data:', new Date().toLocaleDateString('it-IT')],
+      ['Periodo:', salItem.mese, '', 'Stato:', STATO_SAL_LABELS[salItem.stato]],
+      [],
+      // Cantiere info
+      ['DATI COMMESSA'],
+      ['Codice Commessa:', cantiere?.codiceCommessa || '-'],
+      ['Denominazione:', cantiere?.nome || '-'],
+      ['Indirizzo:', cantiere?.indirizzo || '-'],
+      ['Committente:', cantiere?.committente || '-'],
+      [],
+      // Impresa info
+      ['DATI IMPRESA ESECUTRICE'],
+      ['Ragione Sociale:', impresa?.ragioneSociale || '-'],
+      ['Tipo Lavorazione:', TIPO_LAVORAZIONE_LABELS[salItem.tipoLavorazione]],
+      [],
+      // Contratto info
+      ['DATI CONTRATTUALI'],
+      ['Importo Contratto:', formatCurrency(salItem.importoContratto)],
+      ['Importo Varianti:', formatCurrency(contratto?.importoVarianti || 0)],
+      ['Importo Totale:', formatCurrency(salItem.importoContratto + (contratto?.importoVarianti || 0))],
+      [],
+      // SAL details
+      ['DETTAGLIO STATO AVANZAMENTO'],
+      ['Descrizione', 'Importo'],
+      ['Lavori a tutto il mese precedente:', formatCurrency(salItem.importoLavoriPrecedenti)],
+      ['Lavori eseguiti nel periodo:', formatCurrency(salItem.importoLavoriPeriodo)],
+      ['Totale lavori eseguiti a oggi:', formatCurrency(salItem.importoLavoriEseguiti)],
+      ['Lavori ancora da eseguire:', formatCurrency(salItem.importoContratto - salItem.importoLavoriEseguiti)],
+      [],
+      ['Percentuale Avanzamento:', `${salItem.percentualeAvanzamento.toFixed(2)}%`],
+      [],
+      // Ritenute e calcoli
+      ['CALCOLO IMPORTI NETTI'],
+      ['Ritenute contratto (%):', `${contratto?.ritenute || 5}%`],
+      ['Importo ritenuta:', formatCurrency(salItem.importoLavoriPeriodo * ((contratto?.ritenute || 5) / 100))],
+      ['Importo netto a fatturare:', formatCurrency(salItem.importoLavoriPeriodo * (1 - ((contratto?.ritenute || 5) / 100)))],
+      [],
+      // Notes
+      ['NOTE'],
+      [salItem.note || 'Nessuna nota'],
+      [],
+      [],
+      // Firme
+      ['FIRME PER APPROVAZIONE'],
+      ['', '', '', ''],
+      ['Direttore Lavori:', '________________', '', 'Impresa Esecutrice:', '________________'],
+      [],
+      ['Data:', '________________', '', 'Data:', '________________'],
+      [],
+      [],
+      [`Documento generato da GEST-E il ${new Date().toLocaleString('it-IT')}`]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(salData);
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 30 },
+      { wch: 25 },
+      { wch: 5 },
+      { wch: 20 },
+      { wch: 25 }
+    ];
+
+    // Merge cells for headers
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Company name
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Address
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, // VAT
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }, // Email
+      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } }, // Title
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'SAL');
+
+    // Create filename
+    const filename = `SAL_${salItem.numeroSAL}_${cantiere?.codiceCommessa || 'CANTIERE'}_${salItem.mese}.xlsx`;
+    
+    XLSX.writeFile(wb, filename);
+    toast({ 
+      title: 'SAL Esportato', 
+      description: `File ${filename} scaricato con successo` 
+    });
   };
 
   const handleCreatePrevisione = () => {
@@ -564,6 +677,15 @@ export default function SALPage() {
                       <p className="font-medium text-emerald-500">{formatCurrency(s.importoLavoriEseguiti)}</p>
                     </div>
                     <div className="flex-1" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => exportSALDocument(s)}
+                      className="gap-1"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      Esporta
+                    </Button>
                     <Select 
                       value={s.stato} 
                       onValueChange={(v) => handleUpdateSALStatus(s.id, v as StatoSAL)}

@@ -1012,7 +1012,7 @@ export default function SafetyDLgs81() {
         </DialogContent>
       </Dialog>
 
-      {/* Corsi Figura Dialog */}
+      {/* Corsi Figura Dialog - STILE MEDICO COMPETENTE */}
       <Dialog open={showCorsiFiguraDialog} onOpenChange={setShowCorsiFiguraDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -1020,13 +1020,68 @@ export default function SafetyDLgs81() {
               Corsi e Attestati - {selectedFigura?.nome} {selectedFigura?.cognome} ({selectedFigura?.tipo.toUpperCase()})
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
-            {/* Add New Corso */}
-            <div className="p-4 border border-border rounded-lg bg-muted/30">
-              <h3 className="font-medium mb-4">Aggiungi Attestato</h3>
+          <div className="space-y-6">
+            {/* Requisiti Obbligatori - STILE MEDICO COMPETENTE */}
+            <div>
+              <h4 className="font-medium mb-3">Requisiti Obbligatori</h4>
+              <div className="space-y-2">
+                {selectedFigura && getCorsiForType(selectedFigura.tipo).map(corso => {
+                  const completato = selectedFigura.corsiCompletati.find(c => c.corsoId === corso.id);
+                  const isExpired = completato?.dataScadenza && daysUntil(completato.dataScadenza) < 0;
+                  const isExpiring = completato?.dataScadenza && daysUntil(completato.dataScadenza) >= 0 && daysUntil(completato.dataScadenza) <= 30;
+                  
+                  return (
+                    <div key={corso.id} className={cn(
+                      'p-3 rounded-lg border flex items-center justify-between',
+                      completato && !isExpired && !isExpiring ? 'border-emerald-500/30 bg-emerald-500/5' : 
+                      completato && isExpired ? 'border-red-500/30 bg-red-500/5' :
+                      completato && isExpiring ? 'border-amber-500/30 bg-amber-500/5' :
+                      'border-amber-500/30 bg-amber-500/5'
+                    )}>
+                      <div className="flex items-center gap-3">
+                        {completato && !isExpired && !isExpiring ? (
+                          <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        ) : completato && isExpired ? (
+                          <XCircle className="w-5 h-5 text-red-500" />
+                        ) : (
+                          <AlertTriangle className="w-5 h-5 text-amber-500" />
+                        )}
+                        <div>
+                          <p className="font-medium text-sm">{corso.nome}</p>
+                          {completato && (
+                            <p className="text-xs text-muted-foreground">
+                              Conseguito il {formatDateFull(completato.dataConseguimento)}
+                              {completato.ente && ` presso ${completato.ente}`}
+                            </p>
+                          )}
+                          {corso.scadenza && (
+                            <p className="text-xs text-muted-foreground">Validita: {corso.scadenza}</p>
+                          )}
+                          {completato && isExpired && (
+                            <p className="text-xs text-red-500 font-medium">SCADUTO - Rinnovo necessario</p>
+                          )}
+                          {completato && isExpiring && (
+                            <p className="text-xs text-amber-500 font-medium">In scadenza tra {daysUntil(completato.dataScadenza!)} giorni</p>
+                          )}
+                        </div>
+                      </div>
+                      {completato && (
+                        <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteCorso(selectedFigura.id, completato.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Aggiungi Corso/Attestato - STILE MEDICO COMPETENTE */}
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Aggiungi Corso/Attestato</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Corso *</Label>
+                  <Label>Tipo Corso *</Label>
                   <Select value={newCorso.corsoId} onValueChange={(v) => setNewCorso({...newCorso, corsoId: v})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleziona corso" />
@@ -1039,19 +1094,19 @@ export default function SafetyDLgs81() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Ente Formatore</Label>
-                  <Input 
-                    value={newCorso.ente}
-                    onChange={(e) => setNewCorso({...newCorso, ente: e.target.value})}
-                    placeholder="Nome ente"
-                  />
-                </div>
-                <div>
                   <Label>Data Conseguimento *</Label>
                   <Input 
                     type="date"
                     value={newCorso.dataConseguimento}
                     onChange={(e) => setNewCorso({...newCorso, dataConseguimento: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Ente Formatore</Label>
+                  <Input 
+                    value={newCorso.ente}
+                    onChange={(e) => setNewCorso({...newCorso, ente: e.target.value})}
+                    placeholder="Universita, Ordine..."
                   />
                 </div>
                 <div>
@@ -1065,58 +1120,10 @@ export default function SafetyDLgs81() {
               </div>
               <Button onClick={handleAddCorso} className="mt-4 gap-2">
                 <Plus className="w-4 h-4" />
-                Aggiungi Attestato
+                Aggiungi Corso
               </Button>
             </div>
 
-            {/* Lista Corsi */}
-            <div>
-              <h3 className="font-medium mb-4">Attestati Registrati</h3>
-              {selectedFigura?.corsiCompletati.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Nessun attestato registrato</p>
-              ) : (
-                <div className="space-y-2">
-                  {selectedFigura?.corsiCompletati.map(corso => {
-                    const isExpired = corso.dataScadenza && daysUntil(corso.dataScadenza) < 0;
-                    const isExpiring = corso.dataScadenza && daysUntil(corso.dataScadenza) >= 0 && daysUntil(corso.dataScadenza) <= 30;
-                    
-                    return (
-                      <div key={corso.id} className={cn(
-                        'p-3 rounded-lg flex items-center justify-between',
-                        isExpired ? 'bg-red-500/10 border border-red-500/30' :
-                        isExpiring ? 'bg-amber-500/10 border border-amber-500/30' :
-                        'bg-muted/30 border border-border'
-                      )}>
-                        <div>
-                          <p className="font-medium">{getCorsoNome(selectedFigura.tipo, corso.corsoId)}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Conseguito: {formatDateFull(corso.dataConseguimento)}
-                            {corso.ente && ` | Ente: ${corso.ente}`}
-                          </p>
-                          {corso.dataScadenza && (
-                            <p className={cn(
-                              'text-sm',
-                              isExpired ? 'text-red-500' : isExpiring ? 'text-amber-500' : 'text-muted-foreground'
-                            )}>
-                              Scadenza: {formatDateFull(corso.dataScadenza)}
-                              {isExpired && ' (SCADUTO)'}
-                              {isExpiring && ` (${daysUntil(corso.dataScadenza)} giorni)`}
-                            </p>
-                          )}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDeleteCorso(selectedFigura.id, corso.id)}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCorsiFiguraDialog(false)}>Chiudi</Button>
@@ -1125,6 +1132,75 @@ export default function SafetyDLgs81() {
       </Dialog>
 
       {/* Documenti Figura Dialog */}
+      <Dialog open={showDocumentiFiguraDialog} onOpenChange={setShowDocumentiFiguraDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Documenti - {selectedFigura?.nome} {selectedFigura?.cognome} ({selectedFigura?.tipo.toUpperCase()})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Upload */}
+            <div className="p-4 border border-dashed border-border rounded-lg text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              />
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mb-2">
+                Carica documenti (PDF, Word, Immagini)
+              </p>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                Seleziona File
+              </Button>
+            </div>
+
+            {/* Lista Documenti */}
+            <div>
+              <h3 className="font-medium mb-4">Documenti Caricati</h3>
+              {selectedFigura?.documentiUrl.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nessun documento caricato</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedFigura?.documentiUrl.map(doc => (
+                    <div key={doc.id} className="p-3 rounded-lg bg-muted/30 border border-border flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="font-medium">{doc.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Caricato: {formatDateFull(doc.dataCaricamento)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={doc.url} download={doc.nome}>
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteDocumento(selectedFigura.id, doc.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDocumentiFiguraDialog(false)}>Chiudi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={showDocumentiFiguraDialog} onOpenChange={setShowDocumentiFiguraDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
