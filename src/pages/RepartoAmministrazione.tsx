@@ -188,8 +188,6 @@ export default function RepartoAmministrazione() {
   // Create fattura mutation
   const createFattura = useMutation({
     mutationFn: async (data: typeof newFattura) => {
-      const iva = data.imponibile * (data.aliquota_iva / 100);
-      const totale = data.imponibile + iva;
       const { error } = await supabase.from('fatture').insert({
         tipo: data.tipo,
         numero: data.numero || undefined,
@@ -198,9 +196,7 @@ export default function RepartoAmministrazione() {
         cliente_fornitore: data.cliente_fornitore,
         descrizione: data.descrizione,
         imponibile: data.imponibile,
-        aliquota_iva: data.aliquota_iva,
-        iva,
-        totale
+        aliquota_iva: data.aliquota_iva
       });
       if (error) throw error;
     },
