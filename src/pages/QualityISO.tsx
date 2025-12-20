@@ -44,7 +44,14 @@ import {
   Search,
   BarChart3,
   Trash2,
-  Edit
+  Edit,
+  Download,
+  FileSignature,
+  Users,
+  HardHat,
+  UserCheck,
+  Shield,
+  Building2
 } from 'lucide-react';
 
 export default function QualityISO() {
@@ -440,13 +447,153 @@ export default function QualityISO() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="nc" className="w-full">
+      <Tabs defaultValue="moduli" className="w-full">
         <TabsList>
+          <TabsTrigger value="moduli">Moduli ISO 9001</TabsTrigger>
           <TabsTrigger value="nc">Non Conformità</TabsTrigger>
           <TabsTrigger value="capa">CAPA</TabsTrigger>
           <TabsTrigger value="audit">Audit Interni</TabsTrigger>
           <TabsTrigger value="documenti">Documenti Controllati</TabsTrigger>
         </TabsList>
+
+        {/* Moduli ISO 9001 Tab */}
+        <TabsContent value="moduli" className="mt-6">
+          <div className="space-y-6">
+            {/* Nomine Section */}
+            <div>
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-primary" />
+                Nomine e Incarichi
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'nomina_preposto', nome: 'Nomina Preposto', desc: 'Nomina del Preposto alla vigilanza e controllo (Art. 19 D.Lgs 81/08)', icon: HardHat },
+                  { id: 'nomina_raq', nome: 'Nomina RAQ', desc: 'Nomina Responsabile Assicurazione Qualità', icon: Award },
+                  { id: 'nomina_rsgq', nome: 'Nomina RSGQ', desc: 'Nomina Responsabile Sistema Gestione Qualità', icon: Shield },
+                  { id: 'nomina_resp_laboratorio', nome: 'Responsabile Laboratorio', desc: 'Nomina Responsabile Prove e Controlli', icon: ClipboardCheck },
+                  { id: 'nomina_resp_magazzino', nome: 'Responsabile Magazzino', desc: 'Nomina Responsabile Gestione Magazzino', icon: Building2 },
+                  { id: 'nomina_auditor', nome: 'Nomina Auditor Interni', desc: 'Qualifica e nomina degli auditor interni', icon: Users },
+                ].map(modulo => (
+                  <div key={modulo.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <modulo.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{modulo.nome}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{modulo.desc}</p>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1">
+                          <Download className="w-3 h-3" />
+                          Genera
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dichiarazioni Section */}
+            <div>
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <FileSignature className="w-5 h-5 text-primary" />
+                Dichiarazioni e Attestazioni
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'dich_conformita', nome: 'Dichiarazione di Conformità', desc: 'Dichiarazione di conformità prodotto/servizio', icon: CheckCircle },
+                  { id: 'dich_impianti', nome: 'Dichiarazione Conformità Impianti', desc: 'Dichiarazione di conformità impianti (DM 37/08)', icon: Shield },
+                  { id: 'dich_materiali', nome: 'Dichiarazione Materiali', desc: 'Attestazione provenienza e qualità materiali', icon: Award },
+                  { id: 'dich_subappalto', nome: 'Dichiarazione Subappalto', desc: 'Dichiarazione attività in subappalto', icon: Building2 },
+                  { id: 'dich_competenze', nome: 'Matrice Competenze', desc: 'Dichiarazione competenze personale', icon: Users },
+                ].map(modulo => (
+                  <div key={modulo.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 group-hover:bg-emerald-500/20 transition-colors">
+                        <modulo.icon className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{modulo.nome}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{modulo.desc}</p>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1">
+                          <Download className="w-3 h-3" />
+                          Genera
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Verbali Section */}
+            <div>
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-primary" />
+                Verbali e Report
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'verbale_sopralluogo', nome: 'Verbale di Sopralluogo', desc: 'Verbale ispezione e verifica cantiere/stabilimento', icon: ClipboardCheck },
+                  { id: 'verbale_riesame', nome: 'Verbale Riesame Direzione', desc: 'Verbale riesame periodico della direzione', icon: BarChart3 },
+                  { id: 'verbale_consegna', nome: 'Verbale Consegna Lavori', desc: 'Verbale di consegna lavori al committente', icon: FileText },
+                  { id: 'verbale_collaudo', nome: 'Verbale di Collaudo', desc: 'Verbale collaudo finale opere/prodotti', icon: CheckCircle },
+                  { id: 'verbale_formazione', nome: 'Verbale Formazione', desc: 'Registro partecipazione corsi formativi', icon: Users },
+                  { id: 'report_fornitore', nome: 'Report Valutazione Fornitore', desc: 'Scheda valutazione e qualifica fornitori', icon: Building2 },
+                ].map(modulo => (
+                  <div key={modulo.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+                        <modulo.icon className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{modulo.nome}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{modulo.desc}</p>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1">
+                          <Download className="w-3 h-3" />
+                          Genera
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Registri Section */}
+            <div>
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Registri e Schede
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { id: 'registro_nc', nome: 'Registro Non Conformità', desc: 'Elenco e tracking delle non conformità', icon: AlertTriangle },
+                  { id: 'registro_reclami', nome: 'Registro Reclami Cliente', desc: 'Gestione reclami e feedback clienti', icon: Users },
+                  { id: 'registro_strumenti', nome: 'Registro Taratura Strumenti', desc: 'Schede taratura e calibrazione strumenti', icon: ClipboardCheck },
+                  { id: 'scheda_controllo', nome: 'Scheda Controllo Qualità', desc: 'Check-list controllo qualità prodotto/processo', icon: CheckCircle },
+                  { id: 'piano_controllo', nome: 'Piano di Controllo', desc: 'Piano controlli in accettazione e produzione', icon: BarChart3 },
+                ].map(modulo => (
+                  <div key={modulo.id} className="p-4 rounded-xl border border-border bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                        <modulo.icon className="w-5 h-5 text-amber-500" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{modulo.nome}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{modulo.desc}</p>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1">
+                          <Download className="w-3 h-3" />
+                          Genera
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
 
         {/* NC Tab */}
         <TabsContent value="nc" className="mt-6">
