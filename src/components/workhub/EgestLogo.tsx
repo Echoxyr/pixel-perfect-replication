@@ -8,9 +8,9 @@ interface EgestLogoProps {
 
 export function EgestLogo({ size = 'md', showText = true, className }: EgestLogoProps) {
   const sizes = {
-    sm: { text: 'text-base', tagline: 'text-[8px]' },
-    md: { text: 'text-xl', tagline: 'text-[9px]' },
-    lg: { text: 'text-3xl', tagline: 'text-xs' }
+    sm: { text: 'text-lg', tagline: 'text-[8px]' },
+    md: { text: 'text-2xl', tagline: 'text-[9px]' },
+    lg: { text: 'text-4xl', tagline: 'text-xs' }
   };
 
   const { text, tagline } = sizes[size];
@@ -18,12 +18,12 @@ export function EgestLogo({ size = 'md', showText = true, className }: EgestLogo
   return (
     <div className={cn('flex flex-col', className)}>
       <span className={cn('font-bold leading-tight tracking-tight', text)}>
-        <span className="text-primary">Commess</span>
-        <span className="text-foreground">APP</span>
+        <span className="text-primary">Gest</span>
+        <span className="text-foreground">-e</span>
       </span>
       {showText && (
         <span className={cn('text-muted-foreground leading-none tracking-tight', tagline)}>
-          la commessa a portata di mano
+          gestione commesse e sicurezza
         </span>
       )}
     </div>

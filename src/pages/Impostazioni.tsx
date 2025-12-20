@@ -105,10 +105,14 @@ export default function Impostazioni() {
       </div>
 
       <Tabs defaultValue="azienda" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="azienda" className="gap-2">
             <Building2 className="w-4 h-4" />
             Dati Azienda
+          </TabsTrigger>
+          <TabsTrigger value="documenti" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Documenti Azienda
           </TabsTrigger>
           <TabsTrigger value="general" className="gap-2">
             <Settings className="w-4 h-4" />
@@ -451,7 +455,265 @@ export default function Impostazioni() {
           </Card>
         </TabsContent>
 
-        {/* General Settings */}
+        {/* Documenti Azienda - Required for public tenders */}
+        <TabsContent value="documenti" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Documenti Aziendali Obbligatori</CardTitle>
+              <CardDescription>
+                Carica i documenti richiesti per appalti pubblici e gare. Questi documenti saranno disponibili 
+                per la generazione automatica di fascicoli documentali.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* DURC */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">DURC</h4>
+                      <p className="text-sm text-muted-foreground">Documento Unico Regolarità Contributiva</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Scadenza: Non caricato</p>
+              </div>
+
+              {/* Visura Camerale */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Visura Camerale</h4>
+                      <p className="text-sm text-muted-foreground">Visura aggiornata Camera di Commercio</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Validità: 6 mesi</p>
+              </div>
+
+              {/* DVR */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                      <Shield className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">DVR</h4>
+                      <p className="text-sm text-muted-foreground">Documento Valutazione Rischi (D.Lgs 81/2008)</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Aggiornamento: alla variazione dei rischi</p>
+              </div>
+
+              {/* Polizza RCT/RCO */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <Shield className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Polizza RCT/RCO</h4>
+                      <p className="text-sm text-muted-foreground">Responsabilità Civile Terzi e Operai</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Scadenza: Non caricato</p>
+              </div>
+
+              {/* Certificazione SOA */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <FileText className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Certificazione SOA</h4>
+                      <p className="text-sm text-muted-foreground">Attestazione Qualificazione Lavori Pubblici</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Validità: 5 anni (se applicabile)</p>
+              </div>
+
+              {/* Certificato Casellario Giudiziale */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Casellario Giudiziale</h4>
+                      <p className="text-sm text-muted-foreground">Certificato casellario del legale rappresentante</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Validità: 6 mesi</p>
+              </div>
+
+              {/* Certificato Carichi Pendenti */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Carichi Pendenti</h4>
+                      <p className="text-sm text-muted-foreground">Certificato carichi pendenti del legale rappresentante</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Validità: 6 mesi</p>
+              </div>
+
+              {/* Certificazioni ISO */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <Shield className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Certificazioni ISO</h4>
+                      <p className="text-sm text-muted-foreground">ISO 9001, ISO 14001, ISO 45001</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Validità: vedi certificato</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Altri Documenti</CardTitle>
+              <CardDescription>
+                Documenti aggiuntivi per specifiche esigenze contrattuali
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Dichiarazione Antimafia */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Dichiarazione Antimafia</h4>
+                      <p className="text-sm text-muted-foreground">Autocertificazione requisiti antimafia</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+              </div>
+
+              {/* Documento identità legale rappresentante */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Documento Identità</h4>
+                      <p className="text-sm text-muted-foreground">Carta d'identità del legale rappresentante</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+              </div>
+
+              {/* Codice Fiscale Azienda */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Certificato Attribuzione P.IVA</h4>
+                      <p className="text-sm text-muted-foreground">Certificato Agenzia Entrate</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+              </div>
+
+              {/* Libro Unico Lavoro */}
+              <div className="p-4 rounded-lg border border-border bg-card">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Libro Unico Lavoro (LUL)</h4>
+                      <p className="text-sm text-muted-foreground">Estratto LUL ultimo mese</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Carica
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="general" className="mt-6 space-y-6">
           <Card>
             <CardHeader>

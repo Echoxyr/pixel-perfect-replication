@@ -36,7 +36,8 @@ import {
   Users,
   Building2,
   FileText,
-  Download
+  Download,
+  Upload
 } from 'lucide-react';
 
 // Tipi di corsi obbligatori per legge italiana
@@ -86,11 +87,13 @@ export default function Formazione() {
   const [filterTipoCorso, setFilterTipoCorso] = useState<string>('all');
   const [filterStato, setFilterStato] = useState<string>('all');
   const [showNewCorsoDialog, setShowNewCorsoDialog] = useState(false);
+  const [attestatoFile, setAttestatoFile] = useState<File | null>(null);
   
   const [newCorso, setNewCorso] = useState({
     lavoratoreId: '',
     tipoCorso: '',
     dataCorso: '',
+    dataScadenza: '',
     ore: 0,
     ente: ''
   });
@@ -147,9 +150,15 @@ export default function Formazione() {
       return;
     }
     
-    toast({ title: 'Corso registrato con successo' });
+    // In a real app, we'd save the file to storage and course to database
+    if (attestatoFile) {
+      toast({ title: 'Corso e attestato registrati', description: `Attestato: ${attestatoFile.name}` });
+    } else {
+      toast({ title: 'Corso registrato con successo' });
+    }
     setShowNewCorsoDialog(false);
-    setNewCorso({ lavoratoreId: '', tipoCorso: '', dataCorso: '', ore: 0, ente: '' });
+    setNewCorso({ lavoratoreId: '', tipoCorso: '', dataCorso: '', dataScadenza: '', ore: 0, ente: '' });
+    setAttestatoFile(null);
   };
 
   const conformityRate = stats.total > 0 
@@ -493,12 +502,56 @@ export default function Formazione() {
               </div>
             </div>
             <div>
+              <Label>Data Scadenza</Label>
+              <Input 
+                type="date" 
+                value={newCorso.dataScadenza}
+                onChange={(e) => setNewCorso({...newCorso, dataScadenza: e.target.value})}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Compilata automaticamente in base al tipo corso se non specificata
+              </p>
+            </div>
+            <div>
               <Label>Ente Formatore</Label>
               <Input 
                 value={newCorso.ente}
                 onChange={(e) => setNewCorso({...newCorso, ente: e.target.value})}
                 placeholder="Nome ente formatore"
               />
+            </div>
+            <div>
+              <Label>Carica Attestato</Label>
+              <div className="mt-2">
+                {attestatoFile ? (
+                  <div className="flex items-center gap-2 p-3 border border-border rounded-lg bg-muted/30">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <span className="text-sm flex-1">{attestatoFile.name}</span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => setAttestatoFile(null)}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                    <Upload className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Clicca per caricare attestato</span>
+                    <input 
+                      type="file" 
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setAttestatoFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
