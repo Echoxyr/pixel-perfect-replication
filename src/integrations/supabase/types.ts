@@ -14,6 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_cantiere: {
+        Row: {
+          cantiere_id: string | null
+          cantiere_nome: string
+          categoria: string
+          created_at: string | null
+          data_prevista: string | null
+          id: string
+          importo_consuntivo: number | null
+          importo_previsto: number
+          note: string | null
+          updated_at: string | null
+          voce: string
+        }
+        Insert: {
+          cantiere_id?: string | null
+          cantiere_nome: string
+          categoria: string
+          created_at?: string | null
+          data_prevista?: string | null
+          id?: string
+          importo_consuntivo?: number | null
+          importo_previsto?: number
+          note?: string | null
+          updated_at?: string | null
+          voce: string
+        }
+        Update: {
+          cantiere_id?: string | null
+          cantiere_nome?: string
+          categoria?: string
+          created_at?: string | null
+          data_prevista?: string | null
+          id?: string
+          importo_consuntivo?: number | null
+          importo_previsto?: number
+          note?: string | null
+          updated_at?: string | null
+          voce?: string
+        }
+        Relationships: []
+      }
+      centri_costo: {
+        Row: {
+          attivo: boolean | null
+          budget_annuale: number | null
+          codice: string
+          created_at: string | null
+          id: string
+          nome: string
+          parent_id: string | null
+          responsabile: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          budget_annuale?: number | null
+          codice: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          parent_id?: string | null
+          responsabile?: string | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          budget_annuale?: number | null
+          codice?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          parent_id?: string | null
+          responsabile?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centri_costo_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "centri_costo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkin_sicurezza: {
+        Row: {
+          area_lavoro_delimitata: boolean | null
+          argomenti_briefing: string | null
+          briefing_effettuato: boolean | null
+          cantiere_id: string | null
+          cantiere_nome: string
+          condizioni_meteo_ok: boolean | null
+          created_at: string | null
+          data: string
+          dpi_mancanti: string | null
+          dpi_verificati: boolean | null
+          eseguito_da: string
+          estintori_ok: boolean | null
+          firma_responsabile: string | null
+          foto_allegati: string[] | null
+          id: string
+          mezzi_verificati: boolean | null
+          note: string | null
+          ora: string
+          primo_soccorso_ok: boolean | null
+          ruolo: string | null
+          segnalazioni_pericoli: string | null
+        }
+        Insert: {
+          area_lavoro_delimitata?: boolean | null
+          argomenti_briefing?: string | null
+          briefing_effettuato?: boolean | null
+          cantiere_id?: string | null
+          cantiere_nome: string
+          condizioni_meteo_ok?: boolean | null
+          created_at?: string | null
+          data?: string
+          dpi_mancanti?: string | null
+          dpi_verificati?: boolean | null
+          eseguito_da: string
+          estintori_ok?: boolean | null
+          firma_responsabile?: string | null
+          foto_allegati?: string[] | null
+          id?: string
+          mezzi_verificati?: boolean | null
+          note?: string | null
+          ora?: string
+          primo_soccorso_ok?: boolean | null
+          ruolo?: string | null
+          segnalazioni_pericoli?: string | null
+        }
+        Update: {
+          area_lavoro_delimitata?: boolean | null
+          argomenti_briefing?: string | null
+          briefing_effettuato?: boolean | null
+          cantiere_id?: string | null
+          cantiere_nome?: string
+          condizioni_meteo_ok?: boolean | null
+          created_at?: string | null
+          data?: string
+          dpi_mancanti?: string | null
+          dpi_verificati?: boolean | null
+          eseguito_da?: string
+          estintori_ok?: boolean | null
+          firma_responsabile?: string | null
+          foto_allegati?: string[] | null
+          id?: string
+          mezzi_verificati?: boolean | null
+          note?: string | null
+          ora?: string
+          primo_soccorso_ok?: boolean | null
+          ruolo?: string | null
+          segnalazioni_pericoli?: string | null
+        }
+        Relationships: []
+      }
       computi_metrici: {
         Row: {
           cantiere_id: string | null
@@ -47,6 +208,87 @@ export type Database = {
           stato?: string
           totale_computo?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      contatti: {
+        Row: {
+          azienda: string | null
+          cap: string | null
+          cellulare: string | null
+          citta: string | null
+          codice_fiscale: string | null
+          codice_sdi: string | null
+          cognome: string | null
+          created_at: string | null
+          email: string | null
+          iban: string | null
+          id: string
+          indirizzo: string | null
+          nome: string
+          note: string | null
+          partita_iva: string | null
+          pec: string | null
+          preferito: boolean | null
+          provincia: string | null
+          ragione_sociale: string | null
+          ruolo: string | null
+          tags: string[] | null
+          telefono: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          azienda?: string | null
+          cap?: string | null
+          cellulare?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          codice_sdi?: string | null
+          cognome?: string | null
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome: string
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          preferito?: boolean | null
+          provincia?: string | null
+          ragione_sociale?: string | null
+          ruolo?: string | null
+          tags?: string[] | null
+          telefono?: string | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          azienda?: string | null
+          cap?: string | null
+          cellulare?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          codice_sdi?: string | null
+          cognome?: string | null
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome?: string
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          preferito?: boolean | null
+          provincia?: string | null
+          ragione_sociale?: string | null
+          ruolo?: string | null
+          tags?: string[] | null
+          telefono?: string | null
+          tipo?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -296,6 +538,211 @@ export type Database = {
         }
         Relationships: []
       }
+      listino_prezzi: {
+        Row: {
+          attivo: boolean | null
+          categoria: string | null
+          codice: string
+          costo_acquisto: number | null
+          created_at: string | null
+          descrizione: string
+          fornitore: string | null
+          id: string
+          iva_percentuale: number | null
+          margine_percentuale: number | null
+          note: string | null
+          prezzo_unitario: number
+          sottocategoria: string | null
+          unita_misura: string
+          updated_at: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          categoria?: string | null
+          codice: string
+          costo_acquisto?: number | null
+          created_at?: string | null
+          descrizione: string
+          fornitore?: string | null
+          id?: string
+          iva_percentuale?: number | null
+          margine_percentuale?: number | null
+          note?: string | null
+          prezzo_unitario: number
+          sottocategoria?: string | null
+          unita_misura?: string
+          updated_at?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          categoria?: string | null
+          codice?: string
+          costo_acquisto?: number | null
+          created_at?: string | null
+          descrizione?: string
+          fornitore?: string | null
+          id?: string
+          iva_percentuale?: number | null
+          margine_percentuale?: number | null
+          note?: string | null
+          prezzo_unitario?: number
+          sottocategoria?: string | null
+          unita_misura?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      magazzino: {
+        Row: {
+          categoria: string | null
+          codice: string
+          created_at: string | null
+          descrizione: string
+          fornitore_preferito: string | null
+          id: string
+          note: string | null
+          prezzo_medio: number | null
+          quantita_disponibile: number | null
+          quantita_minima: number | null
+          ubicazione: string | null
+          unita_misura: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          codice: string
+          created_at?: string | null
+          descrizione: string
+          fornitore_preferito?: string | null
+          id?: string
+          note?: string | null
+          prezzo_medio?: number | null
+          quantita_disponibile?: number | null
+          quantita_minima?: number | null
+          ubicazione?: string | null
+          unita_misura?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          codice?: string
+          created_at?: string | null
+          descrizione?: string
+          fornitore_preferito?: string | null
+          id?: string
+          note?: string | null
+          prezzo_medio?: number | null
+          quantita_disponibile?: number | null
+          quantita_minima?: number | null
+          ubicazione?: string | null
+          unita_misura?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      movimenti_contabili: {
+        Row: {
+          categoria: string | null
+          centro_costo_id: string | null
+          created_at: string | null
+          data: string
+          descrizione: string
+          documento_id: string | null
+          documento_numero: string | null
+          documento_tipo: string | null
+          id: string
+          importo: number
+          tipo: string
+        }
+        Insert: {
+          categoria?: string | null
+          centro_costo_id?: string | null
+          created_at?: string | null
+          data?: string
+          descrizione: string
+          documento_id?: string | null
+          documento_numero?: string | null
+          documento_tipo?: string | null
+          id?: string
+          importo: number
+          tipo: string
+        }
+        Update: {
+          categoria?: string | null
+          centro_costo_id?: string | null
+          created_at?: string | null
+          data?: string
+          descrizione?: string
+          documento_id?: string | null
+          documento_numero?: string | null
+          documento_tipo?: string | null
+          id?: string
+          importo?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimenti_contabili_centro_costo_id_fkey"
+            columns: ["centro_costo_id"]
+            isOneToOne: false
+            referencedRelation: "centri_costo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movimenti_magazzino: {
+        Row: {
+          articolo_id: string
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string | null
+          data: string
+          documento_numero: string | null
+          documento_tipo: string | null
+          eseguito_da: string | null
+          id: string
+          note: string | null
+          quantita: number
+          tipo: string
+        }
+        Insert: {
+          articolo_id: string
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          documento_numero?: string | null
+          documento_tipo?: string | null
+          eseguito_da?: string | null
+          id?: string
+          note?: string | null
+          quantita: number
+          tipo: string
+        }
+        Update: {
+          articolo_id?: string
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          documento_numero?: string | null
+          documento_tipo?: string | null
+          eseguito_da?: string | null
+          id?: string
+          note?: string | null
+          quantita?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimenti_magazzino_articolo_id_fkey"
+            columns: ["articolo_id"]
+            isOneToOne: false
+            referencedRelation: "magazzino"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_spesa: {
         Row: {
           allegati: string[] | null
@@ -516,6 +963,50 @@ export type Database = {
           },
         ]
       }
+      presenze_rapportino: {
+        Row: {
+          created_at: string | null
+          id: string
+          lavoratore_id: string | null
+          lavoratore_nome: string
+          mansione: string | null
+          note: string | null
+          ore_ordinarie: number | null
+          ore_straordinario: number | null
+          rapportino_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lavoratore_id?: string | null
+          lavoratore_nome: string
+          mansione?: string | null
+          note?: string | null
+          ore_ordinarie?: number | null
+          ore_straordinario?: number | null
+          rapportino_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lavoratore_id?: string | null
+          lavoratore_nome?: string
+          mansione?: string | null
+          note?: string | null
+          ore_ordinarie?: number | null
+          ore_straordinario?: number | null
+          rapportino_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presenze_rapportino_rapportino_id_fkey"
+            columns: ["rapportino_id"]
+            isOneToOne: false
+            referencedRelation: "rapportini"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preventivi: {
         Row: {
           aliquota_iva: number
@@ -580,6 +1071,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rapportini: {
+        Row: {
+          approvato: boolean | null
+          approvato_da: string | null
+          attrezzature_utilizzate: string | null
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          condizioni_meteo: string | null
+          created_at: string | null
+          data: string
+          data_approvazione: string | null
+          foto_allegati: string[] | null
+          id: string
+          lavorazioni_eseguite: string | null
+          materiali_utilizzati: string | null
+          note_sicurezza: string | null
+          ore_lavorate_totali: number | null
+          problemi_riscontrati: string | null
+          redatto_da: string
+          temperatura_max: number | null
+          temperatura_min: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          approvato?: boolean | null
+          approvato_da?: string | null
+          attrezzature_utilizzate?: string | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          condizioni_meteo?: string | null
+          created_at?: string | null
+          data?: string
+          data_approvazione?: string | null
+          foto_allegati?: string[] | null
+          id?: string
+          lavorazioni_eseguite?: string | null
+          materiali_utilizzati?: string | null
+          note_sicurezza?: string | null
+          ore_lavorate_totali?: number | null
+          problemi_riscontrati?: string | null
+          redatto_da: string
+          temperatura_max?: number | null
+          temperatura_min?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          approvato?: boolean | null
+          approvato_da?: string | null
+          attrezzature_utilizzate?: string | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          condizioni_meteo?: string | null
+          created_at?: string | null
+          data?: string
+          data_approvazione?: string | null
+          foto_allegati?: string[] | null
+          id?: string
+          lavorazioni_eseguite?: string | null
+          materiali_utilizzati?: string | null
+          note_sicurezza?: string | null
+          ore_lavorate_totali?: number | null
+          problemi_riscontrati?: string | null
+          redatto_da?: string
+          temperatura_max?: number | null
+          temperatura_min?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       richieste_dipendenti: {
         Row: {
@@ -715,45 +1275,138 @@ export type Database = {
         }
         Relationships: []
       }
+      scadenzario: {
+        Row: {
+          allegati: string[] | null
+          created_at: string | null
+          data_scadenza: string
+          descrizione: string | null
+          entita_id: string | null
+          entita_nome: string | null
+          entita_tipo: string | null
+          giorni_preavviso: number | null
+          id: string
+          note: string | null
+          priorita: string | null
+          responsabile: string | null
+          stato: string | null
+          tipo: string
+          titolo: string
+          updated_at: string | null
+        }
+        Insert: {
+          allegati?: string[] | null
+          created_at?: string | null
+          data_scadenza: string
+          descrizione?: string | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo?: string | null
+          giorni_preavviso?: number | null
+          id?: string
+          note?: string | null
+          priorita?: string | null
+          responsabile?: string | null
+          stato?: string | null
+          tipo: string
+          titolo: string
+          updated_at?: string | null
+        }
+        Update: {
+          allegati?: string[] | null
+          created_at?: string | null
+          data_scadenza?: string
+          descrizione?: string | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo?: string | null
+          giorni_preavviso?: number | null
+          id?: string
+          note?: string | null
+          priorita?: string | null
+          responsabile?: string | null
+          stato?: string | null
+          tipo?: string
+          titolo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       timbrature: {
         Row: {
+          attivita: string | null
           cantiere_id: string | null
           cantiere_nome: string | null
           created_at: string
           data: string
+          data_validazione: string | null
           id: string
           lavoratore_id: string | null
           lavoratore_nome: string
+          metodo: string | null
+          non_conformita_motivo: string | null
+          non_conformita_tipo: string | null
           note: string | null
           ora: string
+          ora_fine: string | null
+          ore_lavorate: number | null
+          ore_straordinario: number | null
+          pausa_minuti: number | null
           posizione_gps: string | null
+          stato_validazione: string | null
           tipo: string
+          turno: string | null
+          validata_da: string | null
         }
         Insert: {
+          attivita?: string | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
           created_at?: string
           data?: string
+          data_validazione?: string | null
           id?: string
           lavoratore_id?: string | null
           lavoratore_nome: string
+          metodo?: string | null
+          non_conformita_motivo?: string | null
+          non_conformita_tipo?: string | null
           note?: string | null
           ora?: string
+          ora_fine?: string | null
+          ore_lavorate?: number | null
+          ore_straordinario?: number | null
+          pausa_minuti?: number | null
           posizione_gps?: string | null
+          stato_validazione?: string | null
           tipo: string
+          turno?: string | null
+          validata_da?: string | null
         }
         Update: {
+          attivita?: string | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
           created_at?: string
           data?: string
+          data_validazione?: string | null
           id?: string
           lavoratore_id?: string | null
           lavoratore_nome?: string
+          metodo?: string | null
+          non_conformita_motivo?: string | null
+          non_conformita_tipo?: string | null
           note?: string | null
           ora?: string
+          ora_fine?: string | null
+          ore_lavorate?: number | null
+          ore_straordinario?: number | null
+          pausa_minuti?: number | null
           posizione_gps?: string | null
+          stato_validazione?: string | null
           tipo?: string
+          turno?: string | null
+          validata_da?: string | null
         }
         Relationships: []
       }
