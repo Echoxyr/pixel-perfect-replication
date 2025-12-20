@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { Task, formatDateFull } from '@/types/workhub';
 import { cn } from '@/lib/utils';
 import { StatusPill } from './StatusPill';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, ChevronLeft, ChevronRight, GripHorizontal } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface GanttTimelineProps {
   tasks: Task[];
@@ -14,23 +15,33 @@ interface GanttTimelineProps {
 
 export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelineProps) {
   const { cantieri } = useWorkHub();
-  const [zoomLevel, setZoomLevel] = useState(1); // 1 = week, 2 = day view
+  const { toast } = useToast();
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [scrollOffset, setScrollOffset] = useState(0);
+  const [dragging, setDragging] = useState<{
+    taskId: string;
+    type: 'move' | 'resize-start' | 'resize-end';
+    startX: number;
+    originalStart: Date;
+    originalEnd: Date;
+  } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const { tasksWithDates, dateRange, weeks } = useMemo(() => {
-    // Filter tasks with dates
+  const { tasksWithDates, dateRange, weeks, days, totalDays } = useMemo(() => {
     const tasksWithDates = tasks.filter(t => t.startDate || t.dueDate);
 
     if (tasksWithDates.length === 0) {
       const today = new Date();
+      const end = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
       return {
         tasksWithDates: [],
-        dateRange: { start: today, end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) },
-        weeks: []
+        dateRange: { start: today, end },
+        weeks: [],
+        days: [],
+        totalDays: 30
       };
     }
 
-    // Calculate date range
     const allDates = tasksWithDates.flatMap(t => [
       t.startDate ? new Date(t.startDate) : null,
       t.dueDate ? new Date(t.dueDate) : null
@@ -39,14 +50,13 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
     const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
     const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
 
-    // Add padding
     minDate.setDate(minDate.getDate() - 7);
     maxDate.setDate(maxDate.getDate() + 14);
 
-    // Generate weeks
     const weeks: { start: Date; label: string }[] = [];
+    const days: { date: Date; label: string; isWeekend: boolean }[] = [];
     const current = new Date(minDate);
-    current.setDate(current.getDate() - current.getDay()); // Start from Sunday
+    current.setDate(current.getDate() - current.getDay());
 
     while (current <= maxDate) {
       weeks.push({
@@ -56,22 +66,34 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
       current.setDate(current.getDate() + 7);
     }
 
+    // Generate days for fine-grained view
+    const dayCurrent = new Date(minDate);
+    while (dayCurrent <= maxDate) {
+      days.push({
+        date: new Date(dayCurrent),
+        label: `${dayCurrent.getDate()}`,
+        isWeekend: dayCurrent.getDay() === 0 || dayCurrent.getDay() === 6
+      });
+      dayCurrent.setDate(dayCurrent.getDate() + 1);
+    }
+
+    const totalDays = Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+
     return {
       tasksWithDates,
       dateRange: { start: minDate, end: maxDate },
-      weeks
+      weeks,
+      days,
+      totalDays
     };
   }, [tasks]);
 
   const getCantiereName = (cantiereId?: string) => {
     if (!cantiereId) return null;
-    const cantiere = cantieri.find(c => c.id === cantiereId);
-    return cantiere?.codiceCommessa;
+    return cantieri.find(c => c.id === cantiereId)?.codiceCommessa;
   };
 
-  const getTaskPosition = (task: Task) => {
-    const totalDays = Math.ceil((dateRange.end.getTime() - dateRange.start.getTime()) / (1000 * 60 * 60 * 24));
-    
+  const getTaskPosition = useCallback((task: Task) => {
     const start = task.startDate ? new Date(task.startDate) : task.dueDate ? new Date(task.dueDate) : dateRange.start;
     const end = task.dueDate ? new Date(task.dueDate) : task.startDate ? new Date(task.startDate) : dateRange.end;
 
@@ -80,9 +102,11 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
 
     return {
       left: `${(startOffset / totalDays) * 100}%`,
-      width: `${Math.max((duration / totalDays) * 100, 2)}%`
+      width: `${Math.max((duration / totalDays) * 100, 2)}%`,
+      startOffset,
+      duration
     };
-  };
+  }, [dateRange, totalDays]);
 
   const getStatusGradient = (status: string) => {
     switch (status) {
@@ -94,15 +118,87 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'fatto': return 'bg-emerald-500';
-      case 'in_corso': return 'bg-sky-500';
-      case 'in_attesa': return 'bg-amber-500';
-      case 'bloccato': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
+  // Drag handlers for moving/resizing tasks
+  const handleDragStart = (e: React.MouseEvent, taskId: string, type: 'move' | 'resize-start' | 'resize-end') => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const task = tasksWithDates.find(t => t.id === taskId);
+    if (!task || !onUpdateTask) return;
+
+    setDragging({
+      taskId,
+      type,
+      startX: e.clientX,
+      originalStart: task.startDate ? new Date(task.startDate) : new Date(),
+      originalEnd: task.dueDate ? new Date(task.dueDate) : new Date()
+    });
   };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragging || !containerRef.current || !onUpdateTask) return;
+
+    const containerWidth = containerRef.current.getBoundingClientRect().width - 256; // Subtract task info column
+    const pixelsPerDay = containerWidth / totalDays;
+    const deltaX = e.clientX - dragging.startX;
+    const deltaDays = Math.round(deltaX / pixelsPerDay);
+
+    if (deltaDays === 0) return;
+
+    const task = tasksWithDates.find(t => t.id === dragging.taskId);
+    if (!task) return;
+
+    let newStartDate: Date;
+    let newEndDate: Date;
+
+    if (dragging.type === 'move') {
+      newStartDate = new Date(dragging.originalStart);
+      newStartDate.setDate(newStartDate.getDate() + deltaDays);
+      newEndDate = new Date(dragging.originalEnd);
+      newEndDate.setDate(newEndDate.getDate() + deltaDays);
+    } else if (dragging.type === 'resize-start') {
+      newStartDate = new Date(dragging.originalStart);
+      newStartDate.setDate(newStartDate.getDate() + deltaDays);
+      newEndDate = new Date(dragging.originalEnd);
+      // Don't let start go past end
+      if (newStartDate >= newEndDate) return;
+    } else {
+      newStartDate = new Date(dragging.originalStart);
+      newEndDate = new Date(dragging.originalEnd);
+      newEndDate.setDate(newEndDate.getDate() + deltaDays);
+      // Don't let end go before start
+      if (newEndDate <= newStartDate) return;
+    }
+
+    // Update the task visually during drag (will be persisted on mouseup)
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+    onUpdateTask(dragging.taskId, {
+      startDate: formatDate(newStartDate),
+      dueDate: formatDate(newEndDate)
+    });
+  }, [dragging, totalDays, tasksWithDates, onUpdateTask]);
+
+  const handleMouseUp = useCallback(() => {
+    if (dragging) {
+      toast({
+        title: 'Timeline aggiornata',
+        description: 'Le date del task sono state modificate'
+      });
+    }
+    setDragging(null);
+  }, [dragging, toast]);
+
+  // Attach global listeners for drag
+  useState(() => {
+    if (dragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  });
 
   if (tasksWithDates.length === 0) {
     return (
@@ -114,7 +210,13 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div 
+      ref={containerRef}
+      className="rounded-xl border border-border bg-card overflow-hidden"
+      onMouseMove={dragging ? (e) => handleMouseMove(e.nativeEvent) : undefined}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
       {/* Toolbar */}
       <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
@@ -124,6 +226,9 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
           <Button variant="outline" size="icon" onClick={() => setScrollOffset(prev => prev + 1)}>
             <ChevronRight className="w-4 h-4" />
           </Button>
+          <span className="text-xs text-muted-foreground ml-2">
+            Trascina le barre per modificare le date
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Button 
@@ -166,15 +271,21 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
       <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
         {tasksWithDates.map((task) => {
           const position = getTaskPosition(task);
+          const isDraggingThis = dragging?.taskId === task.id;
 
           return (
             <div
               key={task.id}
-              className="flex hover:bg-muted/30 transition-colors cursor-pointer"
-              onClick={() => onTaskClick?.(task)}
+              className={cn(
+                'flex hover:bg-muted/30 transition-colors',
+                isDraggingThis && 'bg-muted/50'
+              )}
             >
               {/* Task info */}
-              <div className="w-64 flex-shrink-0 p-3 border-r border-border">
+              <div 
+                className="w-64 flex-shrink-0 p-3 border-r border-border cursor-pointer"
+                onClick={() => onTaskClick?.(task)}
+              >
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-sm truncate">{task.title}</p>
                 </div>
@@ -192,24 +303,47 @@ export function GanttTimeline({ tasks, onTaskClick, onUpdateTask }: GanttTimelin
               <div className="flex-1 relative py-2 px-1 overflow-hidden">
                 <div
                   className={cn(
-                    'absolute top-1/2 -translate-y-1/2 h-8 rounded-full cursor-pointer',
-                    'shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]',
-                    'flex items-center justify-center',
-                    getStatusGradient(task.status)
+                    'absolute top-1/2 -translate-y-1/2 h-8 rounded-full',
+                    'shadow-lg transition-all',
+                    'flex items-center justify-between px-1',
+                    getStatusGradient(task.status),
+                    isDraggingThis ? 'opacity-80 scale-105' : 'hover:shadow-xl'
                   )}
                   style={{
                     left: position.left,
                     width: position.width,
-                    minWidth: '40px'
+                    minWidth: '60px',
+                    cursor: onUpdateTask ? 'grab' : 'pointer'
                   }}
                   title={`${formatDateFull(task.startDate)} → ${formatDateFull(task.dueDate)}`}
                 >
-                  {/* Progress indicator dots */}
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 rounded-full bg-white/40" />
-                    <div className="w-2 h-2 rounded-full bg-white/60" />
-                    <div className="w-2 h-2 rounded-full bg-white/80" />
+                  {/* Left resize handle */}
+                  {onUpdateTask && (
+                    <div
+                      className="w-3 h-full flex items-center justify-center cursor-ew-resize opacity-0 hover:opacity-100 transition-opacity"
+                      onMouseDown={(e) => handleDragStart(e, task.id, 'resize-start')}
+                    >
+                      <div className="w-1 h-4 bg-white/60 rounded" />
+                    </div>
+                  )}
+
+                  {/* Center drag handle */}
+                  <div 
+                    className="flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                    onMouseDown={onUpdateTask ? (e) => handleDragStart(e, task.id, 'move') : undefined}
+                  >
+                    <GripHorizontal className="w-4 h-4 text-white/70" />
                   </div>
+
+                  {/* Right resize handle */}
+                  {onUpdateTask && (
+                    <div
+                      className="w-3 h-full flex items-center justify-center cursor-ew-resize opacity-0 hover:opacity-100 transition-opacity"
+                      onMouseDown={(e) => handleDragStart(e, task.id, 'resize-end')}
+                    >
+                      <div className="w-1 h-4 bg-white/60 rounded" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
