@@ -353,6 +353,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifiche: {
+        Row: {
+          created_at: string
+          data_scadenza: string | null
+          entita_id: string | null
+          entita_tipo: string | null
+          id: string
+          letta: boolean
+          messaggio: string
+          tipo: string
+          titolo: string
+        }
+        Insert: {
+          created_at?: string
+          data_scadenza?: string | null
+          entita_id?: string | null
+          entita_tipo?: string | null
+          id?: string
+          letta?: boolean
+          messaggio: string
+          tipo: string
+          titolo: string
+        }
+        Update: {
+          created_at?: string
+          data_scadenza?: string | null
+          entita_id?: string | null
+          entita_tipo?: string | null
+          id?: string
+          letta?: boolean
+          messaggio?: string
+          tipo?: string
+          titolo?: string
+        }
+        Relationships: []
+      }
       organigramma: {
         Row: {
           created_at: string
@@ -405,6 +441,77 @@ export type Database = {
             columns: ["superiore_id"]
             isOneToOne: false
             referencedRelation: "organigramma"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_templates: {
+        Row: {
+          contenuto: Json
+          created_at: string
+          descrizione: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          contenuto?: Json
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          contenuto?: Json
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prenotazioni_risorse: {
+        Row: {
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          id: string
+          note: string | null
+          risorsa_id: string
+          stato: string
+        }
+        Insert: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          id?: string
+          note?: string | null
+          risorsa_id: string
+          stato?: string
+        }
+        Update: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          id?: string
+          note?: string | null
+          risorsa_id?: string
+          stato?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prenotazioni_risorse_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse"
             referencedColumns: ["id"]
           },
         ]
@@ -572,6 +679,105 @@ export type Database = {
           },
         ]
       }
+      risorse: {
+        Row: {
+          created_at: string
+          descrizione: string | null
+          id: string
+          matricola: string | null
+          nome: string
+          stato: string
+          targa: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          matricola?: string | null
+          nome: string
+          stato?: string
+          targa?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          matricola?: string | null
+          nome?: string
+          stato?: string
+          targa?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      timbrature: {
+        Row: {
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string
+          data: string
+          id: string
+          lavoratore_id: string | null
+          lavoratore_nome: string
+          note: string | null
+          ora: string
+          posizione_gps: string | null
+          tipo: string
+        }
+        Insert: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          lavoratore_id?: string | null
+          lavoratore_nome: string
+          note?: string | null
+          ora?: string
+          posizione_gps?: string | null
+          tipo: string
+        }
+        Update: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          lavoratore_id?: string | null
+          lavoratore_nome?: string
+          note?: string | null
+          ora?: string
+          posizione_gps?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       voci_computo: {
         Row: {
           capitolo: string | null
@@ -674,9 +880,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role:
+        | "admin"
+        | "capo_cantiere"
+        | "contabile"
+        | "hse_manager"
+        | "viewer"
       categoria_nota_spesa:
         | "trasferta"
         | "materiale"
@@ -841,6 +1059,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: [
+        "admin",
+        "capo_cantiere",
+        "contabile",
+        "hse_manager",
+        "viewer",
+      ],
       categoria_nota_spesa: [
         "trasferta",
         "materiale",
