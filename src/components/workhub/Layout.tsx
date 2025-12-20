@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +30,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  LogOut,
   HelpCircle,
   Shield,
   Award,
@@ -68,12 +66,6 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hseStats, tasks, cantieri, imprese, lavoratori } = useWorkHub();
-  const { user, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -810,7 +802,7 @@ export function Layout() {
               <DropdownMenuContent align="end" className="w-56">
                 <div className="p-2">
                   <p className="font-medium">Utente</p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email || 'Non disponibile'}</p>
+                  <p className="text-xs text-muted-foreground">Demo Mode</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
@@ -821,10 +813,6 @@ export function Layout() {
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <HelpCircle className="w-4 h-4 mr-2" /> Aiuto
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-2" /> Esci
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
