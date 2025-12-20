@@ -50,9 +50,73 @@ export type Database = {
         }
         Relationships: []
       }
+      ddt: {
+        Row: {
+          allegati: string[] | null
+          aspetto_beni: string | null
+          causale_trasporto: string | null
+          colli: number | null
+          commessa_id: string | null
+          created_at: string
+          data: string
+          destinatario: string
+          id: string
+          indirizzo_destinazione: string | null
+          mittente: string
+          note: string | null
+          numero: string
+          peso_kg: number | null
+          stato: string
+          tipo: string
+          updated_at: string
+          vettore: string | null
+        }
+        Insert: {
+          allegati?: string[] | null
+          aspetto_beni?: string | null
+          causale_trasporto?: string | null
+          colli?: number | null
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          destinatario: string
+          id?: string
+          indirizzo_destinazione?: string | null
+          mittente: string
+          note?: string | null
+          numero: string
+          peso_kg?: number | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+          vettore?: string | null
+        }
+        Update: {
+          allegati?: string[] | null
+          aspetto_beni?: string | null
+          causale_trasporto?: string | null
+          colli?: number | null
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          destinatario?: string
+          id?: string
+          indirizzo_destinazione?: string | null
+          mittente?: string
+          note?: string | null
+          numero?: string
+          peso_kg?: number | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+          vettore?: string | null
+        }
+        Relationships: []
+      }
       fatture: {
         Row: {
           aliquota_iva: number
+          allegati: string[] | null
           cliente_fornitore: string
           commessa_id: string | null
           created_at: string
@@ -72,6 +136,7 @@ export type Database = {
         }
         Insert: {
           aliquota_iva?: number
+          allegati?: string[] | null
           cliente_fornitore: string
           commessa_id?: string | null
           created_at?: string
@@ -91,6 +156,7 @@ export type Database = {
         }
         Update: {
           aliquota_iva?: number
+          allegati?: string[] | null
           cliente_fornitore?: string
           commessa_id?: string | null
           created_at?: string
@@ -106,6 +172,72 @@ export type Database = {
           stato?: Database["public"]["Enums"]["stato_fattura"]
           tipo?: Database["public"]["Enums"]["tipo_fattura"]
           totale?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      impostazioni_azienda: {
+        Row: {
+          banca: string | null
+          cap: string | null
+          citta: string | null
+          codice_fiscale: string | null
+          created_at: string
+          email: string | null
+          footer_documento: string | null
+          iban: string | null
+          id: string
+          indirizzo: string | null
+          intestazione_personalizzata: string | null
+          logo_url: string | null
+          partita_iva: string | null
+          pec: string | null
+          provincia: string | null
+          ragione_sociale: string
+          sito_web: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          banca?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          created_at?: string
+          email?: string | null
+          footer_documento?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          intestazione_personalizzata?: string | null
+          logo_url?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale: string
+          sito_web?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          banca?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          created_at?: string
+          email?: string | null
+          footer_documento?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          intestazione_personalizzata?: string | null
+          logo_url?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale?: string
+          sito_web?: string | null
+          telefono?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -398,6 +530,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      righe_ddt: {
+        Row: {
+          codice: string | null
+          created_at: string
+          ddt_id: string
+          descrizione: string
+          id: string
+          ordine: number | null
+          quantita: number
+          unita_misura: string | null
+        }
+        Insert: {
+          codice?: string | null
+          created_at?: string
+          ddt_id: string
+          descrizione: string
+          id?: string
+          ordine?: number | null
+          quantita?: number
+          unita_misura?: string | null
+        }
+        Update: {
+          codice?: string | null
+          created_at?: string
+          ddt_id?: string
+          descrizione?: string
+          id?: string
+          ordine?: number | null
+          quantita?: number
+          unita_misura?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "righe_ddt_ddt_id_fkey"
+            columns: ["ddt_id"]
+            isOneToOne: false
+            referencedRelation: "ddt"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voci_computo: {
         Row: {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   FileText,
   Plus,
@@ -45,262 +46,281 @@ import {
   Edit,
   Users,
   UserPlus,
-  Briefcase,
   ArrowUpRight,
   ArrowDownLeft,
   Clock,
   XCircle,
   MessageSquare,
   Calendar,
-  Building2,
   Upload,
   Paperclip,
   Trash2,
-  File
+  LayoutGrid,
+  List,
+  CalendarDays,
+  Truck,
+  Printer,
+  Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Types
-interface Fattura {
-  id: string;
-  numero: string;
-  tipo: 'attiva' | 'passiva';
-  data: string;
-  scadenza: string;
-  cliente_fornitore: string;
-  descrizione: string;
-  commessa?: string;
-  imponibile: number;
-  iva: number;
-  totale: number;
-  stato: 'emessa' | 'pagata' | 'scaduta' | 'in_attesa' | 'contestata';
-  metodoPagamento: string;
-  dataPagamento?: string;
-}
-
-interface NotaSpesa {
-  id: string;
-  numero: string;
-  data: string;
-  dipendente: string;
-  commessa?: string;
-  descrizione: string;
-  importo: number;
-  stato: 'presentata' | 'approvata' | 'rimborsata' | 'rifiutata';
-  allegati: string[];
-  categoria: 'trasferta' | 'materiale' | 'vitto' | 'alloggio' | 'altro';
-}
-
-interface RichiestaDipendente {
-  id: string;
-  numero: string;
-  data: string;
-  dipendente: string;
-  tipo: 'ferie' | 'permesso' | 'malattia' | 'straordinario' | 'anticipo' | 'rimborso' | 'altro';
-  descrizione: string;
-  dataInizio?: string;
-  dataFine?: string;
-  importo?: number;
-  stato: 'in_attesa' | 'approvata' | 'rifiutata' | 'completata';
-  note?: string;
-}
+type StatoFattura = 'emessa' | 'pagata' | 'scaduta' | 'in_attesa' | 'contestata';
+type TipoFattura = 'attiva' | 'passiva';
+type StatoNotaSpesa = 'presentata' | 'approvata' | 'rimborsata' | 'rifiutata';
+type CategoriaNotaSpesa = 'trasferta' | 'materiale' | 'vitto' | 'alloggio' | 'altro';
+type StatoRichiesta = 'in_attesa' | 'approvata' | 'rifiutata' | 'completata';
+type TipoRichiesta = 'ferie' | 'permesso' | 'malattia' | 'straordinario' | 'anticipo' | 'rimborso' | 'altro';
 
 interface NodoOrganigramma {
   id: string;
   nome: string;
   ruolo: string;
   reparto: string;
-  superioreId?: string;
+  superiore_id?: string | null;
   livello: number;
-  foto?: string;
-  email?: string;
-  telefono?: string;
+  foto_url?: string | null;
+  email?: string | null;
+  telefono?: string | null;
 }
 
 export default function RepartoAmministrazione() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('fatture');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'board'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTipo, setFilterTipo] = useState<'tutte' | 'attive' | 'passive'>('tutte');
 
-  // Sample data - Fatture collegate a commesse
-  const [fatture] = useState<Fattura[]>([
-    {
-      id: '1',
-      numero: 'FA-2024-001',
-      tipo: 'attiva',
-      data: '2024-01-15',
-      scadenza: '2024-02-15',
-      cliente_fornitore: 'Comune di Milano',
-      descrizione: 'SAL 1 - Lavori Via Roma',
-      commessa: 'COM-2024-001',
-      imponibile: 45000,
-      iva: 9900,
-      totale: 54900,
-      stato: 'emessa',
-      metodoPagamento: 'Bonifico 30gg'
-    },
-    {
-      id: '2',
-      numero: 'FA-2024-002',
-      tipo: 'attiva',
-      data: '2024-01-20',
-      scadenza: '2024-02-20',
-      cliente_fornitore: 'Condominio Aurora',
-      descrizione: 'Ristrutturazione facciata',
-      commessa: 'COM-2024-002',
-      imponibile: 28000,
-      iva: 6160,
-      totale: 34160,
-      stato: 'pagata',
-      metodoPagamento: 'Bonifico',
-      dataPagamento: '2024-02-18'
-    },
-    {
-      id: '3',
-      numero: 'FP-2024-001',
-      tipo: 'passiva',
-      data: '2024-01-10',
-      scadenza: '2024-02-10',
-      cliente_fornitore: 'Edilmateriali SRL',
-      descrizione: 'Materiali cantiere Via Roma',
-      commessa: 'COM-2024-001',
-      imponibile: 12000,
-      iva: 2640,
-      totale: 14640,
-      stato: 'pagata',
-      metodoPagamento: 'Bonifico',
-      dataPagamento: '2024-02-08'
-    },
-    {
-      id: '4',
-      numero: 'FP-2024-002',
-      tipo: 'passiva',
-      data: '2024-01-25',
-      scadenza: '2024-02-25',
-      cliente_fornitore: 'Ferramenta Industriale SpA',
-      descrizione: 'Bulloneria e fissaggi',
-      commessa: 'COM-2024-001',
-      imponibile: 3500,
-      iva: 770,
-      totale: 4270,
-      stato: 'in_attesa',
-      metodoPagamento: 'RIBA 60gg'
-    }
-  ]);
-
-  const [noteSpesa] = useState<NotaSpesa[]>([
-    {
-      id: '1',
-      numero: 'NS-2024-001',
-      data: '2024-02-10',
-      dipendente: 'Mario Rossi',
-      commessa: 'COM-2024-001',
-      descrizione: 'Trasferta cantiere Torino',
-      importo: 350,
-      stato: 'approvata',
-      allegati: ['ricevute.pdf'],
-      categoria: 'trasferta'
-    },
-    {
-      id: '2',
-      numero: 'NS-2024-002',
-      data: '2024-02-15',
-      dipendente: 'Giuseppe Verdi',
-      commessa: 'COM-2024-002',
-      descrizione: 'Materiale di consumo urgente',
-      importo: 120,
-      stato: 'presentata',
-      allegati: ['scontrini.pdf'],
-      categoria: 'materiale'
-    },
-    {
-      id: '3',
-      numero: 'NS-2024-003',
-      data: '2024-02-18',
-      dipendente: 'Anna Bianchi',
-      descrizione: 'Pranzo cliente',
-      importo: 85,
-      stato: 'presentata',
-      allegati: ['ricevuta_ristorante.pdf'],
-      categoria: 'vitto'
-    }
-  ]);
-
-  const [richiesteDipendenti] = useState<RichiestaDipendente[]>([
-    {
-      id: '1',
-      numero: 'RD-2024-001',
-      data: '2024-02-01',
-      dipendente: 'Mario Rossi',
-      tipo: 'ferie',
-      descrizione: 'Ferie estive',
-      dataInizio: '2024-08-05',
-      dataFine: '2024-08-19',
-      stato: 'approvata'
-    },
-    {
-      id: '2',
-      numero: 'RD-2024-002',
-      data: '2024-02-10',
-      dipendente: 'Giuseppe Verdi',
-      tipo: 'permesso',
-      descrizione: 'Visita medica',
-      dataInizio: '2024-02-20',
-      dataFine: '2024-02-20',
-      stato: 'approvata'
-    },
-    {
-      id: '3',
-      numero: 'RD-2024-003',
-      data: '2024-02-15',
-      dipendente: 'Anna Bianchi',
-      tipo: 'anticipo',
-      descrizione: 'Anticipo stipendio marzo',
-      importo: 500,
-      stato: 'in_attesa'
-    },
-    {
-      id: '4',
-      numero: 'RD-2024-004',
-      data: '2024-02-18',
-      dipendente: 'Luca Neri',
-      tipo: 'straordinario',
-      descrizione: 'Straordinari cantiere urgente',
-      dataInizio: '2024-02-24',
-      dataFine: '2024-02-25',
-      stato: 'in_attesa',
-      note: 'Consegna urgente cliente'
-    }
-  ]);
-
-  // Organigramma aziendale
-  const [organigramma] = useState<NodoOrganigramma[]>([
-    { id: '1', nome: 'Marco Ferretti', ruolo: 'Amministratore Delegato', reparto: 'Direzione', livello: 0 },
-    { id: '2', nome: 'Laura Conti', ruolo: 'Direttore Tecnico', reparto: 'Tecnico', superioreId: '1', livello: 1 },
-    { id: '3', nome: 'Paolo Mantovani', ruolo: 'Direttore Commerciale', reparto: 'Commerciale', superioreId: '1', livello: 1 },
-    { id: '4', nome: 'Giulia Rossini', ruolo: 'Responsabile Amministrativo', reparto: 'Amministrazione', superioreId: '1', livello: 1 },
-    { id: '5', nome: 'Mario Rossi', ruolo: 'Capo Cantiere Senior', reparto: 'Tecnico', superioreId: '2', livello: 2 },
-    { id: '6', nome: 'Giuseppe Verdi', ruolo: 'Capo Cantiere', reparto: 'Tecnico', superioreId: '2', livello: 2 },
-    { id: '7', nome: 'Anna Bianchi', ruolo: 'Responsabile RSPP', reparto: 'HSE', superioreId: '2', livello: 2 },
-    { id: '8', nome: 'Luca Neri', ruolo: 'Project Manager', reparto: 'Tecnico', superioreId: '2', livello: 2 },
-    { id: '9', nome: 'Sara Colombo', ruolo: 'Commerciale', reparto: 'Commerciale', superioreId: '3', livello: 2 },
-    { id: '10', nome: 'Roberto Galli', ruolo: 'Contabile', reparto: 'Amministrazione', superioreId: '4', livello: 2 },
-    { id: '11', nome: 'Francesca Ricci', ruolo: 'HR Manager', reparto: 'Amministrazione', superioreId: '4', livello: 2 },
-    { id: '12', nome: 'Alberto Marini', ruolo: 'Operaio Specializzato', reparto: 'Tecnico', superioreId: '5', livello: 3 },
-    { id: '13', nome: 'Davide Costa', ruolo: 'Operaio Specializzato', reparto: 'Tecnico', superioreId: '5', livello: 3 },
-    { id: '14', nome: 'Stefano Greco', ruolo: 'Operaio', reparto: 'Tecnico', superioreId: '6', livello: 3 },
-  ]);
-
+  // Dialog states
   const [showNewFattura, setShowNewFattura] = useState(false);
   const [showNewNota, setShowNewNota] = useState(false);
   const [showNewRichiesta, setShowNewRichiesta] = useState(false);
+  const [showNewDDT, setShowNewDDT] = useState(false);
 
-  const formatCurrency = (value: number) => {
+  // Form states
+  const [newFattura, setNewFattura] = useState({
+    tipo: 'attiva' as TipoFattura,
+    numero: '',
+    data: new Date().toISOString().split('T')[0],
+    scadenza: '',
+    cliente_fornitore: '',
+    descrizione: '',
+    imponibile: 0,
+    aliquota_iva: 22
+  });
+
+  const [newNota, setNewNota] = useState({
+    dipendente_nome: '',
+    categoria: 'altro' as CategoriaNotaSpesa,
+    descrizione: '',
+    importo: 0,
+    commessa_id: ''
+  });
+
+  const [newRichiesta, setNewRichiesta] = useState({
+    dipendente_nome: '',
+    tipo: 'ferie' as TipoRichiesta,
+    descrizione: '',
+    data_inizio: '',
+    data_fine: '',
+    importo: 0
+  });
+
+  // Fetch fatture from database
+  const { data: fatture = [], isLoading: loadingFatture } = useQuery({
+    queryKey: ['fatture'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fatture')
+        .select('*')
+        .order('data', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch note spesa from database
+  const { data: noteSpesa = [], isLoading: loadingNote } = useQuery({
+    queryKey: ['note_spesa'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('note_spesa')
+        .select('*')
+        .order('data', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch richieste dipendenti from database
+  const { data: richiesteDipendenti = [], isLoading: loadingRichieste } = useQuery({
+    queryKey: ['richieste_dipendenti'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('richieste_dipendenti')
+        .select('*')
+        .order('data', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch organigramma from database
+  const { data: organigramma = [] } = useQuery({
+    queryKey: ['organigramma'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organigramma')
+        .select('*')
+        .order('livello', { ascending: true });
+      if (error) throw error;
+      return data as NodoOrganigramma[];
+    }
+  });
+
+  // Create fattura mutation
+  const createFattura = useMutation({
+    mutationFn: async (data: typeof newFattura) => {
+      const iva = data.imponibile * (data.aliquota_iva / 100);
+      const totale = data.imponibile + iva;
+      const { error } = await supabase.from('fatture').insert({
+        tipo: data.tipo,
+        numero: data.numero || undefined,
+        data: data.data,
+        scadenza: data.scadenza,
+        cliente_fornitore: data.cliente_fornitore,
+        descrizione: data.descrizione,
+        imponibile: data.imponibile,
+        aliquota_iva: data.aliquota_iva,
+        iva,
+        totale
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fatture'] });
+      setShowNewFattura(false);
+      setNewFattura({
+        tipo: 'attiva',
+        numero: '',
+        data: new Date().toISOString().split('T')[0],
+        scadenza: '',
+        cliente_fornitore: '',
+        descrizione: '',
+        imponibile: 0,
+        aliquota_iva: 22
+      });
+      toast.success('Fattura creata con successo');
+    },
+    onError: (error) => {
+      toast.error('Errore nella creazione: ' + error.message);
+    }
+  });
+
+  // Create nota spesa mutation
+  const createNotaSpesa = useMutation({
+    mutationFn: async (data: typeof newNota) => {
+      const numero = `NS-${new Date().getFullYear()}-${String(noteSpesa.length + 1).padStart(3, '0')}`;
+      const { error } = await supabase.from('note_spesa').insert({
+        numero,
+        dipendente_nome: data.dipendente_nome,
+        categoria: data.categoria,
+        descrizione: data.descrizione,
+        importo: data.importo,
+        commessa_id: data.commessa_id || null
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['note_spesa'] });
+      setShowNewNota(false);
+      setNewNota({ dipendente_nome: '', categoria: 'altro', descrizione: '', importo: 0, commessa_id: '' });
+      toast.success('Nota spesa creata con successo');
+    },
+    onError: (error) => {
+      toast.error('Errore: ' + error.message);
+    }
+  });
+
+  // Create richiesta mutation
+  const createRichiesta = useMutation({
+    mutationFn: async (data: typeof newRichiesta) => {
+      const numero = `RD-${new Date().getFullYear()}-${String(richiesteDipendenti.length + 1).padStart(3, '0')}`;
+      const { error } = await supabase.from('richieste_dipendenti').insert({
+        numero,
+        dipendente_nome: data.dipendente_nome,
+        tipo: data.tipo,
+        descrizione: data.descrizione,
+        data_inizio: data.data_inizio || null,
+        data_fine: data.data_fine || null,
+        importo: data.importo || null
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['richieste_dipendenti'] });
+      setShowNewRichiesta(false);
+      setNewRichiesta({ dipendente_nome: '', tipo: 'ferie', descrizione: '', data_inizio: '', data_fine: '', importo: 0 });
+      toast.success('Richiesta inviata con successo');
+    },
+    onError: (error) => {
+      toast.error('Errore: ' + error.message);
+    }
+  });
+
+  // Update nota spesa status
+  const updateNotaStatus = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: StatoNotaSpesa }) => {
+      const { error } = await supabase.from('note_spesa').update({ stato }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['note_spesa'] });
+      toast.success('Stato aggiornato');
+    }
+  });
+
+  // Update richiesta status
+  const updateRichiestaStatus = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: StatoRichiesta }) => {
+      const { error } = await supabase.from('richieste_dipendenti').update({ 
+        stato,
+        data_approvazione: stato === 'approvata' ? new Date().toISOString().split('T')[0] : null
+      }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['richieste_dipendenti'] });
+      toast.success('Stato aggiornato');
+    }
+  });
+
+  // Update fattura status
+  const updateFatturaStatus = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: StatoFattura }) => {
+      const updates: any = { stato };
+      if (stato === 'pagata') {
+        updates.data_pagamento = new Date().toISOString().split('T')[0];
+      }
+      const { error } = await supabase.from('fatture').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fatture'] });
+      toast.success('Stato fattura aggiornato');
+    }
+  });
+
+  const formatCurrency = (value: number | null) => {
+    if (value === null) return '€ 0,00';
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('it-IT');
   };
 
@@ -336,19 +356,154 @@ export default function RepartoAmministrazione() {
       const search = searchQuery.toLowerCase();
       return f.numero.toLowerCase().includes(search) ||
         f.cliente_fornitore.toLowerCase().includes(search) ||
-        f.descrizione.toLowerCase().includes(search) ||
-        (f.commessa && f.commessa.toLowerCase().includes(search));
+        (f.descrizione && f.descrizione.toLowerCase().includes(search));
     }
     return true;
   });
 
-  // Stats
-  const stats = {
-    fattureAttiveEmesse: fatture.filter(f => f.tipo === 'attiva' && f.stato === 'emessa').reduce((sum, f) => sum + f.totale, 0),
-    fatturePassiveDaPagare: fatture.filter(f => f.tipo === 'passiva' && f.stato === 'in_attesa').reduce((sum, f) => sum + f.totale, 0),
+  // Real stats from database
+  const stats = useMemo(() => ({
+    fattureAttiveEmesse: fatture.filter(f => f.tipo === 'attiva' && f.stato === 'emessa').reduce((sum, f) => sum + (f.totale || 0), 0),
+    fatturePassiveDaPagare: fatture.filter(f => f.tipo === 'passiva' && f.stato === 'in_attesa').reduce((sum, f) => sum + (f.totale || 0), 0),
     noteSpesaInAttesa: noteSpesa.filter(n => n.stato === 'presentata').length,
     richiesteInAttesa: richiesteDipendenti.filter(r => r.stato === 'in_attesa').length,
     totaleNoteSpesaInAttesa: noteSpesa.filter(n => n.stato === 'presentata').reduce((sum, n) => sum + n.importo, 0)
+  }), [fatture, noteSpesa, richiesteDipendenti]);
+
+  // Calendar view for richieste
+  const renderCalendarView = () => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    
+    const days = [];
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(<div key={`empty-${i}`} className="h-24 bg-muted/30" />);
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dayRichieste = richiesteDipendenti.filter(r => {
+        if (!r.data_inizio || !r.data_fine) return false;
+        return dateStr >= r.data_inizio && dateStr <= r.data_fine;
+      });
+
+      days.push(
+        <div key={day} className={cn(
+          "h-24 border border-border p-1 hover:bg-muted/50 transition-colors",
+          day === today.getDate() && "bg-primary/10 border-primary"
+        )}>
+          <span className={cn(
+            "text-sm font-medium",
+            day === today.getDate() && "text-primary"
+          )}>{day}</span>
+          <div className="mt-1 space-y-1 overflow-hidden">
+            {dayRichieste.slice(0, 2).map((r, i) => (
+              <div key={i} className={cn(
+                "text-xs px-1 py-0.5 rounded truncate",
+                getTipoRichiestaColor(r.tipo)
+              )}>
+                {r.dipendente_nome.split(' ')[0]} - {r.tipo}
+              </div>
+            ))}
+            {dayRichieste.length > 2 && (
+              <span className="text-xs text-muted-foreground">+{dayRichieste.length - 2} altri</span>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5" />
+            {new Date(currentYear, currentMonth).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-0 mb-2">
+            {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map(d => (
+              <div key={d} className="text-center text-sm font-medium text-muted-foreground py-2">{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-0">
+            {days}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Board/Kanban view for richieste
+  const renderBoardView = () => {
+    const columns: { key: StatoRichiesta; label: string; color: string }[] = [
+      { key: 'in_attesa', label: 'In Attesa', color: 'border-amber-500' },
+      { key: 'approvata', label: 'Approvate', color: 'border-emerald-500' },
+      { key: 'rifiutata', label: 'Rifiutate', color: 'border-red-500' },
+      { key: 'completata', label: 'Completate', color: 'border-sky-500' }
+    ];
+
+    return (
+      <div className="grid grid-cols-4 gap-4">
+        {columns.map(col => (
+          <Card key={col.key} className={cn("border-t-4", col.color)}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                {col.label}
+                <Badge variant="secondary">{richiesteDipendenti.filter(r => r.stato === col.key).length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <ScrollArea className="h-[400px] pr-2">
+                {richiesteDipendenti.filter(r => r.stato === col.key).map(r => (
+                  <Card key={r.id} className="mb-2 p-3 cursor-pointer hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge className={getTipoRichiestaColor(r.tipo)} variant="secondary">
+                        {r.tipo}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{r.numero}</span>
+                    </div>
+                    <p className="font-medium text-sm mb-1">{r.dipendente_nome}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{r.descrizione}</p>
+                    {r.data_inizio && r.data_fine && (
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(r.data_inizio)} - {formatDate(r.data_fine)}
+                      </div>
+                    )}
+                    {col.key === 'in_attesa' && (
+                      <div className="flex gap-1 mt-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 text-emerald-500"
+                          onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Approva
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-7 text-red-500"
+                          onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}
+                        >
+                          <XCircle className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   // Organigramma rendering
@@ -486,7 +641,7 @@ export default function RepartoAmministrazione() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="fatture" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Fatture
@@ -497,7 +652,11 @@ export default function RepartoAmministrazione() {
           </TabsTrigger>
           <TabsTrigger value="richieste" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Richieste Dipendenti
+            Richieste
+          </TabsTrigger>
+          <TabsTrigger value="ddt" className="flex items-center gap-2">
+            <Truck className="w-4 h-4" />
+            DDT
           </TabsTrigger>
           <TabsTrigger value="organigramma" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
@@ -512,27 +671,9 @@ export default function RepartoAmministrazione() {
               <div className="flex items-center gap-4">
                 <CardTitle>Fatture Attive e Passive</CardTitle>
                 <div className="flex gap-2">
-                  <Button
-                    variant={filterTipo === 'tutte' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterTipo('tutte')}
-                  >
-                    Tutte
-                  </Button>
-                  <Button
-                    variant={filterTipo === 'attive' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterTipo('attive')}
-                  >
-                    Attive
-                  </Button>
-                  <Button
-                    variant={filterTipo === 'passive' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterTipo('passive')}
-                  >
-                    Passive
-                  </Button>
+                  <Button variant={filterTipo === 'tutte' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTipo('tutte')}>Tutte</Button>
+                  <Button variant={filterTipo === 'attive' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTipo('attive')}>Attive</Button>
+                  <Button variant={filterTipo === 'passive' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTipo('passive')}>Passive</Button>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -547,65 +688,49 @@ export default function RepartoAmministrazione() {
                       Nuova Fattura
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>Nuova Fattura</DialogTitle>
                     </DialogHeader>
                     <div className="grid grid-cols-2 gap-4 py-4">
                       <div className="space-y-2">
                         <Label>Tipo</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona tipo" />
-                          </SelectTrigger>
+                        <Select value={newFattura.tipo} onValueChange={(v: TipoFattura) => setNewFattura({...newFattura, tipo: v})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="attiva">Fattura Attiva (Emessa)</SelectItem>
-                            <SelectItem value="passiva">Fattura Passiva (Ricevuta)</SelectItem>
+                            <SelectItem value="attiva">Fattura Attiva</SelectItem>
+                            <SelectItem value="passiva">Fattura Passiva</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Numero Fattura</Label>
-                        <Input placeholder="FA-2024-XXX" />
+                        <Label>Numero (auto se vuoto)</Label>
+                        <Input value={newFattura.numero} onChange={(e) => setNewFattura({...newFattura, numero: e.target.value})} placeholder="FA-2024-XXX" />
                       </div>
                       <div className="space-y-2">
                         <Label>Data</Label>
-                        <Input type="date" />
+                        <Input type="date" value={newFattura.data} onChange={(e) => setNewFattura({...newFattura, data: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <Label>Scadenza</Label>
-                        <Input type="date" />
+                        <Label>Scadenza *</Label>
+                        <Input type="date" value={newFattura.scadenza} onChange={(e) => setNewFattura({...newFattura, scadenza: e.target.value})} />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Commessa</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Collega a commessa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="COM-2024-001">COM-2024-001 - Via Roma</SelectItem>
-                            <SelectItem value="COM-2024-002">COM-2024-002 - Aurora</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Cliente/Fornitore</Label>
-                        <Input placeholder="Nome cliente o fornitore" />
+                      <div className="space-y-2 col-span-2">
+                        <Label>Cliente/Fornitore *</Label>
+                        <Input value={newFattura.cliente_fornitore} onChange={(e) => setNewFattura({...newFattura, cliente_fornitore: e.target.value})} placeholder="Nome cliente o fornitore" />
                       </div>
                       <div className="space-y-2 col-span-2">
                         <Label>Descrizione</Label>
-                        <Input placeholder="Descrizione fattura" />
+                        <Input value={newFattura.descrizione} onChange={(e) => setNewFattura({...newFattura, descrizione: e.target.value})} placeholder="Descrizione fattura" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Imponibile</Label>
-                        <Input type="number" placeholder="0.00" />
+                        <Label>Imponibile *</Label>
+                        <Input type="number" value={newFattura.imponibile} onChange={(e) => setNewFattura({...newFattura, imponibile: parseFloat(e.target.value) || 0})} />
                       </div>
                       <div className="space-y-2">
                         <Label>Aliquota IVA %</Label>
-                        <Select defaultValue="22">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={String(newFattura.aliquota_iva)} onValueChange={(v) => setNewFattura({...newFattura, aliquota_iva: parseInt(v)})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="22">22%</SelectItem>
                             <SelectItem value="10">10%</SelectItem>
@@ -614,37 +739,25 @@ export default function RepartoAmministrazione() {
                           </SelectContent>
                         </Select>
                       </div>
-                      {/* File Upload for Fattura */}
                       <div className="space-y-2 col-span-2">
-                        <Label>Allegato Fattura (PDF o documento scansionato)</Label>
-                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                          <input
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            className="hidden"
-                            id="fattura-file"
-                            onChange={(e) => {
-                              const files = e.target.files;
-                              if (files && files.length > 0) {
-                                toast.success(`File "${files[0].name}" selezionato`);
-                              }
-                            }}
-                          />
+                        <Label>Allegato</Label>
+                        <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" id="fattura-file" onChange={(e) => {
+                            if (e.target.files?.[0]) toast.success(`File "${e.target.files[0].name}" selezionato`);
+                          }} />
                           <label htmlFor="fattura-file" className="cursor-pointer">
-                            <Upload className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground">
-                              Clicca per caricare o trascina il file qui
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              PDF, JPG, PNG (max 10MB)
-                            </p>
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">Clicca per caricare</p>
                           </label>
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowNewFattura(false)}>Annulla</Button>
-                      <Button>Salva Fattura</Button>
+                      <Button onClick={() => createFattura.mutate(newFattura)} disabled={!newFattura.cliente_fornitore || !newFattura.scadenza}>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salva Fattura
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -655,66 +768,55 @@ export default function RepartoAmministrazione() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[120px]">Numero</TableHead>
-                      <TableHead className="min-w-[80px]">Tipo</TableHead>
-                      <TableHead className="min-w-[100px]">Data</TableHead>
-                      <TableHead className="min-w-[180px]">Cliente/Fornitore</TableHead>
-                      <TableHead className="min-w-[120px]">Commessa</TableHead>
-                      <TableHead className="min-w-[100px] text-right">Totale</TableHead>
-                      <TableHead className="min-w-[100px]">Stato</TableHead>
-                      <TableHead className="min-w-[100px]">Scadenza</TableHead>
-                      <TableHead className="min-w-[100px]">Azioni</TableHead>
+                      <TableHead>Numero</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Cliente/Fornitore</TableHead>
+                      <TableHead className="text-right">Totale</TableHead>
+                      <TableHead>Stato</TableHead>
+                      <TableHead>Scadenza</TableHead>
+                      <TableHead>Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredFatture.map((fattura) => (
+                    {loadingFatture ? (
+                      <TableRow><TableCell colSpan={8} className="text-center py-8">Caricamento...</TableCell></TableRow>
+                    ) : filteredFatture.length === 0 ? (
+                      <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessuna fattura trovata</TableCell></TableRow>
+                    ) : filteredFatture.map((fattura) => (
                       <TableRow key={fattura.id}>
-                        <TableCell className="font-mono font-medium whitespace-nowrap">{fattura.numero}</TableCell>
+                        <TableCell className="font-mono font-medium">{fattura.numero}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={fattura.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
                             {fattura.tipo === 'attiva' ? 'Attiva' : 'Passiva'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(fattura.data)}</TableCell>
+                        <TableCell>{formatDate(fattura.data)}</TableCell>
                         <TableCell>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="block max-w-[180px] break-words line-clamp-2 cursor-help">
-                                  {fattura.cliente_fornitore}
-                                </span>
+                                <span className="block max-w-[180px] truncate">{fattura.cliente_fornitore}</span>
                               </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{fattura.cliente_fornitore}</p>
-                              </TooltipContent>
+                              <TooltipContent><p>{fattura.cliente_fornitore}</p></TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(fattura.totale)}</TableCell>
                         <TableCell>
-                          {fattura.commessa && (
-                            <Badge variant="outline" className="font-mono text-xs whitespace-nowrap">
-                              {fattura.commessa}
-                            </Badge>
-                          )}
+                          <Badge className={getStatoColor(fattura.stato)}>{fattura.stato.replace('_', ' ')}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium whitespace-nowrap">{formatCurrency(fattura.totale)}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatoColor(fattura.stato)}>
-                            {fattura.stato.replace('_', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(fattura.scadenza)}</TableCell>
+                        <TableCell>{formatDate(fattura.scadenza)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Download className="w-4 h-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="w-4 h-4" /></Button>
+                            {fattura.stato === 'emessa' && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500" onClick={() => updateFatturaStatus.mutate({ id: fattura.id, stato: 'pagata' })}>
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><Printer className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -733,36 +835,20 @@ export default function RepartoAmministrazione() {
               <CardTitle>Note Spesa</CardTitle>
               <Dialog open={showNewNota} onOpenChange={setShowNewNota}>
                 <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuova Nota Spesa
-                  </Button>
+                  <Button className="gap-2"><Plus className="w-4 h-4" />Nuova Nota Spesa</Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Nuova Nota Spesa</DialogTitle>
-                  </DialogHeader>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader><DialogTitle>Nuova Nota Spesa</DialogTitle></DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Dipendente</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona dipendente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="mario">Mario Rossi</SelectItem>
-                            <SelectItem value="giuseppe">Giuseppe Verdi</SelectItem>
-                            <SelectItem value="anna">Anna Bianchi</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label>Dipendente *</Label>
+                        <Input value={newNota.dipendente_nome} onChange={(e) => setNewNota({...newNota, dipendente_nome: e.target.value})} placeholder="Nome dipendente" />
                       </div>
                       <div className="space-y-2">
                         <Label>Categoria</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Categoria" />
-                          </SelectTrigger>
+                        <Select value={newNota.categoria} onValueChange={(v: CategoriaNotaSpesa) => setNewNota({...newNota, categoria: v})}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="trasferta">Trasferta</SelectItem>
                             <SelectItem value="materiale">Materiale</SelectItem>
@@ -773,60 +859,32 @@ export default function RepartoAmministrazione() {
                         </Select>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Commessa</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Collega a commessa" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="COM-2024-001">COM-2024-001</SelectItem>
-                            <SelectItem value="COM-2024-002">COM-2024-002</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Importo (€)</Label>
-                        <Input type="number" placeholder="0.00" />
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Importo *</Label>
+                      <Input type="number" value={newNota.importo} onChange={(e) => setNewNota({...newNota, importo: parseFloat(e.target.value) || 0})} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Descrizione</Label>
-                      <Textarea placeholder="Descrizione spesa..." />
+                      <Label>Descrizione *</Label>
+                      <Textarea value={newNota.descrizione} onChange={(e) => setNewNota({...newNota, descrizione: e.target.value})} placeholder="Descrizione spesa..." />
                     </div>
-                    {/* File Upload Section */}
                     <div className="space-y-2">
-                      <Label>Allegati (ricevute, scontrini, etc.)</Label>
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                        <input
-                          type="file"
-                          multiple
-                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                          className="hidden"
-                          id="nota-spesa-file"
-                          onChange={(e) => {
-                            const files = e.target.files;
-                            if (files && files.length > 0) {
-                              toast.success(`${files.length} file selezionato/i`);
-                            }
-                          }}
-                        />
-                        <label htmlFor="nota-spesa-file" className="cursor-pointer">
-                          <Upload className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">
-                            Clicca per caricare o trascina i file qui
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            PDF, JPG, PNG, DOC (max 10MB)
-                          </p>
+                      <Label>Allegati</Label>
+                      <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                        <input type="file" multiple className="hidden" id="nota-file" onChange={(e) => {
+                          if (e.target.files?.length) toast.success(`${e.target.files.length} file selezionato/i`);
+                        }} />
+                        <label htmlFor="nota-file" className="cursor-pointer">
+                          <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">Carica ricevute</p>
                         </label>
                       </div>
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setShowNewNota(false)}>Annulla</Button>
-                    <Button>Invia Nota Spesa</Button>
+                    <Button onClick={() => createNotaSpesa.mutate(newNota)} disabled={!newNota.dipendente_nome || !newNota.descrizione || newNota.importo <= 0}>
+                      <Save className="w-4 h-4 mr-2" />Invia
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -836,86 +894,52 @@ export default function RepartoAmministrazione() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[100px]">Numero</TableHead>
-                      <TableHead className="min-w-[100px]">Data</TableHead>
-                      <TableHead className="min-w-[120px]">Dipendente</TableHead>
-                      <TableHead className="min-w-[100px]">Categoria</TableHead>
-                      <TableHead className="min-w-[100px]">Commessa</TableHead>
-                      <TableHead className="min-w-[200px]">Descrizione</TableHead>
-                      <TableHead className="min-w-[100px] text-right">Importo</TableHead>
-                      <TableHead className="min-w-[100px]">Stato</TableHead>
-                      <TableHead className="min-w-[80px]">Allegati</TableHead>
-                      <TableHead className="min-w-[150px]">Azioni</TableHead>
+                      <TableHead>Numero</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Dipendente</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Descrizione</TableHead>
+                      <TableHead className="text-right">Importo</TableHead>
+                      <TableHead>Stato</TableHead>
+                      <TableHead>Azioni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {noteSpesa.map((nota) => (
+                    {loadingNote ? (
+                      <TableRow><TableCell colSpan={8} className="text-center py-8">Caricamento...</TableCell></TableRow>
+                    ) : noteSpesa.length === 0 ? (
+                      <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessuna nota spesa</TableCell></TableRow>
+                    ) : noteSpesa.map((nota) => (
                       <TableRow key={nota.id}>
-                        <TableCell className="font-mono font-medium whitespace-nowrap">{nota.numero}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(nota.data)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{nota.dipendente}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{nota.categoria}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          {nota.commessa && (
-                            <Badge variant="outline" className="font-mono text-xs whitespace-nowrap">
-                              {nota.commessa}
-                            </Badge>
-                          )}
-                        </TableCell>
+                        <TableCell className="font-mono">{nota.numero}</TableCell>
+                        <TableCell>{formatDate(nota.data)}</TableCell>
+                        <TableCell>{nota.dipendente_nome}</TableCell>
+                        <TableCell><Badge variant="outline">{nota.categoria}</Badge></TableCell>
                         <TableCell>
                           <TooltipProvider>
                             <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="block max-w-[200px] break-words line-clamp-2 cursor-help">
-                                  {nota.descrizione}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[300px]">
-                                <p>{nota.descrizione}</p>
-                              </TooltipContent>
+                              <TooltipTrigger asChild><span className="block max-w-[200px] truncate">{nota.descrizione}</span></TooltipTrigger>
+                              <TooltipContent className="max-w-[300px]"><p>{nota.descrizione}</p></TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </TableCell>
-                        <TableCell className="text-right font-medium whitespace-nowrap">{formatCurrency(nota.importo)}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatoColor(nota.stato)}>
-                            {nota.stato}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {nota.allegati.length > 0 && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-8 gap-1">
-                                    <Paperclip className="w-4 h-4" />
-                                    {nota.allegati.length}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="space-y-1">
-                                    {nota.allegati.map((file, i) => (
-                                      <p key={i} className="text-xs">{file}</p>
-                                    ))}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(nota.importo)}</TableCell>
+                        <TableCell><Badge className={getStatoColor(nota.stato)}>{nota.stato}</Badge></TableCell>
                         <TableCell>
                           {nota.stato === 'presentata' && (
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Approva
+                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'approvata' })}>
+                                <CheckCircle className="w-4 h-4 mr-1" />Approva
                               </Button>
-                              <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
+                              <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rifiutata' })}>
                                 <XCircle className="w-4 h-4" />
                               </Button>
                             </div>
+                          )}
+                          {nota.stato === 'approvata' && (
+                            <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rimborsata' })}>
+                              Rimborsa
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -928,152 +952,163 @@ export default function RepartoAmministrazione() {
         </TabsContent>
 
         {/* Richieste Dipendenti Tab */}
-        <TabsContent value="richieste" className="mt-6">
+        <TabsContent value="richieste" className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}><List className="w-4 h-4 mr-1" />Tabella</Button>
+              <Button variant={viewMode === 'calendar' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('calendar')}><CalendarDays className="w-4 h-4 mr-1" />Calendario</Button>
+              <Button variant={viewMode === 'board' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('board')}><LayoutGrid className="w-4 h-4 mr-1" />Board</Button>
+            </div>
+            <Dialog open={showNewRichiesta} onOpenChange={setShowNewRichiesta}>
+              <DialogTrigger asChild>
+                <Button className="gap-2"><Plus className="w-4 h-4" />Nuova Richiesta</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nuova Richiesta</DialogTitle></DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Dipendente *</Label>
+                      <Input value={newRichiesta.dipendente_nome} onChange={(e) => setNewRichiesta({...newRichiesta, dipendente_nome: e.target.value})} placeholder="Nome dipendente" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo *</Label>
+                      <Select value={newRichiesta.tipo} onValueChange={(v: TipoRichiesta) => setNewRichiesta({...newRichiesta, tipo: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ferie">Ferie</SelectItem>
+                          <SelectItem value="permesso">Permesso</SelectItem>
+                          <SelectItem value="malattia">Malattia</SelectItem>
+                          <SelectItem value="straordinario">Straordinario</SelectItem>
+                          <SelectItem value="anticipo">Anticipo</SelectItem>
+                          <SelectItem value="rimborso">Rimborso</SelectItem>
+                          <SelectItem value="altro">Altro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Data Inizio</Label>
+                      <Input type="date" value={newRichiesta.data_inizio} onChange={(e) => setNewRichiesta({...newRichiesta, data_inizio: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data Fine</Label>
+                      <Input type="date" value={newRichiesta.data_fine} onChange={(e) => setNewRichiesta({...newRichiesta, data_fine: e.target.value})} />
+                    </div>
+                  </div>
+                  {(newRichiesta.tipo === 'anticipo' || newRichiesta.tipo === 'rimborso') && (
+                    <div className="space-y-2">
+                      <Label>Importo</Label>
+                      <Input type="number" value={newRichiesta.importo} onChange={(e) => setNewRichiesta({...newRichiesta, importo: parseFloat(e.target.value) || 0})} />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Descrizione *</Label>
+                    <Textarea value={newRichiesta.descrizione} onChange={(e) => setNewRichiesta({...newRichiesta, descrizione: e.target.value})} placeholder="Descrivi la richiesta..." />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowNewRichiesta(false)}>Annulla</Button>
+                  <Button onClick={() => createRichiesta.mutate(newRichiesta)} disabled={!newRichiesta.dipendente_nome || !newRichiesta.descrizione}>
+                    <Save className="w-4 h-4 mr-2" />Invia
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {viewMode === 'table' && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Numero</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Dipendente</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Periodo/Importo</TableHead>
+                        <TableHead>Descrizione</TableHead>
+                        <TableHead>Stato</TableHead>
+                        <TableHead>Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loadingRichieste ? (
+                        <TableRow><TableCell colSpan={8} className="text-center py-8">Caricamento...</TableCell></TableRow>
+                      ) : richiesteDipendenti.length === 0 ? (
+                        <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessuna richiesta</TableCell></TableRow>
+                      ) : richiesteDipendenti.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-mono">{r.numero}</TableCell>
+                          <TableCell>{formatDate(r.data)}</TableCell>
+                          <TableCell>{r.dipendente_nome}</TableCell>
+                          <TableCell><Badge className={getTipoRichiestaColor(r.tipo)}>{r.tipo}</Badge></TableCell>
+                          <TableCell>
+                            {r.data_inizio && r.data_fine ? (
+                              <span className="text-sm flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {formatDate(r.data_inizio)} - {formatDate(r.data_fine)}
+                              </span>
+                            ) : r.importo ? (
+                              <span className="font-medium">{formatCurrency(r.importo)}</span>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild><span className="block max-w-[200px] truncate">{r.descrizione}</span></TooltipTrigger>
+                                <TooltipContent className="max-w-[300px]"><p>{r.descrizione}</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell><Badge className={getStatoColor(r.stato)}>{r.stato.replace('_', ' ')}</Badge></TableCell>
+                          <TableCell>
+                            {r.stato === 'in_attesa' && (
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}>
+                                  <CheckCircle className="w-4 h-4 mr-1" />Approva
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}>
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {viewMode === 'calendar' && renderCalendarView()}
+          {viewMode === 'board' && renderBoardView()}
+        </TabsContent>
+
+        {/* DDT Tab */}
+        <TabsContent value="ddt" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Richieste Dipendenti</CardTitle>
-              <Dialog open={showNewRichiesta} onOpenChange={setShowNewRichiesta}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuova Richiesta
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Nuova Richiesta</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Dipendente</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona dipendente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="mario">Mario Rossi</SelectItem>
-                            <SelectItem value="giuseppe">Giuseppe Verdi</SelectItem>
-                            <SelectItem value="anna">Anna Bianchi</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Tipo Richiesta</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ferie">Ferie</SelectItem>
-                            <SelectItem value="permesso">Permesso</SelectItem>
-                            <SelectItem value="malattia">Malattia</SelectItem>
-                            <SelectItem value="straordinario">Straordinario</SelectItem>
-                            <SelectItem value="anticipo">Anticipo Stipendio</SelectItem>
-                            <SelectItem value="rimborso">Rimborso</SelectItem>
-                            <SelectItem value="altro">Altro</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Data Inizio</Label>
-                        <Input type="date" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Data Fine</Label>
-                        <Input type="date" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Importo (se applicabile)</Label>
-                      <Input type="number" placeholder="0.00" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Descrizione / Motivazione</Label>
-                      <Textarea placeholder="Descrivi la richiesta..." />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowNewRichiesta(false)}>Annulla</Button>
-                    <Button>Invia Richiesta</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <CardTitle>Documenti di Trasporto (DDT)</CardTitle>
+              <Button className="gap-2" onClick={() => setShowNewDDT(true)}>
+                <Plus className="w-4 h-4" />
+                Nuovo DDT
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[100px]">Numero</TableHead>
-                      <TableHead className="min-w-[100px]">Data</TableHead>
-                      <TableHead className="min-w-[120px]">Dipendente</TableHead>
-                      <TableHead className="min-w-[100px]">Tipo</TableHead>
-                      <TableHead className="min-w-[180px]">Periodo/Importo</TableHead>
-                      <TableHead className="min-w-[200px]">Descrizione</TableHead>
-                      <TableHead className="min-w-[100px]">Stato</TableHead>
-                      <TableHead className="min-w-[150px]">Azioni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {richiesteDipendenti.map((richiesta) => (
-                      <TableRow key={richiesta.id}>
-                        <TableCell className="font-mono font-medium whitespace-nowrap">{richiesta.numero}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(richiesta.data)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{richiesta.dipendente}</TableCell>
-                        <TableCell>
-                          <Badge className={getTipoRichiestaColor(richiesta.tipo)}>
-                            {richiesta.tipo}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {richiesta.dataInizio && richiesta.dataFine ? (
-                            <span className="text-sm flex items-center gap-1 whitespace-nowrap">
-                              <Calendar className="w-3 h-3 flex-shrink-0" />
-                              {formatDate(richiesta.dataInizio)} - {formatDate(richiesta.dataFine)}
-                            </span>
-                          ) : richiesta.importo ? (
-                            <span className="font-medium whitespace-nowrap">{formatCurrency(richiesta.importo)}</span>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="block max-w-[200px] break-words line-clamp-2 cursor-help">
-                                  {richiesta.descrizione}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-[300px]">
-                                <p>{richiesta.descrizione}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatoColor(richiesta.stato)}>
-                            {richiesta.stato.replace('_', ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {richiesta.stato === 'in_attesa' && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Approva
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
-                                <XCircle className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="text-center py-12 text-muted-foreground">
+                <Truck className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Gestione DDT</p>
+                <p className="text-sm">Crea e gestisci i documenti di trasporto collegati alle commesse</p>
+                <Button className="mt-4 gap-2" onClick={() => setShowNewDDT(true)}>
+                  <Plus className="w-4 h-4" />
+                  Crea il primo DDT
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1085,23 +1120,14 @@ export default function RepartoAmministrazione() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Organigramma Aziendale</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Struttura organizzativa generata automaticamente dai dati dipendenti
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">Struttura organizzativa aziendale</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Esporta PDF
-                </Button>
-                <Button className="gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  Aggiungi Ruolo
-                </Button>
+                <Button variant="outline" className="gap-2"><Download className="w-4 h-4" />Esporta PDF</Button>
+                <Button className="gap-2"><UserPlus className="w-4 h-4" />Aggiungi Ruolo</Button>
               </div>
             </CardHeader>
             <CardContent>
-              {/* Legenda */}
               <div className="flex flex-wrap gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded border-2 border-primary bg-primary/5" />
@@ -1125,7 +1151,12 @@ export default function RepartoAmministrazione() {
                 </div>
               </div>
               
-              {renderOrganigramma}
+              {organigramma.length > 0 ? renderOrganigramma : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun dipendente nell'organigramma</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
