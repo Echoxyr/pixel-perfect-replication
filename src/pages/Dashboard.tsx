@@ -161,11 +161,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Stats - Clickable Cards */}
+      {/* Main Stats - Clickable Cards with Blue Border */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div 
           onClick={() => navigate('/cantieri')}
-          className="p-5 rounded-xl border border-border bg-card card-clickable"
+          className="p-5 rounded-xl border-2 border-primary/50 bg-card card-clickable hover:border-primary shadow-sm hover:shadow-primary/20"
         >
           <div className="flex items-center justify-between">
             <div className="p-2 rounded-lg bg-sky-500/10">
@@ -180,7 +180,7 @@ export default function Dashboard() {
 
         <div 
           onClick={() => navigate('/progetti?status=open')}
-          className="p-5 rounded-xl border border-border bg-card card-clickable"
+          className="p-5 rounded-xl border-2 border-primary/50 bg-card card-clickable hover:border-primary shadow-sm hover:shadow-primary/20"
         >
           <div className="flex items-center justify-between">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -199,7 +199,7 @@ export default function Dashboard() {
 
         <div 
           onClick={() => navigate('/imprese')}
-          className="p-5 rounded-xl border border-border bg-card card-clickable"
+          className="p-5 rounded-xl border-2 border-primary/50 bg-card card-clickable hover:border-primary shadow-sm hover:shadow-primary/20"
         >
           <div className="flex items-center justify-between">
             <div className={cn(
@@ -222,7 +222,7 @@ export default function Dashboard() {
 
         <div 
           onClick={() => navigate('/lavoratori')}
-          className="p-5 rounded-xl border border-border bg-card card-clickable"
+          className="p-5 rounded-xl border-2 border-primary/50 bg-card card-clickable hover:border-primary shadow-sm hover:shadow-primary/20"
         >
           <div className="flex items-center justify-between">
             <div className={cn(
