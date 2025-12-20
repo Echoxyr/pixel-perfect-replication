@@ -38,7 +38,9 @@ import {
   BarChart3,
   FileCheck,
   GraduationCap,
-  Stethoscope
+  Stethoscope,
+  Briefcase,
+  Calculator
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -427,6 +429,30 @@ export function Layout() {
                 />
               </div>
             )}
+          </div>
+
+          {/* Ufficio Commerciale Section */}
+          <div>
+            {!sidebarCollapsed && (
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                Commerciale
+              </p>
+            )}
+            
+            <div className="space-y-1">
+              <NavItem 
+                to="/ufficio-commerciale" 
+                icon={Briefcase} 
+                label="Ufficio Commerciale" 
+                isActive={location.pathname === '/ufficio-commerciale'} 
+              />
+              <NavItem 
+                to="/computo-metrico" 
+                icon={Calculator} 
+                label="Computo Metrico" 
+                isActive={location.pathname === '/computo-metrico'} 
+              />
+            </div>
           </div>
         </nav>
 

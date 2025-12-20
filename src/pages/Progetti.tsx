@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { NotionTaskTable } from '@/components/workhub/NotionTaskTable';
+import { AdvancedTaskTable } from '@/components/workhub/AdvancedTaskTable';
 import { KanbanBoard } from '@/components/workhub/KanbanBoard';
 import { GanttTimeline } from '@/components/workhub/GanttTimeline';
 import { InteractiveCalendar } from '@/components/workhub/InteractiveCalendar';
@@ -360,7 +360,7 @@ export default function Progetti() {
 
       {/* Content based on view mode */}
       {viewMode === 'table' && (
-        <NotionTaskTable tasks={filteredTasks} />
+        <AdvancedTaskTable tasks={filteredTasks} />
       )}
 
       {viewMode === 'board' && (
