@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -37,251 +38,341 @@ import {
   FileSpreadsheet,
   Calculator,
   Download,
-  Upload,
   Search,
-  Filter,
   Truck,
   Euro,
-  Percent,
-  Package,
-  ClipboardList,
-  CheckCircle,
-  Clock,
-  AlertCircle,
   Edit,
   Trash2,
   Eye,
   Send,
-  FileCheck
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { exportToExcel } from '@/utils/exportUtils';
+import { Link } from 'react-router-dom';
 
 // Types
 interface Fornitore {
   id: string;
-  ragioneSociale: string;
-  partitaIva: string;
-  indirizzo: string;
-  citta: string;
-  cap: string;
-  telefono: string;
-  email: string;
-  pec: string;
-  categoria: string;
-  scontoBase: number;
-  condizioniPagamento: string;
-  note: string;
-  stato: 'attivo' | 'sospeso' | 'cessato';
+  ragione_sociale: string;
+  partita_iva: string | null;
+  indirizzo: string | null;
+  citta: string | null;
+  cap: string | null;
+  telefono: string | null;
+  email: string | null;
+  pec: string | null;
+  categoria: string | null;
+  sconto_base: number | null;
+  condizioni_pagamento: string | null;
+  note: string | null;
+  stato: string;
 }
 
-interface Preventivo {
+interface PreventivoFornitore {
   id: string;
   numero: string;
   data: string;
-  fornitoreId: string;
-  fornitoreNome: string;
+  fornitore_id: string | null;
+  fornitore_nome: string;
   oggetto: string;
-  importo: number;
-  stato: 'richiesto' | 'ricevuto' | 'approvato' | 'rifiutato' | 'scaduto';
-  scadenza: string;
-  note: string;
-  allegati: string[];
+  importo: number | null;
+  stato: string;
+  scadenza: string | null;
+  note: string | null;
 }
 
-interface Ordine {
+interface OrdineFornitore {
   id: string;
   numero: string;
   data: string;
-  fornitoreId: string;
-  fornitoreNome: string;
-  preventivi: string[];
+  fornitore_id: string | null;
+  fornitore_nome: string;
   importo: number;
-  stato: 'bozza' | 'inviato' | 'confermato' | 'in_consegna' | 'consegnato' | 'annullato';
-  dataConsegnaPrevista: string;
-  dataConsegnaEffettiva?: string;
-  note: string;
+  stato: string;
+  data_consegna_prevista: string | null;
+  data_consegna_effettiva: string | null;
+  note: string | null;
 }
 
 interface Contratto {
   id: string;
   numero: string;
   titolo: string;
-  tipo: 'appalto' | 'subappalto' | 'fornitura' | 'servizio';
+  tipo: string;
   contraente: string;
   importo: number;
-  dataInizio: string;
-  dataFine: string;
-  stato: 'attivo' | 'scaduto' | 'chiuso' | 'sospeso';
-  rinnovo: boolean;
-  allegati: string[];
+  data_inizio: string;
+  data_fine: string;
+  stato: string;
+  rinnovo_automatico: boolean | null;
+  descrizione: string | null;
 }
 
-interface ListinoPrezzo {
+interface ListinoFornitore {
   id: string;
-  fornitoreId: string;
-  fornitoreNome: string;
+  fornitore_id: string | null;
+  fornitore_nome: string;
   nome: string;
-  validoDal: string;
-  validoAl: string;
-  scontoApplicato: number;
-  articoli: ArticoloListino[];
-}
-
-interface ArticoloListino {
-  codice: string;
-  descrizione: string;
-  unitaMisura: string;
-  prezzoListino: number;
-  prezzoScontato: number;
+  valido_dal: string;
+  valido_al: string | null;
+  sconto_applicato: number | null;
+  attivo: boolean | null;
 }
 
 export default function UfficioCommerciale() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('contratti');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Sample data
-  const [fornitori, setFornitori] = useState<Fornitore[]>([
-    {
-      id: '1',
-      ragioneSociale: 'Edilmateriali SRL',
-      partitaIva: '01234567890',
-      indirizzo: 'Via Roma 123',
-      citta: 'Milano',
-      cap: '20100',
-      telefono: '02-12345678',
-      email: 'info@edilmateriali.it',
-      pec: 'edilmateriali@pec.it',
-      categoria: 'Materiali edili',
-      scontoBase: 15,
-      condizioniPagamento: '30 gg DFFM',
-      note: '',
-      stato: 'attivo'
-    },
-    {
-      id: '2',
-      ragioneSociale: 'Ferramenta Industriale SpA',
-      partitaIva: '09876543210',
-      indirizzo: 'Via Industria 45',
-      citta: 'Torino',
-      cap: '10100',
-      telefono: '011-9876543',
-      email: 'ordini@ferramentaind.it',
-      pec: 'ferramentaind@pec.it',
-      categoria: 'Ferramenta',
-      scontoBase: 20,
-      condizioniPagamento: '60 gg DFFM',
-      note: 'Consegna gratuita sopra 500€',
-      stato: 'attivo'
-    }
-  ]);
-
-  const [preventivi, setPreventivi] = useState<Preventivo[]>([
-    {
-      id: '1',
-      numero: 'PRV-2024-001',
-      data: '2024-01-15',
-      fornitoreId: '1',
-      fornitoreNome: 'Edilmateriali SRL',
-      oggetto: 'Materiali per cantiere Via Mazzini',
-      importo: 15000,
-      stato: 'ricevuto',
-      scadenza: '2024-02-15',
-      note: '',
-      allegati: []
-    },
-    {
-      id: '2',
-      numero: 'PRV-2024-002',
-      data: '2024-01-20',
-      fornitoreId: '2',
-      fornitoreNome: 'Ferramenta Industriale SpA',
-      oggetto: 'Bulloneria e fissaggi',
-      importo: 3500,
-      stato: 'approvato',
-      scadenza: '2024-02-20',
-      note: '',
-      allegati: []
-    }
-  ]);
-
-  const [ordini, setOrdini] = useState<Ordine[]>([
-    {
-      id: '1',
-      numero: 'ORD-2024-001',
-      data: '2024-01-22',
-      fornitoreId: '2',
-      fornitoreNome: 'Ferramenta Industriale SpA',
-      preventivi: ['2'],
-      importo: 3500,
-      stato: 'confermato',
-      dataConsegnaPrevista: '2024-02-05',
-      note: ''
-    }
-  ]);
-
-  const [contratti, setContratti] = useState<Contratto[]>([
-    {
-      id: '1',
-      numero: 'CTR-2024-001',
-      titolo: 'Appalto lavori edili Via Roma',
-      tipo: 'appalto',
-      contraente: 'Comune di Milano',
-      importo: 500000,
-      dataInizio: '2024-01-01',
-      dataFine: '2024-12-31',
-      stato: 'attivo',
-      rinnovo: false,
-      allegati: []
-    },
-    {
-      id: '2',
-      numero: 'CTR-2024-002',
-      titolo: 'Subappalto impianti elettrici',
-      tipo: 'subappalto',
-      contraente: 'Elettrica SRL',
-      importo: 80000,
-      dataInizio: '2024-02-01',
-      dataFine: '2024-06-30',
-      stato: 'attivo',
-      rinnovo: true,
-      allegati: []
-    }
-  ]);
-
-  const [listini, setListini] = useState<ListinoPrezzo[]>([
-    {
-      id: '1',
-      fornitoreId: '1',
-      fornitoreNome: 'Edilmateriali SRL',
-      nome: 'Listino 2024',
-      validoDal: '2024-01-01',
-      validoAl: '2024-12-31',
-      scontoApplicato: 15,
-      articoli: [
-        { codice: 'CEM001', descrizione: 'Cemento Portland 325', unitaMisura: 'sacco', prezzoListino: 8.50, prezzoScontato: 7.23 },
-        { codice: 'SAB001', descrizione: 'Sabbia lavata', unitaMisura: 'm³', prezzoListino: 35.00, prezzoScontato: 29.75 },
-        { codice: 'GHI001', descrizione: 'Ghiaia mista', unitaMisura: 'm³', prezzoListino: 28.00, prezzoScontato: 23.80 }
-      ]
-    }
-  ]);
-
-  // Dialogs state
+  // Dialog states
   const [showNewFornitore, setShowNewFornitore] = useState(false);
   const [showNewPreventivo, setShowNewPreventivo] = useState(false);
   const [showNewOrdine, setShowNewOrdine] = useState(false);
   const [showNewContratto, setShowNewContratto] = useState(false);
+  const [showNewListino, setShowNewListino] = useState(false);
 
-  // New item forms
-  const [newFornitore, setNewFornitore] = useState<Partial<Fornitore>>({});
-  const [newPreventivo, setNewPreventivo] = useState<Partial<Preventivo>>({});
-  const [newOrdine, setNewOrdine] = useState<Partial<Ordine>>({});
-  const [newContratto, setNewContratto] = useState<Partial<Contratto>>({});
+  // Form states
+  const [newFornitore, setNewFornitore] = useState({
+    ragione_sociale: '',
+    partita_iva: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    telefono: '',
+    email: '',
+    pec: '',
+    categoria: '',
+    sconto_base: 0,
+    condizioni_pagamento: '30 gg DFFM',
+    stato: 'attivo'
+  });
 
+  const [newPreventivo, setNewPreventivo] = useState({
+    numero: `PRV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+    fornitore_id: '',
+    fornitore_nome: '',
+    oggetto: '',
+    importo: 0,
+    scadenza: '',
+    note: ''
+  });
+
+  const [newOrdine, setNewOrdine] = useState({
+    numero: `ORD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+    fornitore_id: '',
+    fornitore_nome: '',
+    importo: 0,
+    data_consegna_prevista: '',
+    note: ''
+  });
+
+  const [newContratto, setNewContratto] = useState({
+    numero: `CTR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+    titolo: '',
+    tipo: 'appalto',
+    contraente: '',
+    importo: 0,
+    data_inizio: new Date().toISOString().split('T')[0],
+    data_fine: '',
+    rinnovo_automatico: false,
+    descrizione: ''
+  });
+
+  const [newListino, setNewListino] = useState({
+    fornitore_id: '',
+    fornitore_nome: '',
+    nome: '',
+    valido_dal: new Date().toISOString().split('T')[0],
+    valido_al: '',
+    sconto_applicato: 0
+  });
+
+  // Queries
+  const { data: fornitori = [] } = useQuery({
+    queryKey: ['fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('fornitori').select('*').order('ragione_sociale');
+      if (error) throw error;
+      return data as Fornitore[];
+    }
+  });
+
+  const { data: preventivi = [] } = useQuery({
+    queryKey: ['preventivi_fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('preventivi_fornitori').select('*').order('data', { ascending: false });
+      if (error) throw error;
+      return data as PreventivoFornitore[];
+    }
+  });
+
+  const { data: ordini = [] } = useQuery({
+    queryKey: ['ordini_fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('ordini_fornitori').select('*').order('data', { ascending: false });
+      if (error) throw error;
+      return data as OrdineFornitore[];
+    }
+  });
+
+  const { data: contratti = [] } = useQuery({
+    queryKey: ['contratti'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('contratti').select('*').order('data_inizio', { ascending: false });
+      if (error) throw error;
+      return data as Contratto[];
+    }
+  });
+
+  const { data: listini = [] } = useQuery({
+    queryKey: ['listini_fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('listini_fornitori').select('*').order('valido_dal', { ascending: false });
+      if (error) throw error;
+      return data as ListinoFornitore[];
+    }
+  });
+
+  // Mutations
+  const createFornitoreMutation = useMutation({
+    mutationFn: async (data: typeof newFornitore) => {
+      const { error } = await supabase.from('fornitori').insert(data);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fornitori'] });
+      toast.success('Fornitore creato');
+      setShowNewFornitore(false);
+      setNewFornitore({ ragione_sociale: '', partita_iva: '', indirizzo: '', citta: '', cap: '', telefono: '', email: '', pec: '', categoria: '', sconto_base: 0, condizioni_pagamento: '30 gg DFFM', stato: 'attivo' });
+    },
+    onError: () => toast.error('Errore nella creazione')
+  });
+
+  const createPreventivoMutation = useMutation({
+    mutationFn: async (data: typeof newPreventivo) => {
+      const { error } = await supabase.from('preventivi_fornitori').insert({
+        ...data,
+        stato: 'richiesto'
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preventivi_fornitori'] });
+      toast.success('Preventivo richiesto');
+      setShowNewPreventivo(false);
+    },
+    onError: () => toast.error('Errore nella creazione')
+  });
+
+  const createOrdineMutation = useMutation({
+    mutationFn: async (data: typeof newOrdine) => {
+      const { error } = await supabase.from('ordini_fornitori').insert({
+        ...data,
+        stato: 'bozza'
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordini_fornitori'] });
+      toast.success('Ordine creato');
+      setShowNewOrdine(false);
+    },
+    onError: () => toast.error('Errore nella creazione')
+  });
+
+  const createContrattoMutation = useMutation({
+    mutationFn: async (data: typeof newContratto) => {
+      const { error } = await supabase.from('contratti').insert({
+        ...data,
+        stato: 'attivo'
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contratti'] });
+      toast.success('Contratto creato');
+      setShowNewContratto(false);
+    },
+    onError: () => toast.error('Errore nella creazione')
+  });
+
+  const createListinoMutation = useMutation({
+    mutationFn: async (data: typeof newListino) => {
+      const { error } = await supabase.from('listini_fornitori').insert({
+        ...data,
+        attivo: true
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listini_fornitori'] });
+      toast.success('Listino creato');
+      setShowNewListino(false);
+    },
+    onError: () => toast.error('Errore nella creazione')
+  });
+
+  const deleteFornitoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('fornitori').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fornitori'] });
+      toast.success('Fornitore eliminato');
+    }
+  });
+
+  const deleteContrattoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('contratti').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contratti'] });
+      toast.success('Contratto eliminato');
+    }
+  });
+
+  const updateOrdineStatoMutation = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: string }) => {
+      const update: Record<string, unknown> = { stato };
+      if (stato === 'consegnato') {
+        update.data_consegna_effettiva = new Date().toISOString().split('T')[0];
+      }
+      const { error } = await supabase.from('ordini_fornitori').update(update).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordini_fornitori'] });
+      toast.success('Stato aggiornato');
+    }
+  });
+
+  const updatePreventivoStatoMutation = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: string }) => {
+      const { error } = await supabase.from('preventivi_fornitori').update({ stato }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preventivi_fornitori'] });
+      toast.success('Stato aggiornato');
+    }
+  });
+
+  // Helpers
   const getStatoColor = (stato: string) => {
     switch (stato) {
-      case 'attivo': case 'approvato': case 'confermato': case 'consegnato':
+      case 'attivo': case 'approvato': case 'confermato': case 'consegnato': case 'ricevuto':
         return 'bg-emerald-500/15 text-emerald-500';
-      case 'ricevuto': case 'in_consegna': case 'inviato':
+      case 'in_consegna': case 'inviato':
         return 'bg-sky-500/15 text-sky-500';
       case 'richiesto': case 'bozza':
         return 'bg-amber-500/15 text-amber-500';
@@ -292,13 +383,23 @@ export default function UfficioCommerciale() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+  const getStatoIcon = (stato: string) => {
+    switch (stato) {
+      case 'attivo': case 'approvato': case 'confermato': case 'consegnato':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'in_consegna': case 'inviato':
+        return <Truck className="w-4 h-4" />;
+      case 'richiesto': case 'bozza': case 'ricevuto':
+        return <Clock className="w-4 h-4" />;
+      case 'scaduto': case 'rifiutato': case 'annullato':
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return <AlertCircle className="w-4 h-4" />;
+    }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('it-IT');
-  };
+  const formatCurrency = (value: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('it-IT');
 
   // Stats
   const stats = {
@@ -307,6 +408,24 @@ export default function UfficioCommerciale() {
     preventiviInAttesa: preventivi.filter(p => p.stato === 'richiesto' || p.stato === 'ricevuto').length,
     ordiniInCorso: ordini.filter(o => o.stato !== 'consegnato' && o.stato !== 'annullato').length,
     fornitoriAttivi: fornitori.filter(f => f.stato === 'attivo').length
+  };
+
+  // Filter data
+  const filteredFornitori = fornitori.filter(f => 
+    f.ragione_sociale.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.categoria?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredContratti = contratti.filter(c =>
+    c.titolo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.contraente.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleExport = <T extends object>(data: T[], filename: string) => {
+    if (data.length === 0) return;
+    const columns = Object.keys(data[0]).map(key => ({ key, header: key, width: 15 }));
+    exportToExcel(data as Record<string, unknown>[], columns, filename);
+    toast.success('Export completato');
   };
 
   return (
@@ -332,71 +451,61 @@ export default function UfficioCommerciale() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="border-2 border-primary/50 min-w-0">
+        <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold truncate">{stats.contrattiAttivi}</p>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">Contratti Attivi</p>
+              <div className="p-2 rounded-lg bg-primary/10"><FileText className="w-5 h-5 text-primary" /></div>
+              <div>
+                <p className="text-2xl font-bold">{stats.contrattiAttivi}</p>
+                <p className="text-xs text-muted-foreground">Contratti Attivi</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-2 border-primary/50 min-w-0">
+        <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 flex-shrink-0">
-                <Euro className="w-5 h-5 text-emerald-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xl font-bold truncate" title={formatCurrency(stats.valoreTotaleContratti)}>{formatCurrency(stats.valoreTotaleContratti)}</p>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">Valore Contratti</p>
+              <div className="p-2 rounded-lg bg-emerald-500/10"><Euro className="w-5 h-5 text-emerald-500" /></div>
+              <div>
+                <p className="text-xl font-bold">{formatCurrency(stats.valoreTotaleContratti)}</p>
+                <p className="text-xs text-muted-foreground">Valore Contratti</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50 min-w-0">
+        <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
-                <Receipt className="w-5 h-5 text-amber-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold truncate">{stats.preventiviInAttesa}</p>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">Preventivi in Attesa</p>
+              <div className="p-2 rounded-lg bg-amber-500/10"><Receipt className="w-5 h-5 text-amber-500" /></div>
+              <div>
+                <p className="text-2xl font-bold">{stats.preventiviInAttesa}</p>
+                <p className="text-xs text-muted-foreground">Preventivi in Attesa</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50 min-w-0">
+        <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-sky-500/10 flex-shrink-0">
-                <Truck className="w-5 h-5 text-sky-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold truncate">{stats.ordiniInCorso}</p>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">Ordini in Corso</p>
+              <div className="p-2 rounded-lg bg-sky-500/10"><Truck className="w-5 h-5 text-sky-500" /></div>
+              <div>
+                <p className="text-2xl font-bold">{stats.ordiniInCorso}</p>
+                <p className="text-xs text-muted-foreground">Ordini in Corso</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50 min-w-0">
+        <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
-                <Building2 className="w-5 h-5 text-purple-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold truncate">{stats.fornitoriAttivi}</p>
-                <p className="text-xs text-muted-foreground whitespace-nowrap">Fornitori Attivi</p>
+              <div className="p-2 rounded-lg bg-purple-500/10"><Building2 className="w-5 h-5 text-purple-500" /></div>
+              <div>
+                <p className="text-2xl font-bold">{stats.fornitoriAttivi}</p>
+                <p className="text-xs text-muted-foreground">Fornitori Attivi</p>
               </div>
             </div>
           </CardContent>
@@ -406,30 +515,12 @@ export default function UfficioCommerciale() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="contratti" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Contratti
-          </TabsTrigger>
-          <TabsTrigger value="fornitori" className="flex items-center gap-2">
-            <Building2 className="w-4 h-4" />
-            Fornitori
-          </TabsTrigger>
-          <TabsTrigger value="preventivi" className="flex items-center gap-2">
-            <Receipt className="w-4 h-4" />
-            Preventivi
-          </TabsTrigger>
-          <TabsTrigger value="ordini" className="flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4" />
-            Ordini
-          </TabsTrigger>
-          <TabsTrigger value="listini" className="flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4" />
-            Listini Prezzi
-          </TabsTrigger>
-          <TabsTrigger value="computi" className="flex items-center gap-2">
-            <Calculator className="w-4 h-4" />
-            Computo Metrico
-          </TabsTrigger>
+          <TabsTrigger value="contratti" className="flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
+          <TabsTrigger value="fornitori" className="flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
+          <TabsTrigger value="preventivi" className="flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
+          <TabsTrigger value="ordini" className="flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
+          <TabsTrigger value="listini" className="flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
+          <TabsTrigger value="computi" className="flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
         </TabsList>
 
         {/* Contratti Tab */}
@@ -437,70 +528,43 @@ export default function UfficioCommerciale() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Contratti</CardTitle>
-              <Dialog open={showNewContratto} onOpenChange={setShowNewContratto}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuovo Contratto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Nuovo Contratto</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Numero Contratto</Label>
-                      <Input placeholder="CTR-2024-XXX" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tipo</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="appalto">Appalto</SelectItem>
-                          <SelectItem value="subappalto">Subappalto</SelectItem>
-                          <SelectItem value="fornitura">Fornitura</SelectItem>
-                          <SelectItem value="servizio">Servizio</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Titolo</Label>
-                      <Input placeholder="Titolo del contratto" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Contraente</Label>
-                      <Input placeholder="Nome contraente" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Importo</Label>
-                      <Input type="number" placeholder="0.00" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Data Inizio</Label>
-                      <Input type="date" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Data Fine</Label>
-                      <Input type="date" />
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Allegati</Label>
-                      <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">Trascina o clicca per caricare</p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(contratti, 'contratti')}>
+                  <Download className="w-4 h-4" />Esporta
+                </Button>
+                <Dialog open={showNewContratto} onOpenChange={setShowNewContratto}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Contratto</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader><DialogTitle>Nuovo Contratto</DialogTitle></DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div><Label>Numero</Label><Input value={newContratto.numero} onChange={(e) => setNewContratto(p => ({ ...p, numero: e.target.value }))} /></div>
+                      <div><Label>Tipo</Label>
+                        <Select value={newContratto.tipo} onValueChange={(v) => setNewContratto(p => ({ ...p, tipo: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="appalto">Appalto</SelectItem>
+                            <SelectItem value="subappalto">Subappalto</SelectItem>
+                            <SelectItem value="fornitura">Fornitura</SelectItem>
+                            <SelectItem value="servizio">Servizio</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
+                      <div className="col-span-2"><Label>Titolo *</Label><Input value={newContratto.titolo} onChange={(e) => setNewContratto(p => ({ ...p, titolo: e.target.value }))} /></div>
+                      <div><Label>Contraente *</Label><Input value={newContratto.contraente} onChange={(e) => setNewContratto(p => ({ ...p, contraente: e.target.value }))} /></div>
+                      <div><Label>Importo €</Label><Input type="number" value={newContratto.importo} onChange={(e) => setNewContratto(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
+                      <div><Label>Data Inizio</Label><Input type="date" value={newContratto.data_inizio} onChange={(e) => setNewContratto(p => ({ ...p, data_inizio: e.target.value }))} /></div>
+                      <div><Label>Data Fine</Label><Input type="date" value={newContratto.data_fine} onChange={(e) => setNewContratto(p => ({ ...p, data_fine: e.target.value }))} /></div>
+                      <div className="col-span-2"><Label>Descrizione</Label><Textarea value={newContratto.descrizione} onChange={(e) => setNewContratto(p => ({ ...p, descrizione: e.target.value }))} /></div>
                     </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowNewContratto(false)}>Annulla</Button>
-                    <Button>Salva Contratto</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowNewContratto(false)}>Annulla</Button>
+                      <Button onClick={() => createContrattoMutation.mutate(newContratto)} disabled={!newContratto.titolo || !newContratto.contraente}>Salva</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -517,32 +581,24 @@ export default function UfficioCommerciale() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contratti.map((contratto) => (
-                    <TableRow key={contratto.id}>
-                      <TableCell className="font-medium">{contratto.numero}</TableCell>
-                      <TableCell>{contratto.titolo}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">{contratto.tipo}</Badge>
-                      </TableCell>
-                      <TableCell>{contratto.contraente}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(contratto.importo)}</TableCell>
-                      <TableCell className="text-sm">
-                        {formatDate(contratto.dataInizio)} - {formatDate(contratto.dataFine)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn('capitalize', getStatoColor(contratto.stato))}>
-                          {contratto.stato}
-                        </Badge>
-                      </TableCell>
+                  {filteredContratti.map(c => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono">{c.numero}</TableCell>
+                      <TableCell className="font-medium">{c.titolo}</TableCell>
+                      <TableCell><Badge variant="outline">{c.tipo}</Badge></TableCell>
+                      <TableCell>{c.contraente}</TableCell>
+                      <TableCell>{formatCurrency(c.importo)}</TableCell>
+                      <TableCell className="text-sm">{formatDate(c.data_inizio)} - {formatDate(c.data_fine)}</TableCell>
+                      <TableCell><Badge className={cn("gap-1", getStatoColor(c.stato))}>{getStatoIcon(c.stato)}{c.stato}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon"><Download className="w-4 h-4" /></Button>
-                        </div>
+                        <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteContrattoMutation.mutate(c.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredContratti.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun contratto trovato</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -553,143 +609,69 @@ export default function UfficioCommerciale() {
         <TabsContent value="fornitori" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Anagrafica Fornitori</CardTitle>
-              <Dialog open={showNewFornitore} onOpenChange={setShowNewFornitore}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuovo Fornitore
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl">
-                  <DialogHeader>
-                    <DialogTitle>Nuovo Fornitore</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-3 gap-4 py-4">
-                    <div className="space-y-2 col-span-2">
-                      <Label>Ragione Sociale *</Label>
-                      <Input placeholder="Ragione sociale" />
+              <CardTitle>Fornitori</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(fornitori, 'fornitori')}><Download className="w-4 h-4" />Esporta</Button>
+                <Dialog open={showNewFornitore} onOpenChange={setShowNewFornitore}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Fornitore</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader><DialogTitle>Nuovo Fornitore</DialogTitle></DialogHeader>
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div className="col-span-2"><Label>Ragione Sociale *</Label><Input value={newFornitore.ragione_sociale} onChange={(e) => setNewFornitore(p => ({ ...p, ragione_sociale: e.target.value }))} /></div>
+                      <div><Label>Partita IVA</Label><Input value={newFornitore.partita_iva} onChange={(e) => setNewFornitore(p => ({ ...p, partita_iva: e.target.value }))} /></div>
+                      <div><Label>Categoria</Label><Input value={newFornitore.categoria} onChange={(e) => setNewFornitore(p => ({ ...p, categoria: e.target.value }))} placeholder="es. Materiali edili" /></div>
+                      <div className="col-span-2"><Label>Indirizzo</Label><Input value={newFornitore.indirizzo} onChange={(e) => setNewFornitore(p => ({ ...p, indirizzo: e.target.value }))} /></div>
+                      <div><Label>Città</Label><Input value={newFornitore.citta} onChange={(e) => setNewFornitore(p => ({ ...p, citta: e.target.value }))} /></div>
+                      <div><Label>CAP</Label><Input value={newFornitore.cap} onChange={(e) => setNewFornitore(p => ({ ...p, cap: e.target.value }))} /></div>
+                      <div><Label>Telefono</Label><Input value={newFornitore.telefono} onChange={(e) => setNewFornitore(p => ({ ...p, telefono: e.target.value }))} /></div>
+                      <div><Label>Email</Label><Input type="email" value={newFornitore.email} onChange={(e) => setNewFornitore(p => ({ ...p, email: e.target.value }))} /></div>
+                      <div><Label>PEC</Label><Input value={newFornitore.pec} onChange={(e) => setNewFornitore(p => ({ ...p, pec: e.target.value }))} /></div>
+                      <div><Label>Sconto Base %</Label><Input type="number" value={newFornitore.sconto_base} onChange={(e) => setNewFornitore(p => ({ ...p, sconto_base: parseFloat(e.target.value) || 0 }))} /></div>
+                      <div><Label>Condizioni Pagamento</Label><Input value={newFornitore.condizioni_pagamento} onChange={(e) => setNewFornitore(p => ({ ...p, condizioni_pagamento: e.target.value }))} /></div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>P.IVA *</Label>
-                      <Input placeholder="01234567890" />
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Indirizzo</Label>
-                      <Input placeholder="Via/Piazza" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>CAP</Label>
-                      <Input placeholder="00000" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Città</Label>
-                      <Input placeholder="Città" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Telefono</Label>
-                      <Input placeholder="+39 0123456789" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input type="email" placeholder="email@esempio.it" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>PEC</Label>
-                      <Input type="email" placeholder="pec@esempio.it" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Categoria</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="materiali">Materiali edili</SelectItem>
-                          <SelectItem value="ferramenta">Ferramenta</SelectItem>
-                          <SelectItem value="elettrico">Materiale elettrico</SelectItem>
-                          <SelectItem value="idraulica">Idraulica</SelectItem>
-                          <SelectItem value="noleggio">Noleggio</SelectItem>
-                          <SelectItem value="servizi">Servizi</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Sconto Base %</Label>
-                      <Input type="number" placeholder="0" />
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Condizioni Pagamento</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="contanti">Contanti</SelectItem>
-                          <SelectItem value="30gg">30 gg DFFM</SelectItem>
-                          <SelectItem value="60gg">60 gg DFFM</SelectItem>
-                          <SelectItem value="90gg">90 gg DFFM</SelectItem>
-                          <SelectItem value="riba30">Ri.Ba 30 gg</SelectItem>
-                          <SelectItem value="riba60">Ri.Ba 60 gg</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2 col-span-3">
-                      <Label>Note</Label>
-                      <Textarea placeholder="Note aggiuntive..." />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowNewFornitore(false)}>Annulla</Button>
-                    <Button>Salva Fornitore</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowNewFornitore(false)}>Annulla</Button>
+                      <Button onClick={() => createFornitoreMutation.mutate(newFornitore)} disabled={!newFornitore.ragione_sociale}>Salva</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ragione Sociale</TableHead>
-                    <TableHead>P.IVA</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead>Sconto Base</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    <TableHead>Contatti</TableHead>
+                    <TableHead>Città</TableHead>
+                    <TableHead>Telefono</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Sconto</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fornitori.map((fornitore) => (
-                    <TableRow key={fornitore.id}>
-                      <TableCell className="font-medium">{fornitore.ragioneSociale}</TableCell>
-                      <TableCell>{fornitore.partitaIva}</TableCell>
-                      <TableCell>{fornitore.categoria}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-emerald-500">
-                          -{fornitore.scontoBase}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{fornitore.condizioniPagamento}</TableCell>
-                      <TableCell className="text-sm">
-                        <div>{fornitore.email}</div>
-                        <div className="text-muted-foreground">{fornitore.telefono}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={cn('capitalize', getStatoColor(fornitore.stato))}>
-                          {fornitore.stato}
-                        </Badge>
-                      </TableCell>
+                  {filteredFornitori.map(f => (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-medium">{f.ragione_sociale}</TableCell>
+                      <TableCell>{f.categoria || '-'}</TableCell>
+                      <TableCell>{f.citta || '-'}</TableCell>
+                      <TableCell>{f.telefono || '-'}</TableCell>
+                      <TableCell>{f.email || '-'}</TableCell>
+                      <TableCell>{f.sconto_base}%</TableCell>
+                      <TableCell><Badge className={getStatoColor(f.stato)}>{f.stato}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon"><FileSpreadsheet className="w-4 h-4" /></Button>
-                        </div>
+                        <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteFornitoreMutation.mutate(f.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredFornitori.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun fornitore trovato</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -700,89 +682,36 @@ export default function UfficioCommerciale() {
         <TabsContent value="preventivi" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Preventivi Ricevuti/Emessi</CardTitle>
-              <div className="flex items-center gap-2">
+              <CardTitle>Richieste Preventivo</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(preventivi, 'preventivi')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewPreventivo} onOpenChange={setShowNewPreventivo}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2">
-                      <Upload className="w-4 h-4" />
-                      Carica Preventivo
-                    </Button>
+                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuova Richiesta</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Carica Preventivo</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid grid-cols-2 gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label>Tipo *</Label>
-                        <Select defaultValue="ricevuto">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona tipo" />
-                          </SelectTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Nuova Richiesta Preventivo</DialogTitle></DialogHeader>
+                    <div className="grid gap-4 pt-4">
+                      <div><Label>Fornitore *</Label>
+                        <Select value={newPreventivo.fornitore_id} onValueChange={(v) => {
+                          const f = fornitori.find(x => x.id === v);
+                          setNewPreventivo(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ricevuto">Preventivo Ricevuto (da fornitore)</SelectItem>
-                            <SelectItem value="emesso">Preventivo Emesso (a cliente)</SelectItem>
+                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Fornitore/Cliente *</Label>
-                        <Input placeholder="Nome fornitore o cliente" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Numero Preventivo</Label>
-                        <Input placeholder="PRV-2024-XXX" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Data</Label>
-                        <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Oggetto *</Label>
-                        <Input placeholder="Oggetto del preventivo" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Importo</Label>
-                        <Input type="number" placeholder="0.00" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Scadenza</Label>
-                        <Input type="date" />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Stato</Label>
-                        <Select defaultValue="ricevuto">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ricevuto">Ricevuto</SelectItem>
-                            <SelectItem value="approvato">Approvato</SelectItem>
-                            <SelectItem value="rifiutato">Rifiutato</SelectItem>
-                            <SelectItem value="scaduto">Scaduto</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Allegato (PDF)</Label>
-                        <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                          <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" className="hidden" id="preventivo-upload" />
-                          <label htmlFor="preventivo-upload" className="cursor-pointer">
-                            <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground">Carica il file del preventivo</p>
-                            <p className="text-xs text-muted-foreground mt-1">PDF, DOC, DOCX, XLS, XLSX</p>
-                          </label>
-                        </div>
-                      </div>
+                      <div><Label>Oggetto *</Label><Input value={newPreventivo.oggetto} onChange={(e) => setNewPreventivo(p => ({ ...p, oggetto: e.target.value }))} /></div>
+                      <div><Label>Importo Stimato €</Label><Input type="number" value={newPreventivo.importo} onChange={(e) => setNewPreventivo(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
+                      <div><Label>Scadenza</Label><Input type="date" value={newPreventivo.scadenza} onChange={(e) => setNewPreventivo(p => ({ ...p, scadenza: e.target.value }))} /></div>
+                      <div><Label>Note</Label><Textarea value={newPreventivo.note || ''} onChange={(e) => setNewPreventivo(p => ({ ...p, note: e.target.value }))} /></div>
                     </div>
-                    <div className="flex justify-end gap-2">
+                    <DialogFooter>
                       <Button variant="outline" onClick={() => setShowNewPreventivo(false)}>Annulla</Button>
-                      <Button className="gap-2">
-                        <FileCheck className="w-4 h-4" />
-                        Salva Preventivo
-                      </Button>
-                    </div>
+                      <Button onClick={() => createPreventivoMutation.mutate(newPreventivo)} disabled={!newPreventivo.fornitore_nome || !newPreventivo.oggetto}>Invia Richiesta</Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -793,7 +722,7 @@ export default function UfficioCommerciale() {
                   <TableRow>
                     <TableHead>Numero</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Fornitore/Cliente</TableHead>
+                    <TableHead>Fornitore</TableHead>
                     <TableHead>Oggetto</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Scadenza</TableHead>
@@ -802,40 +731,31 @@ export default function UfficioCommerciale() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {preventivi.map((preventivo) => (
-                    <TableRow key={preventivo.id}>
-                      <TableCell className="font-medium">{preventivo.numero}</TableCell>
-                      <TableCell>{formatDate(preventivo.data)}</TableCell>
-                      <TableCell>{preventivo.fornitoreNome}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{preventivo.oggetto}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(preventivo.importo)}</TableCell>
-                      <TableCell>{formatDate(preventivo.scadenza)}</TableCell>
-                      <TableCell>
-                        <Badge className={cn('capitalize', getStatoColor(preventivo.stato))}>
-                          {preventivo.stato.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" title="Visualizza"><Eye className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" title="Scarica"><Download className="w-4 h-4" /></Button>
-                          {preventivo.stato === 'ricevuto' && (
-                            <>
-                              <Button variant="ghost" size="icon" className="text-emerald-500" title="Approva">
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="text-red-500" title="Rifiuta">
-                                <AlertCircle className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                          <Button variant="ghost" size="icon" className="text-red-500" title="Elimina">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                  {preventivi.map(p => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono">{p.numero}</TableCell>
+                      <TableCell>{formatDate(p.data)}</TableCell>
+                      <TableCell>{p.fornitore_nome}</TableCell>
+                      <TableCell>{p.oggetto}</TableCell>
+                      <TableCell>{p.importo ? formatCurrency(p.importo) : '-'}</TableCell>
+                      <TableCell>{p.scadenza ? formatDate(p.scadenza) : '-'}</TableCell>
+                      <TableCell><Badge className={getStatoColor(p.stato)}>{p.stato}</Badge></TableCell>
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        {p.stato === 'richiesto' && (
+                          <Button size="sm" variant="outline" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'ricevuto' })}>Ricevuto</Button>
+                        )}
+                        {p.stato === 'ricevuto' && (
+                          <>
+                            <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'approvato' })}>Approva</Button>
+                            <Button size="sm" variant="outline" className="text-destructive" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'rifiutato' })}>Rifiuta</Button>
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
+                  {preventivi.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun preventivo trovato</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -846,67 +766,38 @@ export default function UfficioCommerciale() {
         <TabsContent value="ordini" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Ordini a Fornitore</CardTitle>
-              <Dialog open={showNewOrdine} onOpenChange={setShowNewOrdine}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuovo Ordine
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Nuovo Ordine</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Fornitore *</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona fornitore" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fornitori.map(f => (
-                            <SelectItem key={f.id} value={f.id}>{f.ragioneSociale}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+              <CardTitle>Ordini Fornitori</CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(ordini, 'ordini')}><Download className="w-4 h-4" />Esporta</Button>
+                <Dialog open={showNewOrdine} onOpenChange={setShowNewOrdine}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Ordine</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Nuovo Ordine</DialogTitle></DialogHeader>
+                    <div className="grid gap-4 pt-4">
+                      <div><Label>Fornitore *</Label>
+                        <Select value={newOrdine.fornitore_id} onValueChange={(v) => {
+                          const f = fornitori.find(x => x.id === v);
+                          setNewOrdine(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
+                          <SelectContent>
+                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Importo €</Label><Input type="number" value={newOrdine.importo} onChange={(e) => setNewOrdine(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
+                      <div><Label>Data Consegna Prevista</Label><Input type="date" value={newOrdine.data_consegna_prevista} onChange={(e) => setNewOrdine(p => ({ ...p, data_consegna_prevista: e.target.value }))} /></div>
+                      <div><Label>Note</Label><Textarea value={newOrdine.note || ''} onChange={(e) => setNewOrdine(p => ({ ...p, note: e.target.value }))} /></div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Da Preventivo</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Collega preventivo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {preventivi.filter(p => p.stato === 'approvato').map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.numero} - {p.oggetto}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Data Consegna Prevista</Label>
-                      <Input type="date" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Importo</Label>
-                      <Input type="number" placeholder="0.00" />
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <Label>Note</Label>
-                      <Textarea placeholder="Note per il fornitore..." />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowNewOrdine(false)}>Annulla</Button>
-                    <Button className="gap-2">
-                      <Send className="w-4 h-4" />
-                      Crea ed Invia Ordine
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowNewOrdine(false)}>Annulla</Button>
+                      <Button onClick={() => createOrdineMutation.mutate(newOrdine)} disabled={!newOrdine.fornitore_nome}>Crea Ordine</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -917,129 +808,139 @@ export default function UfficioCommerciale() {
                     <TableHead>Fornitore</TableHead>
                     <TableHead>Importo</TableHead>
                     <TableHead>Consegna Prevista</TableHead>
+                    <TableHead>Consegna Effettiva</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ordini.map((ordine) => (
-                    <TableRow key={ordine.id}>
-                      <TableCell className="font-medium">{ordine.numero}</TableCell>
-                      <TableCell>{formatDate(ordine.data)}</TableCell>
-                      <TableCell>{ordine.fornitoreNome}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(ordine.importo)}</TableCell>
-                      <TableCell>{formatDate(ordine.dataConsegnaPrevista)}</TableCell>
-                      <TableCell>
-                        <Badge className={cn('capitalize', getStatoColor(ordine.stato))}>
-                          {ordine.stato.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon"><Download className="w-4 h-4" /></Button>
-                          {ordine.stato === 'confermato' && (
-                            <Button variant="ghost" size="icon" className="text-emerald-500">
-                              <FileCheck className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                  {ordini.map(o => (
+                    <TableRow key={o.id}>
+                      <TableCell className="font-mono">{o.numero}</TableCell>
+                      <TableCell>{formatDate(o.data)}</TableCell>
+                      <TableCell>{o.fornitore_nome}</TableCell>
+                      <TableCell>{formatCurrency(o.importo)}</TableCell>
+                      <TableCell>{o.data_consegna_prevista ? formatDate(o.data_consegna_prevista) : '-'}</TableCell>
+                      <TableCell>{o.data_consegna_effettiva ? formatDate(o.data_consegna_effettiva) : '-'}</TableCell>
+                      <TableCell><Badge className={cn("gap-1", getStatoColor(o.stato))}>{getStatoIcon(o.stato)}{o.stato.replace('_', ' ')}</Badge></TableCell>
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        {o.stato === 'bozza' && (
+                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'inviato' })}><Send className="w-3 h-3 mr-1" />Invia</Button>
+                        )}
+                        {o.stato === 'inviato' && (
+                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'confermato' })}>Conferma</Button>
+                        )}
+                        {o.stato === 'confermato' && (
+                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'in_consegna' })}>In Consegna</Button>
+                        )}
+                        {o.stato === 'in_consegna' && (
+                          <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'consegnato' })}><CheckCircle className="w-3 h-3 mr-1" />Consegnato</Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
+                  {ordini.length === 0 && (
+                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun ordine trovato</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Listini Prezzi Tab */}
+        {/* Listini Tab */}
         <TabsContent value="listini" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Listini Prezzi Fornitori</CardTitle>
-              <Button className="gap-2">
-                <Upload className="w-4 h-4" />
-                Importa Listino
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(listini, 'listini')}><Download className="w-4 h-4" />Esporta</Button>
+                <Dialog open={showNewListino} onOpenChange={setShowNewListino}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Listino</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Nuovo Listino</DialogTitle></DialogHeader>
+                    <div className="grid gap-4 pt-4">
+                      <div><Label>Fornitore *</Label>
+                        <Select value={newListino.fornitore_id} onValueChange={(v) => {
+                          const f = fornitori.find(x => x.id === v);
+                          setNewListino(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
+                          <SelectContent>
+                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Nome Listino *</Label><Input value={newListino.nome} onChange={(e) => setNewListino(p => ({ ...p, nome: e.target.value }))} placeholder="es. Listino 2024" /></div>
+                      <div><Label>Valido Dal</Label><Input type="date" value={newListino.valido_dal} onChange={(e) => setNewListino(p => ({ ...p, valido_dal: e.target.value }))} /></div>
+                      <div><Label>Valido Al</Label><Input type="date" value={newListino.valido_al} onChange={(e) => setNewListino(p => ({ ...p, valido_al: e.target.value }))} /></div>
+                      <div><Label>Sconto Applicato %</Label><Input type="number" value={newListino.sconto_applicato} onChange={(e) => setNewListino(p => ({ ...p, sconto_applicato: parseFloat(e.target.value) || 0 }))} /></div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowNewListino(false)}>Annulla</Button>
+                      <Button onClick={() => createListinoMutation.mutate(newListino)} disabled={!newListino.fornitore_nome || !newListino.nome}>Salva</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {listini.map((listino) => (
-                  <Card key={listino.id} className="border">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{listino.fornitoreNome}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {listino.nome} • Valido dal {formatDate(listino.validoDal)} al {formatDate(listino.validoAl)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-emerald-500">
-                            <Percent className="w-3 h-3 mr-1" />
-                            -{listino.scontoApplicato}%
-                          </Badge>
-                          <Button variant="outline" size="sm">
-                            <Download className="w-4 h-4 mr-1" />
-                            Esporta
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Codice</TableHead>
-                            <TableHead>Descrizione</TableHead>
-                            <TableHead>U.M.</TableHead>
-                            <TableHead className="text-right">Prezzo Listino</TableHead>
-                            <TableHead className="text-right">Prezzo Scontato</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {listino.articoli.map((articolo, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell className="font-mono">{articolo.codice}</TableCell>
-                              <TableCell>{articolo.descrizione}</TableCell>
-                              <TableCell>{articolo.unitaMisura}</TableCell>
-                              <TableCell className="text-right text-muted-foreground line-through">
-                                {formatCurrency(articolo.prezzoListino)}
-                              </TableCell>
-                              <TableCell className="text-right font-medium text-emerald-500">
-                                {formatCurrency(articolo.prezzoScontato)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fornitore</TableHead>
+                    <TableHead>Nome Listino</TableHead>
+                    <TableHead>Valido Dal</TableHead>
+                    <TableHead>Valido Al</TableHead>
+                    <TableHead>Sconto</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listini.map(l => (
+                    <TableRow key={l.id}>
+                      <TableCell className="font-medium">{l.fornitore_nome}</TableCell>
+                      <TableCell>{l.nome}</TableCell>
+                      <TableCell>{formatDate(l.valido_dal)}</TableCell>
+                      <TableCell>{l.valido_al ? formatDate(l.valido_al) : 'Indeterminato'}</TableCell>
+                      <TableCell>{l.sconto_applicato}%</TableCell>
+                      <TableCell><Badge className={l.attivo ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted'}>{l.attivo ? 'Attivo' : 'Inattivo'}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {listini.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nessun listino trovato</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Computo Metrico Tab - Redirect to dedicated page */}
+        {/* Computo Metrico Tab */}
         <TabsContent value="computi" className="mt-6">
-          <Card className="border-2 border-primary/30 bg-primary/5">
-            <CardContent className="p-8 text-center">
-              <Calculator className="w-16 h-16 mx-auto text-primary mb-4" />
-              <h3 className="text-xl font-bold mb-2">Gestione Computo Metrico</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Strumento avanzato per la gestione dei computi metrici, preventivi e contabilità lavori.
-                Compatibile con Primus, Excel e prezziari regionali.
-              </p>
-              <Button 
-                size="lg" 
-                className="gap-2"
-                onClick={() => window.location.href = '/computo-metrico'}
-              >
-                <FileSpreadsheet className="w-5 h-5" />
-                Apri Computo Metrico
-              </Button>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Computo Metrico</CardTitle>
+              <Link to="/computo-metrico">
+                <Button className="gap-2"><Calculator className="w-4 h-4" />Apri Modulo Completo</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Calculator className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-medium mb-2">Gestione Computi Metrici</h3>
+                <p className="text-muted-foreground mb-4">Accedi al modulo completo per la gestione dei computi metrici estimativi</p>
+                <Link to="/computo-metrico">
+                  <Button>Vai al Computo Metrico</Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
