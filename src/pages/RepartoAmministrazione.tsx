@@ -314,6 +314,58 @@ export default function RepartoAmministrazione() {
     }
   });
 
+  // Delete fattura
+  const deleteFattura = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('fatture').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fatture'] });
+      toast.success('Fattura eliminata');
+    },
+    onError: (error) => toast.error('Errore: ' + error.message)
+  });
+
+  // Delete nota spesa
+  const deleteNotaSpesa = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('note_spesa').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['note_spesa'] });
+      toast.success('Nota spesa eliminata');
+    },
+    onError: (error) => toast.error('Errore: ' + error.message)
+  });
+
+  // Delete richiesta
+  const deleteRichiesta = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('richieste_dipendenti').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['richieste_dipendenti'] });
+      toast.success('Richiesta eliminata');
+    },
+    onError: (error) => toast.error('Errore: ' + error.message)
+  });
+
+  // Delete organigramma node
+  const deleteOrganigramma = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('organigramma').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organigramma'] });
+      toast.success('Ruolo eliminato');
+    },
+    onError: (error) => toast.error('Errore: ' + error.message)
+  });
+
   const formatCurrency = (value: number | null) => {
     if (value === null) return '€ 0,00';
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
@@ -475,27 +527,41 @@ export default function RepartoAmministrazione() {
                         {formatDate(r.data_inizio)} - {formatDate(r.data_fine)}
                       </div>
                     )}
-                    {col.key === 'in_attesa' && (
-                      <div className="flex gap-1 mt-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 text-emerald-500"
-                          onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}
-                        >
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Approva
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-7 text-red-500"
-                          onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}
-                        >
-                          <XCircle className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1 mt-2">
+                      {col.key === 'in_attesa' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-7 text-emerald-500"
+                            onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}
+                          >
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Approva
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-7 text-red-500"
+                            onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}
+                          >
+                            <XCircle className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        onClick={() => {
+                          if (confirm('Sei sicuro di voler eliminare questa richiesta?')) {
+                            deleteRichiesta.mutate(r.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </ScrollArea>
@@ -536,10 +602,23 @@ export default function RepartoAmministrazione() {
                 <Card 
                   key={nodo.id} 
                   className={cn(
-                    "w-48 border-2 transition-all hover:shadow-lg cursor-pointer",
+                    "w-48 border-2 transition-all hover:shadow-lg cursor-pointer relative group",
                     repartiColors[nodo.reparto] || 'border-border'
                   )}
                 >
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Sei sicuro di voler eliminare questo ruolo?')) {
+                        deleteOrganigramma.mutate(nodo.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
                   <CardContent className="p-4 text-center">
                     <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-2 flex items-center justify-center">
                       <Users className="w-6 h-6 text-muted-foreground" />
@@ -817,6 +896,18 @@ export default function RepartoAmministrazione() {
                               </Button>
                             )}
                             <Button variant="ghost" size="icon" className="h-8 w-8"><Printer className="w-4 h-4" /></Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              onClick={() => {
+                                if (confirm('Sei sicuro di voler eliminare questa fattura?')) {
+                                  deleteFattura.mutate(fattura.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -926,21 +1017,35 @@ export default function RepartoAmministrazione() {
                         <TableCell className="text-right font-medium">{formatCurrency(nota.importo)}</TableCell>
                         <TableCell><Badge className={getStatoColor(nota.stato)}>{nota.stato}</Badge></TableCell>
                         <TableCell>
-                          {nota.stato === 'presentata' && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'approvata' })}>
-                                <CheckCircle className="w-4 h-4 mr-1" />Approva
+                          <div className="flex gap-1">
+                            {nota.stato === 'presentata' && (
+                              <>
+                                <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'approvata' })}>
+                                  <CheckCircle className="w-4 h-4 mr-1" />Approva
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rifiutata' })}>
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                            {nota.stato === 'approvata' && (
+                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rimborsata' })}>
+                                Rimborsa
                               </Button>
-                              <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rifiutata' })}>
-                                <XCircle className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )}
-                          {nota.stato === 'approvata' && (
-                            <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateNotaStatus.mutate({ id: nota.id, stato: 'rimborsata' })}>
-                              Rimborsa
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              onClick={() => {
+                                if (confirm('Sei sicuro di voler eliminare questa nota spesa?')) {
+                                  deleteNotaSpesa.mutate(nota.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1066,16 +1171,30 @@ export default function RepartoAmministrazione() {
                           </TableCell>
                           <TableCell><Badge className={getStatoColor(r.stato)}>{r.stato.replace('_', ' ')}</Badge></TableCell>
                           <TableCell>
-                            {r.stato === 'in_attesa' && (
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}>
-                                  <CheckCircle className="w-4 h-4 mr-1" />Approva
-                                </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}>
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
+                            <div className="flex gap-1">
+                              {r.stato === 'in_attesa' && (
+                                <>
+                                  <Button variant="ghost" size="sm" className="h-8 text-emerald-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'approvata' })}>
+                                    <CheckCircle className="w-4 h-4 mr-1" />Approva
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="h-8 text-red-500" onClick={() => updateRichiestaStatus.mutate({ id: r.id, stato: 'rifiutata' })}>
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                onClick={() => {
+                                  if (confirm('Sei sicuro di voler eliminare questa richiesta?')) {
+                                    deleteRichiesta.mutate(r.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
