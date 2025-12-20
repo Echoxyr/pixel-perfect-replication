@@ -314,7 +314,7 @@ export default function UfficioCommerciale() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Ufficio Commerciale</h1>
+          <h1 className="text-2xl font-bold">Reparto Commerciale</h1>
           <p className="text-muted-foreground">Gestione contratti, fornitori, preventivi e ordini</p>
         </div>
         <div className="flex items-center gap-2">
