@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Lock } from 'lucide-react';
 
 // Cambia questa password con quella che preferisci
-const SITE_PASSWORD = 'geste2024';
+const SITE_PASSWORD = 'Geste2025';
 
 interface PasswordGateProps {
   children: React.ReactNode;
