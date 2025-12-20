@@ -147,116 +147,489 @@ export default function SALPage() {
     XLSX.writeFile(wb, 'template_previsioni_sal.xlsx');
   };
 
-  // Export SAL as professional Excel with letterhead
-  const exportSALDocument = (salItem: SAL) => {
+  // Generate professional HTML document for SAL
+  const generateSALDocument = (salItem: SAL): string => {
     const cantiere = cantieri.find(c => c.id === salItem.cantiereId);
     const contratto = contratti.find(c => c.cantiereId === salItem.cantiereId && c.tipoLavorazione === salItem.tipoLavorazione);
     const impresa = contratto ? imprese.find(i => i.id === contratto.impresaId) : undefined;
     
-    // Company header info
-    const companyName = 'GEST-E S.r.l.';
-    const companyAddress = 'Via Example 123, 35100 Padova (PD)';
-    const companyVat = 'P.IVA: IT01234567890';
-    const companyPhone = 'Tel: +39 049 1234567';
-    const companyEmail = 'info@gest-e.it';
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+    };
 
-    // Create workbook
-    const wb = XLSX.utils.book_new();
+    const importoVarianti = contratto?.importoVarianti || 0;
+    const importoTotaleContratto = salItem.importoContratto + importoVarianti;
+    const ritenutaPerc = contratto?.ritenute || 5;
+    const importoRitenuta = salItem.importoLavoriPeriodo * (ritenutaPerc / 100);
+    const importoNettoFatturare = salItem.importoLavoriPeriodo - importoRitenuta;
+    const lavoriDaEseguire = importoTotaleContratto - salItem.importoLavoriEseguiti;
 
-    // Create data for the SAL sheet
-    const salData: (string | number)[][] = [
-      // Header section
-      [companyName],
-      [companyAddress],
-      [`${companyVat} | ${companyPhone}`],
-      [companyEmail],
-      [],
-      ['STATO AVANZAMENTO LAVORI (SAL)'],
-      [],
-      // SAL Info
-      ['N. SAL:', salItem.numeroSAL, '', 'Data:', new Date().toLocaleDateString('it-IT')],
-      ['Periodo:', salItem.mese, '', 'Stato:', STATO_SAL_LABELS[salItem.stato]],
-      [],
-      // Cantiere info
-      ['DATI COMMESSA'],
-      ['Codice Commessa:', cantiere?.codiceCommessa || '-'],
-      ['Denominazione:', cantiere?.nome || '-'],
-      ['Indirizzo:', cantiere?.indirizzo || '-'],
-      ['Committente:', cantiere?.committente || '-'],
-      [],
-      // Impresa info
-      ['DATI IMPRESA ESECUTRICE'],
-      ['Ragione Sociale:', impresa?.ragioneSociale || '-'],
-      ['Tipo Lavorazione:', TIPO_LAVORAZIONE_LABELS[salItem.tipoLavorazione]],
-      [],
-      // Contratto info
-      ['DATI CONTRATTUALI'],
-      ['Importo Contratto:', formatCurrency(salItem.importoContratto)],
-      ['Importo Varianti:', formatCurrency(contratto?.importoVarianti || 0)],
-      ['Importo Totale:', formatCurrency(salItem.importoContratto + (contratto?.importoVarianti || 0))],
-      [],
-      // SAL details
-      ['DETTAGLIO STATO AVANZAMENTO'],
-      ['Descrizione', 'Importo'],
-      ['Lavori a tutto il mese precedente:', formatCurrency(salItem.importoLavoriPrecedenti)],
-      ['Lavori eseguiti nel periodo:', formatCurrency(salItem.importoLavoriPeriodo)],
-      ['Totale lavori eseguiti a oggi:', formatCurrency(salItem.importoLavoriEseguiti)],
-      ['Lavori ancora da eseguire:', formatCurrency(salItem.importoContratto - salItem.importoLavoriEseguiti)],
-      [],
-      ['Percentuale Avanzamento:', `${salItem.percentualeAvanzamento.toFixed(2)}%`],
-      [],
-      // Ritenute e calcoli
-      ['CALCOLO IMPORTI NETTI'],
-      ['Ritenute contratto (%):', `${contratto?.ritenute || 5}%`],
-      ['Importo ritenuta:', formatCurrency(salItem.importoLavoriPeriodo * ((contratto?.ritenute || 5) / 100))],
-      ['Importo netto a fatturare:', formatCurrency(salItem.importoLavoriPeriodo * (1 - ((contratto?.ritenute || 5) / 100)))],
-      [],
-      // Notes
-      ['NOTE'],
-      [salItem.note || 'Nessuna nota'],
-      [],
-      [],
-      // Firme
-      ['FIRME PER APPROVAZIONE'],
-      ['', '', '', ''],
-      ['Direttore Lavori:', '________________', '', 'Impresa Esecutrice:', '________________'],
-      [],
-      ['Data:', '________________', '', 'Data:', '________________'],
-      [],
-      [],
-      [`Documento generato da GEST-E il ${new Date().toLocaleString('it-IT')}`]
-    ];
+    return `
+      <!DOCTYPE html>
+      <html lang="it">
+      <head>
+        <meta charset="UTF-8">
+        <title>SAL ${salItem.numeroSAL} - ${cantiere?.codiceCommessa || 'Documento'}</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+          }
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+          }
+          .document-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 25mm 20mm;
+            min-height: 297mm;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #2563eb;
+            margin-bottom: 20px;
+          }
+          .company-info {
+            flex: 1;
+          }
+          .company-name {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          .company-details {
+            font-size: 9pt;
+            color: #4b5563;
+            line-height: 1.5;
+          }
+          .document-number {
+            text-align: right;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+          }
+          .document-number h2 {
+            margin: 0;
+            font-size: 11pt;
+            font-weight: 600;
+            letter-spacing: 1px;
+          }
+          .document-number .sal-num {
+            font-size: 20pt;
+            font-weight: 700;
+            margin-top: 5px;
+          }
+          .document-title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: 700;
+            color: #1e40af;
+            margin: 25px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px;
+            background: #eff6ff;
+            border-radius: 6px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+          }
+          .info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #2563eb;
+          }
+          .info-box h3 {
+            margin: 0 0 12px 0;
+            font-size: 10pt;
+            color: #1e40af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+          }
+          .info-box .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 9pt;
+          }
+          .info-box .label {
+            color: #6b7280;
+            font-weight: 500;
+          }
+          .info-box .value {
+            color: #1f2937;
+            font-weight: 600;
+            text-align: right;
+          }
+          .sal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 9pt;
+          }
+          .sal-table th {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .sal-table th:last-child {
+            text-align: right;
+          }
+          .sal-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .sal-table td:last-child {
+            text-align: right;
+            font-weight: 600;
+            font-family: 'Consolas', monospace;
+          }
+          .sal-table tr:nth-child(even) {
+            background: #f8fafc;
+          }
+          .sal-table tr.subtotal {
+            background: #eff6ff;
+            font-weight: 600;
+          }
+          .sal-table tr.total {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            font-weight: 700;
+          }
+          .sal-table tr.total td {
+            border: none;
+            font-size: 10pt;
+          }
+          .progress-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            border: 1px solid #bbf7d0;
+          }
+          .progress-section h3 {
+            margin: 0 0 15px 0;
+            color: #166534;
+            font-size: 11pt;
+          }
+          .progress-bar-container {
+            background: #dcfce7;
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+            position: relative;
+          }
+          .progress-bar {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 11pt;
+          }
+          .notes-section {
+            margin: 25px 0;
+            padding: 15px;
+            background: #fffbeb;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+          }
+          .notes-section h3 {
+            margin: 0 0 10px 0;
+            color: #b45309;
+            font-size: 10pt;
+          }
+          .notes-section p {
+            margin: 0;
+            color: #78350f;
+            font-style: italic;
+          }
+          .signature-section {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+          }
+          .signature-box {
+            text-align: center;
+            padding: 20px;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            background: #fafafa;
+          }
+          .signature-box h4 {
+            margin: 0 0 30px 0;
+            font-size: 10pt;
+            color: #374151;
+            font-weight: 600;
+          }
+          .signature-line {
+            border-top: 1px solid #1f2937;
+            padding-top: 8px;
+            margin-top: 50px;
+            font-size: 9pt;
+            color: #6b7280;
+          }
+          .signature-date {
+            margin-top: 15px;
+            font-size: 9pt;
+            color: #6b7280;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 8pt;
+            color: #9ca3af;
+          }
+          .toolbar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+          }
+          .toolbar button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 11pt;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .toolbar button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+          }
+          .btn-print {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+          }
+          .btn-close {
+            background: #6b7280;
+            color: white;
+          }
+          [contenteditable="true"] {
+            outline: 2px dashed #3b82f6;
+            outline-offset: 2px;
+            border-radius: 4px;
+            padding: 2px 4px;
+            min-width: 50px;
+            background: #fef3c7;
+          }
+          [contenteditable="true"]:focus {
+            outline-color: #1e40af;
+            background: #fef9c3;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="document-container">
+          <!-- Header -->
+          <div class="header">
+            <div class="company-info">
+              <div class="company-name" contenteditable="true">GEST-E S.r.l.</div>
+              <div class="company-details">
+                <span contenteditable="true">Via Example 123, 35100 Padova (PD)</span><br>
+                <span contenteditable="true">P.IVA: IT01234567890</span> | <span contenteditable="true">Tel: +39 049 1234567</span><br>
+                <span contenteditable="true">info@gest-e.it</span> | <span contenteditable="true">PEC: gest-e@pec.it</span>
+              </div>
+            </div>
+            <div class="document-number">
+              <h2>STATO AVANZAMENTO LAVORI</h2>
+              <div class="sal-num">N° ${salItem.numeroSAL}</div>
+            </div>
+          </div>
 
-    const ws = XLSX.utils.aoa_to_sheet(salData);
+          <!-- Title -->
+          <div class="document-title">
+            Certificato Stato Avanzamento Lavori
+          </div>
 
-    // Set column widths
-    ws['!cols'] = [
-      { wch: 30 },
-      { wch: 25 },
-      { wch: 5 },
-      { wch: 20 },
-      { wch: 25 }
-    ];
+          <!-- Info Grid -->
+          <div class="info-grid">
+            <div class="info-box">
+              <h3>📋 Dati Commessa</h3>
+              <div class="row"><span class="label">Codice:</span><span class="value">${cantiere?.codiceCommessa || '-'}</span></div>
+              <div class="row"><span class="label">Denominazione:</span><span class="value">${cantiere?.nome || '-'}</span></div>
+              <div class="row"><span class="label">Indirizzo:</span><span class="value">${cantiere?.indirizzo || '-'}</span></div>
+              <div class="row"><span class="label">Committente:</span><span class="value">${cantiere?.committente || '-'}</span></div>
+            </div>
+            <div class="info-box">
+              <h3>🏢 Impresa Esecutrice</h3>
+              <div class="row"><span class="label">Ragione Sociale:</span><span class="value">${impresa?.ragioneSociale || '-'}</span></div>
+              <div class="row"><span class="label">Tipo Lavorazione:</span><span class="value">${TIPO_LAVORAZIONE_LABELS[salItem.tipoLavorazione]}</span></div>
+              <div class="row"><span class="label">Periodo:</span><span class="value">${salItem.mese}</span></div>
+              <div class="row"><span class="label">Stato:</span><span class="value">${STATO_SAL_LABELS[salItem.stato]}</span></div>
+            </div>
+          </div>
 
-    // Merge cells for headers
-    ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Company name
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Address
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, // VAT
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }, // Email
-      { s: { r: 5, c: 0 }, e: { r: 5, c: 4 } }, // Title
-    ];
+          <!-- SAL Table -->
+          <table class="sal-table">
+            <thead>
+              <tr>
+                <th>Descrizione</th>
+                <th>Importo (€)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Importo Contratto Originale</td>
+                <td>${formatCurrency(salItem.importoContratto)}</td>
+              </tr>
+              <tr>
+                <td>Importo Varianti Approvate</td>
+                <td contenteditable="true">${formatCurrency(importoVarianti)}</td>
+              </tr>
+              <tr class="subtotal">
+                <td><strong>IMPORTO TOTALE CONTRATTUALE</strong></td>
+                <td><strong>${formatCurrency(importoTotaleContratto)}</strong></td>
+              </tr>
+              <tr><td colspan="2" style="height: 10px; border: none;"></td></tr>
+              <tr>
+                <td>Lavori a tutto il mese precedente</td>
+                <td>${formatCurrency(salItem.importoLavoriPrecedenti)}</td>
+              </tr>
+              <tr>
+                <td>Lavori eseguiti nel periodo corrente</td>
+                <td contenteditable="true">${formatCurrency(salItem.importoLavoriPeriodo)}</td>
+              </tr>
+              <tr class="subtotal">
+                <td><strong>TOTALE LAVORI ESEGUITI AD OGGI</strong></td>
+                <td><strong>${formatCurrency(salItem.importoLavoriEseguiti)}</strong></td>
+              </tr>
+              <tr>
+                <td>Lavori ancora da eseguire</td>
+                <td>${formatCurrency(lavoriDaEseguire)}</td>
+              </tr>
+              <tr><td colspan="2" style="height: 10px; border: none;"></td></tr>
+              <tr>
+                <td>Ritenuta a garanzia (${ritenutaPerc}%)</td>
+                <td>- ${formatCurrency(importoRitenuta)}</td>
+              </tr>
+              <tr class="total">
+                <td>IMPORTO NETTO A FATTURARE</td>
+                <td>${formatCurrency(importoNettoFatturare)}</td>
+              </tr>
+            </tbody>
+          </table>
 
-    XLSX.utils.book_append_sheet(wb, ws, 'SAL');
+          <!-- Progress Section -->
+          <div class="progress-section">
+            <h3>📊 Percentuale Avanzamento Lavori</h3>
+            <div class="progress-bar-container">
+              <div class="progress-bar" style="width: ${Math.min(salItem.percentualeAvanzamento, 100)}%;">
+                ${salItem.percentualeAvanzamento.toFixed(1)}%
+              </div>
+            </div>
+          </div>
 
-    // Create filename
-    const filename = `SAL_${salItem.numeroSAL}_${cantiere?.codiceCommessa || 'CANTIERE'}_${salItem.mese}.xlsx`;
-    
-    XLSX.writeFile(wb, filename);
-    toast({ 
-      title: 'SAL Esportato', 
-      description: `File ${filename} scaricato con successo` 
-    });
+          <!-- Notes -->
+          ${salItem.note ? `
+          <div class="notes-section">
+            <h3>📝 Note e Osservazioni</h3>
+            <p contenteditable="true">${salItem.note}</p>
+          </div>
+          ` : ''}
+
+          <!-- Signatures -->
+          <div class="signature-section">
+            <div class="signature-box">
+              <h4>DIRETTORE LAVORI</h4>
+              <div class="signature-line">Firma e Timbro</div>
+              <div class="signature-date">Data: <span contenteditable="true">____/____/________</span></div>
+            </div>
+            <div class="signature-box">
+              <h4>IMPRESA ESECUTRICE</h4>
+              <div class="signature-line">Firma e Timbro</div>
+              <div class="signature-date">Data: <span contenteditable="true">____/____/________</span></div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="footer">
+            Documento generato da GEST-E il ${new Date().toLocaleString('it-IT')}<br>
+            I campi evidenziati in giallo sono editabili prima della stampa
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar no-print">
+          <button class="btn-print" onclick="window.print()">
+            🖨️ Stampa / Salva PDF
+          </button>
+          <button class="btn-close" onclick="window.close()">
+            ✕ Chiudi
+          </button>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  // Export SAL as professional editable document
+  const exportSALDocument = (salItem: SAL) => {
+    const htmlContent = generateSALDocument(salItem);
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+      toast({ 
+        title: 'Documento SAL Aperto', 
+        description: 'Modifica i campi evidenziati, poi usa "Stampa / Salva PDF" per scaricare' 
+      });
+    } else {
+      toast({ 
+        title: 'Errore', 
+        description: 'Abilita i popup per aprire il documento', 
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleCreatePrevisione = () => {
