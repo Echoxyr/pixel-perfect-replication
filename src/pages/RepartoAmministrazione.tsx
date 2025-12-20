@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   FileText,
   Plus,
   Receipt,
@@ -46,9 +52,14 @@ import {
   XCircle,
   MessageSquare,
   Calendar,
-  Building2
+  Building2,
+  Upload,
+  Paperclip,
+  Trash2,
+  File
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 // Types
 interface Fattura {
@@ -536,7 +547,7 @@ export default function RepartoAmministrazione() {
                       Nuova Fattura
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Nuova Fattura</DialogTitle>
                     </DialogHeader>
@@ -603,6 +614,33 @@ export default function RepartoAmministrazione() {
                           </SelectContent>
                         </Select>
                       </div>
+                      {/* File Upload for Fattura */}
+                      <div className="space-y-2 col-span-2">
+                        <Label>Allegato Fattura (PDF o documento scansionato)</Label>
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            id="fattura-file"
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files && files.length > 0) {
+                                toast.success(`File "${files[0].name}" selezionato`);
+                              }
+                            }}
+                          />
+                          <label htmlFor="fattura-file" className="cursor-pointer">
+                            <Upload className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Clicca per caricare o trascina il file qui
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              PDF, JPG, PNG (max 10MB)
+                            </p>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowNewFattura(false)}>Annulla</Button>
@@ -613,59 +651,77 @@ export default function RepartoAmministrazione() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Cliente/Fornitore</TableHead>
-                    <TableHead>Commessa</TableHead>
-                    <TableHead className="text-right">Totale</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead>Scadenza</TableHead>
-                    <TableHead className="w-[100px]">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFatture.map((fattura) => (
-                    <TableRow key={fattura.id}>
-                      <TableCell className="font-mono font-medium">{fattura.numero}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={fattura.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
-                          {fattura.tipo === 'attiva' ? 'Attiva' : 'Passiva'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(fattura.data)}</TableCell>
-                      <TableCell>{fattura.cliente_fornitore}</TableCell>
-                      <TableCell>
-                        {fattura.commessa && (
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {fattura.commessa}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(fattura.totale)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatoColor(fattura.stato)}>
-                          {fattura.stato.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDate(fattura.scadenza)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[120px]">Numero</TableHead>
+                      <TableHead className="min-w-[80px]">Tipo</TableHead>
+                      <TableHead className="min-w-[100px]">Data</TableHead>
+                      <TableHead className="min-w-[180px]">Cliente/Fornitore</TableHead>
+                      <TableHead className="min-w-[120px]">Commessa</TableHead>
+                      <TableHead className="min-w-[100px] text-right">Totale</TableHead>
+                      <TableHead className="min-w-[100px]">Stato</TableHead>
+                      <TableHead className="min-w-[100px]">Scadenza</TableHead>
+                      <TableHead className="min-w-[100px]">Azioni</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredFatture.map((fattura) => (
+                      <TableRow key={fattura.id}>
+                        <TableCell className="font-mono font-medium whitespace-nowrap">{fattura.numero}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={fattura.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                            {fattura.tipo === 'attiva' ? 'Attiva' : 'Passiva'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(fattura.data)}</TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="block max-w-[180px] break-words line-clamp-2 cursor-help">
+                                  {fattura.cliente_fornitore}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{fattura.cliente_fornitore}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell>
+                          {fattura.commessa && (
+                            <Badge variant="outline" className="font-mono text-xs whitespace-nowrap">
+                              {fattura.commessa}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap">{formatCurrency(fattura.totale)}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatoColor(fattura.stato)}>
+                            {fattura.stato.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(fattura.scadenza)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -682,7 +738,7 @@ export default function RepartoAmministrazione() {
                     Nuova Nota Spesa
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Nuova Nota Spesa</DialogTitle>
                   </DialogHeader>
@@ -739,6 +795,34 @@ export default function RepartoAmministrazione() {
                       <Label>Descrizione</Label>
                       <Textarea placeholder="Descrizione spesa..." />
                     </div>
+                    {/* File Upload Section */}
+                    <div className="space-y-2">
+                      <Label>Allegati (ricevute, scontrini, etc.)</Label>
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                        <input
+                          type="file"
+                          multiple
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          className="hidden"
+                          id="nota-spesa-file"
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files && files.length > 0) {
+                              toast.success(`${files.length} file selezionato/i`);
+                            }
+                          }}
+                        />
+                        <label htmlFor="nota-spesa-file" className="cursor-pointer">
+                          <Upload className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            Clicca per caricare o trascina i file qui
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            PDF, JPG, PNG, DOC (max 10MB)
+                          </p>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setShowNewNota(false)}>Annulla</Button>
@@ -748,60 +832,97 @@ export default function RepartoAmministrazione() {
               </Dialog>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Dipendente</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Commessa</TableHead>
-                    <TableHead>Descrizione</TableHead>
-                    <TableHead className="text-right">Importo</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="w-[150px]">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {noteSpesa.map((nota) => (
-                    <TableRow key={nota.id}>
-                      <TableCell className="font-mono font-medium">{nota.numero}</TableCell>
-                      <TableCell>{formatDate(nota.data)}</TableCell>
-                      <TableCell>{nota.dipendente}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{nota.categoria}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {nota.commessa && (
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {nota.commessa}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[150px] truncate">{nota.descrizione}</TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(nota.importo)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatoColor(nota.stato)}>
-                          {nota.stato}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {nota.stato === 'presentata' && (
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approva
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[100px]">Numero</TableHead>
+                      <TableHead className="min-w-[100px]">Data</TableHead>
+                      <TableHead className="min-w-[120px]">Dipendente</TableHead>
+                      <TableHead className="min-w-[100px]">Categoria</TableHead>
+                      <TableHead className="min-w-[100px]">Commessa</TableHead>
+                      <TableHead className="min-w-[200px]">Descrizione</TableHead>
+                      <TableHead className="min-w-[100px] text-right">Importo</TableHead>
+                      <TableHead className="min-w-[100px]">Stato</TableHead>
+                      <TableHead className="min-w-[80px]">Allegati</TableHead>
+                      <TableHead className="min-w-[150px]">Azioni</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {noteSpesa.map((nota) => (
+                      <TableRow key={nota.id}>
+                        <TableCell className="font-mono font-medium whitespace-nowrap">{nota.numero}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(nota.data)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{nota.dipendente}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{nota.categoria}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {nota.commessa && (
+                            <Badge variant="outline" className="font-mono text-xs whitespace-nowrap">
+                              {nota.commessa}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="block max-w-[200px] break-words line-clamp-2 cursor-help">
+                                  {nota.descrizione}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[300px]">
+                                <p>{nota.descrizione}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap">{formatCurrency(nota.importo)}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatoColor(nota.stato)}>
+                            {nota.stato}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {nota.allegati.length > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 gap-1">
+                                    <Paperclip className="w-4 h-4" />
+                                    {nota.allegati.length}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1">
+                                    {nota.allegati.map((file, i) => (
+                                      <p key={i} className="text-xs">{file}</p>
+                                    ))}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {nota.stato === 'presentata' && (
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approva
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -882,63 +1003,78 @@ export default function RepartoAmministrazione() {
               </Dialog>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Dipendente</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Periodo/Importo</TableHead>
-                    <TableHead>Descrizione</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="w-[150px]">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {richiesteDipendenti.map((richiesta) => (
-                    <TableRow key={richiesta.id}>
-                      <TableCell className="font-mono font-medium">{richiesta.numero}</TableCell>
-                      <TableCell>{formatDate(richiesta.data)}</TableCell>
-                      <TableCell>{richiesta.dipendente}</TableCell>
-                      <TableCell>
-                        <Badge className={getTipoRichiestaColor(richiesta.tipo)}>
-                          {richiesta.tipo}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {richiesta.dataInizio && richiesta.dataFine ? (
-                          <span className="text-sm flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatDate(richiesta.dataInizio)} - {formatDate(richiesta.dataFine)}
-                          </span>
-                        ) : richiesta.importo ? (
-                          <span className="font-medium">{formatCurrency(richiesta.importo)}</span>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell className="max-w-[150px] truncate">{richiesta.descrizione}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatoColor(richiesta.stato)}>
-                          {richiesta.stato.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {richiesta.stato === 'in_attesa' && (
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approva
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[100px]">Numero</TableHead>
+                      <TableHead className="min-w-[100px]">Data</TableHead>
+                      <TableHead className="min-w-[120px]">Dipendente</TableHead>
+                      <TableHead className="min-w-[100px]">Tipo</TableHead>
+                      <TableHead className="min-w-[180px]">Periodo/Importo</TableHead>
+                      <TableHead className="min-w-[200px]">Descrizione</TableHead>
+                      <TableHead className="min-w-[100px]">Stato</TableHead>
+                      <TableHead className="min-w-[150px]">Azioni</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {richiesteDipendenti.map((richiesta) => (
+                      <TableRow key={richiesta.id}>
+                        <TableCell className="font-mono font-medium whitespace-nowrap">{richiesta.numero}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(richiesta.data)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{richiesta.dipendente}</TableCell>
+                        <TableCell>
+                          <Badge className={getTipoRichiestaColor(richiesta.tipo)}>
+                            {richiesta.tipo}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {richiesta.dataInizio && richiesta.dataFine ? (
+                            <span className="text-sm flex items-center gap-1 whitespace-nowrap">
+                              <Calendar className="w-3 h-3 flex-shrink-0" />
+                              {formatDate(richiesta.dataInizio)} - {formatDate(richiesta.dataFine)}
+                            </span>
+                          ) : richiesta.importo ? (
+                            <span className="font-medium whitespace-nowrap">{formatCurrency(richiesta.importo)}</span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="block max-w-[200px] break-words line-clamp-2 cursor-help">
+                                  {richiesta.descrizione}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-[300px]">
+                                <p>{richiesta.descrizione}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatoColor(richiesta.stato)}>
+                            {richiesta.stato.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {richiesta.stato === 'in_attesa' && (
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-8 text-emerald-500 hover:text-emerald-600">
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approva
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 text-red-500 hover:text-red-600">
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
