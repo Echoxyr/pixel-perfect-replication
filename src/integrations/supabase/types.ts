@@ -14,7 +14,488 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      computi_metrici: {
+        Row: {
+          cantiere_id: string | null
+          created_at: string
+          data_creazione: string
+          descrizione: string | null
+          id: string
+          nome: string
+          stato: string
+          totale_computo: number | null
+          updated_at: string
+        }
+        Insert: {
+          cantiere_id?: string | null
+          created_at?: string
+          data_creazione?: string
+          descrizione?: string | null
+          id?: string
+          nome: string
+          stato?: string
+          totale_computo?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cantiere_id?: string | null
+          created_at?: string
+          data_creazione?: string
+          descrizione?: string | null
+          id?: string
+          nome?: string
+          stato?: string
+          totale_computo?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fatture: {
+        Row: {
+          aliquota_iva: number
+          cliente_fornitore: string
+          commessa_id: string | null
+          created_at: string
+          data: string
+          data_pagamento: string | null
+          descrizione: string | null
+          id: string
+          imponibile: number
+          iva: number | null
+          metodo_pagamento: string | null
+          numero: string
+          scadenza: string
+          stato: Database["public"]["Enums"]["stato_fattura"]
+          tipo: Database["public"]["Enums"]["tipo_fattura"]
+          totale: number | null
+          updated_at: string
+        }
+        Insert: {
+          aliquota_iva?: number
+          cliente_fornitore: string
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          data_pagamento?: string | null
+          descrizione?: string | null
+          id?: string
+          imponibile?: number
+          iva?: number | null
+          metodo_pagamento?: string | null
+          numero: string
+          scadenza: string
+          stato?: Database["public"]["Enums"]["stato_fattura"]
+          tipo: Database["public"]["Enums"]["tipo_fattura"]
+          totale?: number | null
+          updated_at?: string
+        }
+        Update: {
+          aliquota_iva?: number
+          cliente_fornitore?: string
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          data_pagamento?: string | null
+          descrizione?: string | null
+          id?: string
+          imponibile?: number
+          iva?: number | null
+          metodo_pagamento?: string | null
+          numero?: string
+          scadenza?: string
+          stato?: Database["public"]["Enums"]["stato_fattura"]
+          tipo?: Database["public"]["Enums"]["tipo_fattura"]
+          totale?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          assegnato_a: string | null
+          azienda: string | null
+          created_at: string
+          email: string | null
+          fonte: string | null
+          id: string
+          indirizzo: string | null
+          nome: string
+          note: string | null
+          probabilita: number | null
+          prossimo_contatto: string | null
+          stato: Database["public"]["Enums"]["stato_lead"]
+          telefono: string | null
+          updated_at: string
+          valore_stimato: number | null
+        }
+        Insert: {
+          assegnato_a?: string | null
+          azienda?: string | null
+          created_at?: string
+          email?: string | null
+          fonte?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome: string
+          note?: string | null
+          probabilita?: number | null
+          prossimo_contatto?: string | null
+          stato?: Database["public"]["Enums"]["stato_lead"]
+          telefono?: string | null
+          updated_at?: string
+          valore_stimato?: number | null
+        }
+        Update: {
+          assegnato_a?: string | null
+          azienda?: string | null
+          created_at?: string
+          email?: string | null
+          fonte?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome?: string
+          note?: string | null
+          probabilita?: number | null
+          prossimo_contatto?: string | null
+          stato?: Database["public"]["Enums"]["stato_lead"]
+          telefono?: string | null
+          updated_at?: string
+          valore_stimato?: number | null
+        }
+        Relationships: []
+      }
+      note_spesa: {
+        Row: {
+          allegati: string[] | null
+          approvato_da: string | null
+          categoria: Database["public"]["Enums"]["categoria_nota_spesa"]
+          commessa_id: string | null
+          created_at: string
+          data: string
+          data_approvazione: string | null
+          descrizione: string
+          dipendente_id: string | null
+          dipendente_nome: string
+          id: string
+          importo: number
+          note: string | null
+          numero: string
+          stato: Database["public"]["Enums"]["stato_nota_spesa"]
+          updated_at: string
+        }
+        Insert: {
+          allegati?: string[] | null
+          approvato_da?: string | null
+          categoria?: Database["public"]["Enums"]["categoria_nota_spesa"]
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          data_approvazione?: string | null
+          descrizione: string
+          dipendente_id?: string | null
+          dipendente_nome: string
+          id?: string
+          importo: number
+          note?: string | null
+          numero: string
+          stato?: Database["public"]["Enums"]["stato_nota_spesa"]
+          updated_at?: string
+        }
+        Update: {
+          allegati?: string[] | null
+          approvato_da?: string | null
+          categoria?: Database["public"]["Enums"]["categoria_nota_spesa"]
+          commessa_id?: string | null
+          created_at?: string
+          data?: string
+          data_approvazione?: string | null
+          descrizione?: string
+          dipendente_id?: string | null
+          dipendente_nome?: string
+          id?: string
+          importo?: number
+          note?: string | null
+          numero?: string
+          stato?: Database["public"]["Enums"]["stato_nota_spesa"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organigramma: {
+        Row: {
+          created_at: string
+          dipendente_id: string | null
+          email: string | null
+          foto_url: string | null
+          id: string
+          livello: number
+          nome: string
+          ordine: number
+          reparto: string
+          ruolo: string
+          superiore_id: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dipendente_id?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          livello?: number
+          nome: string
+          ordine?: number
+          reparto: string
+          ruolo: string
+          superiore_id?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dipendente_id?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          livello?: number
+          nome?: string
+          ordine?: number
+          reparto?: string
+          ruolo?: string
+          superiore_id?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organigramma_superiore_id_fkey"
+            columns: ["superiore_id"]
+            isOneToOne: false
+            referencedRelation: "organigramma"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preventivi: {
+        Row: {
+          aliquota_iva: number
+          cliente_nome: string
+          created_at: string
+          data: string
+          descrizione: string | null
+          id: string
+          imponibile: number
+          lead_id: string | null
+          note: string | null
+          numero: string
+          oggetto: string
+          sconto_percentuale: number | null
+          stato: Database["public"]["Enums"]["stato_preventivo"]
+          totale: number | null
+          updated_at: string
+          validita_giorni: number
+        }
+        Insert: {
+          aliquota_iva?: number
+          cliente_nome: string
+          created_at?: string
+          data?: string
+          descrizione?: string | null
+          id?: string
+          imponibile?: number
+          lead_id?: string | null
+          note?: string | null
+          numero: string
+          oggetto: string
+          sconto_percentuale?: number | null
+          stato?: Database["public"]["Enums"]["stato_preventivo"]
+          totale?: number | null
+          updated_at?: string
+          validita_giorni?: number
+        }
+        Update: {
+          aliquota_iva?: number
+          cliente_nome?: string
+          created_at?: string
+          data?: string
+          descrizione?: string | null
+          id?: string
+          imponibile?: number
+          lead_id?: string | null
+          note?: string | null
+          numero?: string
+          oggetto?: string
+          sconto_percentuale?: number | null
+          stato?: Database["public"]["Enums"]["stato_preventivo"]
+          totale?: number | null
+          updated_at?: string
+          validita_giorni?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventivi_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      richieste_dipendenti: {
+        Row: {
+          approvato_da: string | null
+          created_at: string
+          data: string
+          data_approvazione: string | null
+          data_fine: string | null
+          data_inizio: string | null
+          descrizione: string
+          dipendente_id: string | null
+          dipendente_nome: string
+          id: string
+          importo: number | null
+          note: string | null
+          numero: string
+          stato: Database["public"]["Enums"]["stato_richiesta"]
+          tipo: Database["public"]["Enums"]["tipo_richiesta"]
+          updated_at: string
+        }
+        Insert: {
+          approvato_da?: string | null
+          created_at?: string
+          data?: string
+          data_approvazione?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione: string
+          dipendente_id?: string | null
+          dipendente_nome: string
+          id?: string
+          importo?: number | null
+          note?: string | null
+          numero: string
+          stato?: Database["public"]["Enums"]["stato_richiesta"]
+          tipo: Database["public"]["Enums"]["tipo_richiesta"]
+          updated_at?: string
+        }
+        Update: {
+          approvato_da?: string | null
+          created_at?: string
+          data?: string
+          data_approvazione?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          descrizione?: string
+          dipendente_id?: string | null
+          dipendente_nome?: string
+          id?: string
+          importo?: number | null
+          note?: string | null
+          numero?: string
+          stato?: Database["public"]["Enums"]["stato_richiesta"]
+          tipo?: Database["public"]["Enums"]["tipo_richiesta"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      voci_computo: {
+        Row: {
+          capitolo: string | null
+          categoria: string | null
+          codice: string | null
+          computo_id: string
+          created_at: string
+          descrizione: string
+          id: string
+          importo: number | null
+          ordine: number
+          prezzo_unitario: number
+          quantita: number
+          unita_misura: string
+        }
+        Insert: {
+          capitolo?: string | null
+          categoria?: string | null
+          codice?: string | null
+          computo_id: string
+          created_at?: string
+          descrizione: string
+          id?: string
+          importo?: number | null
+          ordine?: number
+          prezzo_unitario: number
+          quantita: number
+          unita_misura: string
+        }
+        Update: {
+          capitolo?: string | null
+          categoria?: string | null
+          codice?: string | null
+          computo_id?: string
+          created_at?: string
+          descrizione?: string
+          id?: string
+          importo?: number | null
+          ordine?: number
+          prezzo_unitario?: number
+          quantita?: number
+          unita_misura?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voci_computo_computo_id_fkey"
+            columns: ["computo_id"]
+            isOneToOne: false
+            referencedRelation: "computi_metrici"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voci_preventivo: {
+        Row: {
+          created_at: string
+          descrizione: string
+          id: string
+          importo: number | null
+          ordine: number
+          preventivo_id: string
+          prezzo_unitario: number
+          quantita: number
+          unita_misura: string
+        }
+        Insert: {
+          created_at?: string
+          descrizione: string
+          id?: string
+          importo?: number | null
+          ordine?: number
+          preventivo_id: string
+          prezzo_unitario: number
+          quantita?: number
+          unita_misura?: string
+        }
+        Update: {
+          created_at?: string
+          descrizione?: string
+          id?: string
+          importo?: number | null
+          ordine?: number
+          preventivo_id?: string
+          prezzo_unitario?: number
+          quantita?: number
+          unita_misura?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voci_preventivo_preventivo_id_fkey"
+            columns: ["preventivo_id"]
+            isOneToOne: false
+            referencedRelation: "preventivi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +504,43 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      categoria_nota_spesa:
+        | "trasferta"
+        | "materiale"
+        | "vitto"
+        | "alloggio"
+        | "altro"
+      stato_fattura:
+        | "emessa"
+        | "pagata"
+        | "scaduta"
+        | "in_attesa"
+        | "contestata"
+      stato_lead:
+        | "nuovo"
+        | "contattato"
+        | "qualificato"
+        | "proposta"
+        | "negoziazione"
+        | "chiuso_vinto"
+        | "chiuso_perso"
+      stato_nota_spesa: "presentata" | "approvata" | "rimborsata" | "rifiutata"
+      stato_preventivo:
+        | "bozza"
+        | "inviato"
+        | "approvato"
+        | "rifiutato"
+        | "scaduto"
+      stato_richiesta: "in_attesa" | "approvata" | "rifiutata" | "completata"
+      tipo_fattura: "attiva" | "passiva"
+      tipo_richiesta:
+        | "ferie"
+        | "permesso"
+        | "malattia"
+        | "straordinario"
+        | "anticipo"
+        | "rimborso"
+        | "altro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +667,43 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      categoria_nota_spesa: [
+        "trasferta",
+        "materiale",
+        "vitto",
+        "alloggio",
+        "altro",
+      ],
+      stato_fattura: ["emessa", "pagata", "scaduta", "in_attesa", "contestata"],
+      stato_lead: [
+        "nuovo",
+        "contattato",
+        "qualificato",
+        "proposta",
+        "negoziazione",
+        "chiuso_vinto",
+        "chiuso_perso",
+      ],
+      stato_nota_spesa: ["presentata", "approvata", "rimborsata", "rifiutata"],
+      stato_preventivo: [
+        "bozza",
+        "inviato",
+        "approvato",
+        "rifiutato",
+        "scaduto",
+      ],
+      stato_richiesta: ["in_attesa", "approvata", "rifiutata", "completata"],
+      tipo_fattura: ["attiva", "passiva"],
+      tipo_richiesta: [
+        "ferie",
+        "permesso",
+        "malattia",
+        "straordinario",
+        "anticipo",
+        "rimborso",
+        "altro",
+      ],
+    },
   },
 } as const
