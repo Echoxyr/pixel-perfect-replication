@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      analisi_predittive: {
+        Row: {
+          azioni_mitigazione: string[] | null
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string | null
+          data_analisi: string
+          fattori_rischio: string[] | null
+          id: string
+          impatto: string | null
+          probabilita: number | null
+          raccomandazioni: string[] | null
+          stato: string | null
+          tipo_previsione: string
+        }
+        Insert: {
+          azioni_mitigazione?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data_analisi?: string
+          fattori_rischio?: string[] | null
+          id?: string
+          impatto?: string | null
+          probabilita?: number | null
+          raccomandazioni?: string[] | null
+          stato?: string | null
+          tipo_previsione: string
+        }
+        Update: {
+          azioni_mitigazione?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data_analisi?: string
+          fattori_rischio?: string[] | null
+          id?: string
+          impatto?: string | null
+          probabilita?: number | null
+          raccomandazioni?: string[] | null
+          stato?: string | null
+          tipo_previsione?: string
+        }
+        Relationships: []
+      }
+      articoli_listino: {
+        Row: {
+          categoria: string | null
+          codice: string
+          created_at: string | null
+          descrizione: string
+          id: string
+          listino_id: string
+          prezzo_listino: number
+          prezzo_scontato: number | null
+          unita_misura: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          codice: string
+          created_at?: string | null
+          descrizione: string
+          id?: string
+          listino_id: string
+          prezzo_listino?: number
+          prezzo_scontato?: number | null
+          unita_misura?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          codice?: string
+          created_at?: string | null
+          descrizione?: string
+          id?: string
+          listino_id?: string
+          prezzo_listino?: number
+          prezzo_scontato?: number | null
+          unita_misura?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articoli_listino_listino_id_fkey"
+            columns: ["listino_id"]
+            isOneToOne: false
+            referencedRelation: "listini_fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_cantiere: {
         Row: {
           cantiere_id: string | null
@@ -292,6 +381,75 @@ export type Database = {
         }
         Relationships: []
       }
+      contratti: {
+        Row: {
+          allegati: string[] | null
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          clausole: string | null
+          contraente: string
+          contraente_id: string | null
+          created_at: string | null
+          data_fine: string
+          data_inizio: string
+          descrizione: string | null
+          id: string
+          importo: number
+          numero: string
+          penali: string | null
+          preavviso_giorni: number | null
+          rinnovo_automatico: boolean | null
+          stato: string
+          tipo: string
+          titolo: string
+          updated_at: string | null
+        }
+        Insert: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          clausole?: string | null
+          contraente: string
+          contraente_id?: string | null
+          created_at?: string | null
+          data_fine: string
+          data_inizio: string
+          descrizione?: string | null
+          id?: string
+          importo?: number
+          numero: string
+          penali?: string | null
+          preavviso_giorni?: number | null
+          rinnovo_automatico?: boolean | null
+          stato?: string
+          tipo?: string
+          titolo: string
+          updated_at?: string | null
+        }
+        Update: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          clausole?: string | null
+          contraente?: string
+          contraente_id?: string | null
+          created_at?: string | null
+          data_fine?: string
+          data_inizio?: string
+          descrizione?: string | null
+          id?: string
+          importo?: number
+          numero?: string
+          penali?: string | null
+          preavviso_giorni?: number | null
+          rinnovo_automatico?: boolean | null
+          stato?: string
+          tipo?: string
+          titolo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ddt: {
         Row: {
           allegati: string[] | null
@@ -418,6 +576,78 @@ export type Database = {
         }
         Relationships: []
       }
+      fornitori: {
+        Row: {
+          cap: string | null
+          categoria: string | null
+          cellulare: string | null
+          citta: string | null
+          codice_fiscale: string | null
+          condizioni_pagamento: string | null
+          created_at: string | null
+          email: string | null
+          iban: string | null
+          id: string
+          indirizzo: string | null
+          note: string | null
+          partita_iva: string | null
+          pec: string | null
+          provincia: string | null
+          ragione_sociale: string
+          rating: number | null
+          sconto_base: number | null
+          stato: string
+          telefono: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cap?: string | null
+          categoria?: string | null
+          cellulare?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          condizioni_pagamento?: string | null
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale: string
+          rating?: number | null
+          sconto_base?: number | null
+          stato?: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cap?: string | null
+          categoria?: string | null
+          cellulare?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          condizioni_pagamento?: string | null
+          created_at?: string | null
+          email?: string | null
+          iban?: string | null
+          id?: string
+          indirizzo?: string | null
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale?: string
+          rating?: number | null
+          sconto_base?: number | null
+          stato?: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       impostazioni_azienda: {
         Row: {
           banca: string | null
@@ -484,6 +714,51 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_finanziari: {
+        Row: {
+          cash_flow_operativo: number | null
+          costi_effettivi: number | null
+          costi_previsti: number | null
+          created_at: string | null
+          dso: number | null
+          id: string
+          margine: number | null
+          margine_previsto: number | null
+          periodo: string
+          ricavi_effettivi: number | null
+          ricavi_previsti: number | null
+          wip: number | null
+        }
+        Insert: {
+          cash_flow_operativo?: number | null
+          costi_effettivi?: number | null
+          costi_previsti?: number | null
+          created_at?: string | null
+          dso?: number | null
+          id?: string
+          margine?: number | null
+          margine_previsto?: number | null
+          periodo: string
+          ricavi_effettivi?: number | null
+          ricavi_previsti?: number | null
+          wip?: number | null
+        }
+        Update: {
+          cash_flow_operativo?: number | null
+          costi_effettivi?: number | null
+          costi_previsti?: number | null
+          created_at?: string | null
+          dso?: number | null
+          id?: string
+          margine?: number | null
+          margine_previsto?: number | null
+          periodo?: string
+          ricavi_effettivi?: number | null
+          ricavi_previsti?: number | null
+          wip?: number | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assegnato_a: string | null
@@ -537,6 +812,59 @@ export type Database = {
           valore_stimato?: number | null
         }
         Relationships: []
+      }
+      listini_fornitori: {
+        Row: {
+          allegato_url: string | null
+          attivo: boolean | null
+          created_at: string | null
+          fornitore_id: string | null
+          fornitore_nome: string
+          id: string
+          nome: string
+          note: string | null
+          sconto_applicato: number | null
+          updated_at: string | null
+          valido_al: string | null
+          valido_dal: string
+        }
+        Insert: {
+          allegato_url?: string | null
+          attivo?: boolean | null
+          created_at?: string | null
+          fornitore_id?: string | null
+          fornitore_nome: string
+          id?: string
+          nome: string
+          note?: string | null
+          sconto_applicato?: number | null
+          updated_at?: string | null
+          valido_al?: string | null
+          valido_dal: string
+        }
+        Update: {
+          allegato_url?: string | null
+          attivo?: boolean | null
+          created_at?: string | null
+          fornitore_id?: string | null
+          fornitore_nome?: string
+          id?: string
+          nome?: string
+          note?: string | null
+          sconto_applicato?: number | null
+          updated_at?: string | null
+          valido_al?: string | null
+          valido_dal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listini_fornitori_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       listino_prezzi: {
         Row: {
@@ -836,6 +1164,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ordini_fornitori: {
+        Row: {
+          allegati: string[] | null
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string | null
+          data: string
+          data_consegna_effettiva: string | null
+          data_consegna_prevista: string | null
+          fornitore_id: string | null
+          fornitore_nome: string
+          id: string
+          importo: number
+          note: string | null
+          numero: string
+          stato: string
+          updated_at: string | null
+        }
+        Insert: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          data_consegna_effettiva?: string | null
+          data_consegna_prevista?: string | null
+          fornitore_id?: string | null
+          fornitore_nome: string
+          id?: string
+          importo?: number
+          note?: string | null
+          numero: string
+          stato?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          data_consegna_effettiva?: string | null
+          data_consegna_prevista?: string | null
+          fornitore_id?: string | null
+          fornitore_nome?: string
+          id?: string
+          importo?: number
+          note?: string | null
+          numero?: string
+          stato?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordini_fornitori_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organigramma: {
         Row: {
           created_at: string
@@ -1072,6 +1462,68 @@ export type Database = {
           },
         ]
       }
+      preventivi_fornitori: {
+        Row: {
+          allegati: string[] | null
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string | null
+          data: string
+          fornitore_id: string | null
+          fornitore_nome: string
+          id: string
+          importo: number | null
+          note: string | null
+          numero: string
+          oggetto: string
+          scadenza: string | null
+          stato: string
+          updated_at: string | null
+        }
+        Insert: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          fornitore_id?: string | null
+          fornitore_nome: string
+          id?: string
+          importo?: number | null
+          note?: string | null
+          numero: string
+          oggetto: string
+          scadenza?: string | null
+          stato?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allegati?: string[] | null
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string | null
+          data?: string
+          fornitore_id?: string | null
+          fornitore_nome?: string
+          id?: string
+          importo?: number | null
+          note?: string | null
+          numero?: string
+          oggetto?: string
+          scadenza?: string | null
+          stato?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventivi_fornitori_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rapportini: {
         Row: {
           approvato: boolean | null
@@ -1137,6 +1589,54 @@ export type Database = {
           redatto_da?: string
           temperatura_max?: number | null
           temperatura_min?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      report_bi: {
+        Row: {
+          attivo: boolean | null
+          created_at: string | null
+          descrizione: string | null
+          destinatari: string[] | null
+          filtri: Json | null
+          formato: string | null
+          frequenza: string | null
+          id: string
+          nome: string
+          prossima_esecuzione: string | null
+          tipo_report: string
+          ultima_esecuzione: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          created_at?: string | null
+          descrizione?: string | null
+          destinatari?: string[] | null
+          filtri?: Json | null
+          formato?: string | null
+          frequenza?: string | null
+          id?: string
+          nome: string
+          prossima_esecuzione?: string | null
+          tipo_report?: string
+          ultima_esecuzione?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          created_at?: string | null
+          descrizione?: string | null
+          destinatari?: string[] | null
+          filtri?: Json | null
+          formato?: string | null
+          frequenza?: string | null
+          id?: string
+          nome?: string
+          prossima_esecuzione?: string | null
+          tipo_report?: string
+          ultima_esecuzione?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1235,6 +1735,56 @@ export type Database = {
             columns: ["ddt_id"]
             isOneToOne: false
             referencedRelation: "ddt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      righe_ordine: {
+        Row: {
+          codice: string | null
+          created_at: string | null
+          descrizione: string
+          id: string
+          importo: number | null
+          ordine: number | null
+          ordine_id: string
+          prezzo_unitario: number
+          quantita: number
+          sconto: number | null
+          unita_misura: string | null
+        }
+        Insert: {
+          codice?: string | null
+          created_at?: string | null
+          descrizione: string
+          id?: string
+          importo?: number | null
+          ordine?: number | null
+          ordine_id: string
+          prezzo_unitario?: number
+          quantita?: number
+          sconto?: number | null
+          unita_misura?: string | null
+        }
+        Update: {
+          codice?: string | null
+          created_at?: string | null
+          descrizione?: string
+          id?: string
+          importo?: number | null
+          ordine?: number | null
+          ordine_id?: string
+          prezzo_unitario?: number
+          quantita?: number
+          sconto?: number | null
+          unita_misura?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "righe_ordine_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini_fornitori"
             referencedColumns: ["id"]
           },
         ]
