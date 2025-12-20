@@ -710,21 +710,49 @@ export default function SorveglianzaSanitaria() {
         </TabsContent>
 
         <TabsContent value="medici" className="mt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-semibold">Medici Competenti Registrati</h3>
-            <Button onClick={() => { setEditingMedico(null); setShowNewMedicoDialog(true); }} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nuovo Medico
-            </Button>
-          </div>
-          
-          {medici.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Stethoscope className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-foreground">Nessun medico registrato</h3>
-              <p className="text-sm">Clicca su "Nuovo Medico" per aggiungere un medico competente</p>
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Stethoscope className="w-5 h-5 text-primary" />
+                  Medici Competenti Registrati
+                </h3>
+                <p className="text-sm text-muted-foreground">Gestione medici competenti aziendali</p>
+              </div>
+              <Button onClick={() => { setEditingMedico(null); setShowNewMedicoDialog(true); }} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nuovo Medico
+              </Button>
             </div>
-          ) : (
+
+            {/* Corsi Obbligatori Reference */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4" />
+                Requisiti/Attestati Obbligatori per Medico Competente
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {CORSI_MEDICO_COMPETENTE.map(corso => (
+                  <div key={corso.id} className="flex items-start gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">{corso.nome}</span>
+                      {corso.scadenza && <span className="text-muted-foreground"> - Rinnovo: {corso.scadenza}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          
+            {/* Lista Medici */}
+            {medici.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Stethoscope className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold text-foreground">Nessun medico registrato</h3>
+                <p className="text-sm">Clicca su "Nuovo Medico" per aggiungere un medico competente</p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {medici.map(medico => {
                 const corsiMancanti = CORSI_MEDICO_COMPETENTE.filter(
@@ -796,7 +824,8 @@ export default function SorveglianzaSanitaria() {
                 );
               })}
             </div>
-          )}
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
