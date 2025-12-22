@@ -35,6 +35,12 @@ import ComputoMetrico from "./pages/ComputoMetrico";
 import RepartoAmministrazione from "./pages/RepartoAmministrazione";
 import Timbrature from "./pages/Timbrature";
 import Risorse from "./pages/Risorse";
+import Scadenzario from "./pages/Scadenzario";
+import Rapportini from "./pages/Rapportini";
+import Magazzino from "./pages/Magazzino";
+import Contatti from "./pages/Contatti";
+import CheckinSicurezza from "./pages/CheckinSicurezza";
+import ListinoPrezzi from "./pages/ListinoPrezzi";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +69,7 @@ const App = () => (
                 <Route path="/formazione" element={<Formazione />} />
                 <Route path="/dpi" element={<DPI />} />
                 <Route path="/sorveglianza-sanitaria" element={<SorveglianzaSanitaria />} />
+                <Route path="/checkin-sicurezza" element={<CheckinSicurezza />} />
                 {/* Compliance Routes */}
                 <Route path="/compliance/gdpr" element={<GDPRCompliance />} />
                 <Route path="/compliance/qualita" element={<QualityISO />} />
@@ -71,10 +78,15 @@ const App = () => (
                 <Route path="/compliance/bi" element={<BusinessIntelligence />} />
                 <Route path="/reparto-commerciale" element={<UfficioCommerciale />} />
                 <Route path="/computo-metrico" element={<ComputoMetrico />} />
+                <Route path="/listino-prezzi" element={<ListinoPrezzi />} />
                 <Route path="/reparto-amministrazione" element={<RepartoAmministrazione />} />
                 {/* New Features */}
                 <Route path="/timbrature" element={<Timbrature />} />
                 <Route path="/risorse" element={<Risorse />} />
+                <Route path="/scadenzario" element={<Scadenzario />} />
+                <Route path="/rapportini" element={<Rapportini />} />
+                <Route path="/magazzino" element={<Magazzino />} />
+                <Route path="/contatti" element={<Contatti />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

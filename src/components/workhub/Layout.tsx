@@ -43,7 +43,9 @@ import {
   Briefcase,
   Calculator,
   Truck,
-  ClipboardList
+  ClipboardList,
+  Boxes,
+  Euro
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -626,6 +628,10 @@ export function Layout() {
                   { to: '/imprese', icon: Building2, label: 'Imprese Esterne' },
                   { to: '/lavoratori', icon: HardHat, label: 'Dipendenti' },
                   { to: '/hse', icon: ShieldCheck, label: 'Dashboard HSE', badge: totalAlerts },
+                  { to: '/formazione', icon: GraduationCap, label: 'Formazione' },
+                  { to: '/dpi', icon: ShieldAlert, label: 'DPI' },
+                  { to: '/sorveglianza-sanitaria', icon: Stethoscope, label: 'Sorveglianza Sanitaria' },
+                  { to: '/checkin-sicurezza', icon: ClipboardList, label: 'Check-in Sicurezza' },
                 ].map(item => (
                   <Link
                     key={item.to}
@@ -657,6 +663,85 @@ export function Layout() {
                   { to: '/compliance/sicurezza', icon: FileCheck, label: 'D.Lgs 81/2008' },
                   { to: '/compliance/ambiente', icon: Leaf, label: 'ISO 14001 Ambiente' },
                   { to: '/compliance/bi', icon: BarChart3, label: 'Business Intelligence' },
+                ].map(item => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
+                      location.pathname === item.to
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="h-px bg-sidebar-border" />
+              
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Commerciale</p>
+                {[
+                  { to: '/reparto-commerciale', icon: Briefcase, label: 'Ufficio Commerciale' },
+                  { to: '/computo-metrico', icon: Calculator, label: 'Computo Metrico' },
+                  { to: '/listino-prezzi', icon: Euro, label: 'Listino Prezzi' },
+                ].map(item => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
+                      location.pathname === item.to
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="h-px bg-sidebar-border" />
+              
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Amministrazione</p>
+                {[
+                  { to: '/reparto-amministrazione', icon: FileText, label: 'Amministrazione' },
+                  { to: '/timbrature', icon: Clock, label: 'Timbrature' },
+                  { to: '/scadenzario', icon: Calendar, label: 'Scadenzario' },
+                  { to: '/rapportini', icon: ClipboardList, label: 'Rapportini' },
+                  { to: '/contatti', icon: User, label: 'Contatti' },
+                ].map(item => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
+                      location.pathname === item.to
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-muted/50'
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+              
+              <div className="h-px bg-sidebar-border" />
+              
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Logistica</p>
+                {[
+                  { to: '/risorse', icon: Truck, label: 'Risorse & Mezzi' },
+                  { to: '/magazzino', icon: Boxes, label: 'Magazzino' },
                 ].map(item => (
                   <Link
                     key={item.to}
@@ -757,19 +842,23 @@ export function Layout() {
             {/* Notifications - New Component */}
             <NotificationCenter />
 
-            {/* User Menu */}
+            {/* User Info + Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" className="rounded-full flex items-center gap-2 pl-2 pr-3 py-1 h-auto">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
                     <User className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div className="hidden sm:flex flex-col items-start text-left">
+                    <span className="text-sm font-semibold text-foreground">Admin User</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">Direttore Tecnico</span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="p-2">
-                  <p className="font-medium">Utente</p>
-                  <p className="text-xs text-muted-foreground">Demo Mode</p>
+                  <p className="font-medium">Admin User</p>
+                  <p className="text-xs text-muted-foreground">Direttore Tecnico</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
