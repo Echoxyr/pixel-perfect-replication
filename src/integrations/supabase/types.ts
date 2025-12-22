@@ -103,6 +103,71 @@ export type Database = {
           },
         ]
       }
+      attivita_risorse: {
+        Row: {
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          costo: number | null
+          created_at: string
+          data: string
+          descrizione: string | null
+          eseguito_da: string | null
+          id: string
+          km_finali: number | null
+          km_iniziali: number | null
+          km_percorsi: number | null
+          litri_carburante: number | null
+          note: string | null
+          ore_utilizzo: number | null
+          risorsa_id: string
+          tipo_attivita: string
+        }
+        Insert: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          costo?: number | null
+          created_at?: string
+          data?: string
+          descrizione?: string | null
+          eseguito_da?: string | null
+          id?: string
+          km_finali?: number | null
+          km_iniziali?: number | null
+          km_percorsi?: number | null
+          litri_carburante?: number | null
+          note?: string | null
+          ore_utilizzo?: number | null
+          risorsa_id: string
+          tipo_attivita: string
+        }
+        Update: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          costo?: number | null
+          created_at?: string
+          data?: string
+          descrizione?: string | null
+          eseguito_da?: string | null
+          id?: string
+          km_finali?: number | null
+          km_iniziali?: number | null
+          km_percorsi?: number | null
+          litri_carburante?: number | null
+          note?: string | null
+          ore_utilizzo?: number | null
+          risorsa_id?: string
+          tipo_attivita?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attivita_risorse_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_cantiere: {
         Row: {
           cantiere_id: string | null
@@ -512,6 +577,56 @@ export type Database = {
           vettore?: string | null
         }
         Relationships: []
+      }
+      documenti_risorse: {
+        Row: {
+          allegato_url: string | null
+          created_at: string
+          data_emissione: string | null
+          data_scadenza: string | null
+          id: string
+          note: string | null
+          risorsa_id: string
+          stato: string
+          tipo: string
+          titolo: string
+          updated_at: string
+        }
+        Insert: {
+          allegato_url?: string | null
+          created_at?: string
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          id?: string
+          note?: string | null
+          risorsa_id: string
+          stato?: string
+          tipo: string
+          titolo: string
+          updated_at?: string
+        }
+        Update: {
+          allegato_url?: string | null
+          created_at?: string
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          id?: string
+          note?: string | null
+          risorsa_id?: string
+          stato?: string
+          tipo?: string
+          titolo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documenti_risorse_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fatture: {
         Row: {
@@ -967,6 +1082,71 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      manutenzioni_risorse: {
+        Row: {
+          allegati: string[] | null
+          costo: number | null
+          created_at: string
+          data_esecuzione: string | null
+          data_programmata: string | null
+          descrizione: string
+          eseguito_da: string | null
+          id: string
+          km_esecuzione: number | null
+          km_programmati: number | null
+          note: string | null
+          officina: string | null
+          risorsa_id: string
+          stato: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          allegati?: string[] | null
+          costo?: number | null
+          created_at?: string
+          data_esecuzione?: string | null
+          data_programmata?: string | null
+          descrizione: string
+          eseguito_da?: string | null
+          id?: string
+          km_esecuzione?: number | null
+          km_programmati?: number | null
+          note?: string | null
+          officina?: string | null
+          risorsa_id: string
+          stato?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          allegati?: string[] | null
+          costo?: number | null
+          created_at?: string
+          data_esecuzione?: string | null
+          data_programmata?: string | null
+          descrizione?: string
+          eseguito_da?: string | null
+          id?: string
+          km_esecuzione?: number | null
+          km_programmati?: number | null
+          note?: string | null
+          officina?: string | null
+          risorsa_id?: string
+          stato?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutenzioni_risorse_risorsa_id_fkey"
+            columns: ["risorsa_id"]
+            isOneToOne: false
+            referencedRelation: "risorse"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       movimenti_contabili: {
         Row: {
