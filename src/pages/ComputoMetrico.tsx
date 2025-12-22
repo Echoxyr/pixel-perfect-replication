@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -41,15 +40,9 @@ import {
   ChevronDown,
   Trash2,
   Edit,
-  Copy,
-  Move,
   FileText,
   Layers,
   Euro,
-  Percent,
-  ArrowUpDown,
-  Filter,
-  Save,
   FileUp,
   FileDown,
   Printer,
@@ -57,11 +50,14 @@ import {
   Wand2,
   ListTree,
   FileArchive,
-  AlertCircle,
-  CheckCircle
+  Loader2,
+  Globe,
+  Check,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Types
 interface VoceComputo {
@@ -91,6 +87,8 @@ interface Preziario {
   nome: string;
   regione: string;
   anno: number;
+  descrizione: string;
+  attivo: boolean;
   voci: VocePreziario[];
 }
 
@@ -102,31 +100,144 @@ interface VocePreziario {
   categoria: string;
 }
 
-// Sample prezziari
+// Prezziari regionali italiani con descrizioni complete
 const prezziariDisponibili: Preziario[] = [
   {
     id: 'lom2024',
     nome: 'Prezzario Regione Lombardia 2024',
     regione: 'Lombardia',
     anno: 2024,
+    descrizione: 'Prezzario ufficiale regionale per opere edili, impiantistiche e infrastrutturali. Include voci per edilizia residenziale, terziaria e industriale.',
+    attivo: true,
     voci: [
-      { codice: 'E.01.001.001', descrizione: 'Scavo di sbancamento in terreno di qualsiasi natura', unitaMisura: 'm³', prezzo: 8.50, categoria: 'OPERE EDILI' },
-      { codice: 'E.01.002.001', descrizione: 'Scavo a sezione obbligata', unitaMisura: 'm³', prezzo: 15.00, categoria: 'OPERE EDILI' },
-      { codice: 'E.02.001.001', descrizione: 'Calcestruzzo classe C25/30', unitaMisura: 'm³', prezzo: 125.00, categoria: 'OPERE EDILI' },
-      { codice: 'E.02.002.001', descrizione: 'Acciaio per c.a. B450C', unitaMisura: 'kg', prezzo: 1.85, categoria: 'OPERE EDILI' },
-      { codice: 'M.01.001.001', descrizione: 'Tubazione in rame rivestito ø 18', unitaMisura: 'm', prezzo: 28.50, categoria: 'IMPIANTI MECCANICI' },
-      { codice: 'M.01.002.001', descrizione: 'Tubazione in multistrato ø 20', unitaMisura: 'm', prezzo: 12.80, categoria: 'IMPIANTI MECCANICI' },
-      { codice: 'M.02.001.001', descrizione: 'Radiatore in alluminio 10 elementi', unitaMisura: 'cad', prezzo: 185.00, categoria: 'IMPIANTI MECCANICI' },
-      { codice: 'EL.01.001.001', descrizione: 'Cavo FG7OR 3x2.5 mm²', unitaMisura: 'm', prezzo: 3.20, categoria: 'IMPIANTI ELETTRICI' },
-      { codice: 'EL.01.002.001', descrizione: 'Quadro elettrico da incasso 24 moduli', unitaMisura: 'cad', prezzo: 145.00, categoria: 'IMPIANTI ELETTRICI' },
-      { codice: 'EL.02.001.001', descrizione: 'Punto luce completo', unitaMisura: 'cad', prezzo: 85.00, categoria: 'IMPIANTI ELETTRICI' },
-      { codice: 'ID.01.001.001', descrizione: 'Tubazione in PE-HD ø 50', unitaMisura: 'm', prezzo: 8.50, categoria: 'IMPIANTI IDRAULICI' },
-      { codice: 'ID.01.002.001', descrizione: 'Tubazione in PP ø 110', unitaMisura: 'm', prezzo: 22.00, categoria: 'IMPIANTI IDRAULICI' }
+      { codice: 'E.01.001.001', descrizione: 'Scavo di sbancamento in terreno di qualsiasi natura esclusa roccia', unitaMisura: 'm³', prezzo: 8.50, categoria: 'OPERE EDILI - Movimenti terra' },
+      { codice: 'E.01.002.001', descrizione: 'Scavo a sezione obbligata fino a m 2.00 di profondità', unitaMisura: 'm³', prezzo: 15.00, categoria: 'OPERE EDILI - Movimenti terra' },
+      { codice: 'E.01.003.001', descrizione: 'Rinterro e costipazione con materiale proveniente dagli scavi', unitaMisura: 'm³', prezzo: 4.20, categoria: 'OPERE EDILI - Movimenti terra' },
+      { codice: 'E.02.001.001', descrizione: 'Calcestruzzo per strutture in elevazione classe C25/30', unitaMisura: 'm³', prezzo: 125.00, categoria: 'OPERE EDILI - Calcestruzzi' },
+      { codice: 'E.02.001.002', descrizione: 'Calcestruzzo per strutture in elevazione classe C30/37', unitaMisura: 'm³', prezzo: 135.00, categoria: 'OPERE EDILI - Calcestruzzi' },
+      { codice: 'E.02.002.001', descrizione: 'Acciaio per c.a. tipo B450C in barre ad aderenza migliorata', unitaMisura: 'kg', prezzo: 1.85, categoria: 'OPERE EDILI - Acciaio' },
+      { codice: 'E.03.001.001', descrizione: 'Muratura in blocchi di laterizio da cm 25', unitaMisura: 'm²', prezzo: 48.00, categoria: 'OPERE EDILI - Murature' },
+      { codice: 'M.01.001.001', descrizione: 'Tubazione in rame rivestito per impianti di riscaldamento ø 18 mm', unitaMisura: 'm', prezzo: 28.50, categoria: 'IMPIANTI MECCANICI - Tubazioni' },
+      { codice: 'M.01.002.001', descrizione: 'Tubazione in multistrato PEX/AL/PEX ø 20 mm', unitaMisura: 'm', prezzo: 12.80, categoria: 'IMPIANTI MECCANICI - Tubazioni' },
+      { codice: 'M.02.001.001', descrizione: 'Radiatore in alluminio pressofuso 10 elementi h. 600 mm', unitaMisura: 'cad', prezzo: 185.00, categoria: 'IMPIANTI MECCANICI - Terminali' },
+      { codice: 'EL.01.001.001', descrizione: 'Cavo FG7OR 450/750V 3x2.5 mm² in guaina', unitaMisura: 'm', prezzo: 3.20, categoria: 'IMPIANTI ELETTRICI - Cavi' },
+      { codice: 'EL.01.002.001', descrizione: 'Quadro elettrico da incasso 24 moduli DIN con sportello', unitaMisura: 'cad', prezzo: 145.00, categoria: 'IMPIANTI ELETTRICI - Quadri' },
+      { codice: 'EL.02.001.001', descrizione: 'Punto luce completo di frutto, placca e cablaggio', unitaMisura: 'cad', prezzo: 85.00, categoria: 'IMPIANTI ELETTRICI - Punti' },
+      { codice: 'ID.01.001.001', descrizione: 'Tubazione in PE-HD PN16 per acquedotti ø 50 mm', unitaMisura: 'm', prezzo: 8.50, categoria: 'IMPIANTI IDRAULICI - Adduzione' },
+      { codice: 'ID.01.002.001', descrizione: 'Tubazione in PP per scarichi ø 110 mm', unitaMisura: 'm', prezzo: 22.00, categoria: 'IMPIANTI IDRAULICI - Scarichi' }
+    ]
+  },
+  {
+    id: 'laz2024',
+    nome: 'Prezzario Regione Lazio 2024',
+    regione: 'Lazio',
+    anno: 2024,
+    descrizione: 'Tariffa dei prezzi per opere pubbliche della Regione Lazio. Comprende edilizia, strade, acquedotti e fognature.',
+    attivo: true,
+    voci: [
+      { codice: 'A.01.001.a', descrizione: 'Scavo di sbancamento a macchina in terreno di qualsiasi natura', unitaMisura: 'm³', prezzo: 7.80, categoria: 'OPERE EDILI - Scavi' },
+      { codice: 'A.01.002.a', descrizione: 'Scavo a sezione obbligata fino a ml 1.50', unitaMisura: 'm³', prezzo: 14.50, categoria: 'OPERE EDILI - Scavi' },
+      { codice: 'B.01.001.a', descrizione: 'Conglomerato cementizio Rck 30 per strutture armate', unitaMisura: 'm³', prezzo: 128.00, categoria: 'OPERE EDILI - Calcestruzzi' },
+      { codice: 'B.02.001.a', descrizione: 'Acciaio ad aderenza migliorata B450C lavorato', unitaMisura: 'kg', prezzo: 1.90, categoria: 'OPERE EDILI - Armature' },
+      { codice: 'C.01.001.a', descrizione: 'Muratura in blocchi di laterizio forato spessore cm 12', unitaMisura: 'm²', prezzo: 32.00, categoria: 'OPERE EDILI - Murature' },
+      { codice: 'IM.01.001.a', descrizione: 'Tubo multistrato in PE-X/AL/PE-X ø 16 mm', unitaMisura: 'm', prezzo: 10.50, categoria: 'IMPIANTI - Tubazioni' },
+      { codice: 'IM.02.001.a', descrizione: 'Radiatore in alluminio 8 elementi h 700', unitaMisura: 'cad', prezzo: 165.00, categoria: 'IMPIANTI - Riscaldamento' },
+      { codice: 'IE.01.001.a', descrizione: 'Punto presa forza motrice 16A', unitaMisura: 'cad', prezzo: 75.00, categoria: 'IMPIANTI - Elettrico' }
+    ]
+  },
+  {
+    id: 'cam2024',
+    nome: 'Prezzario Regione Campania 2024',
+    regione: 'Campania',
+    anno: 2024,
+    descrizione: 'Listino prezzi per lavori pubblici della Regione Campania. Include bonifiche, restauro e consolidamento antisismico.',
+    attivo: true,
+    voci: [
+      { codice: 'OE.01.001', descrizione: 'Scavo di sbancamento con mezzi meccanici', unitaMisura: 'm³', prezzo: 7.20, categoria: 'OPERE EDILI' },
+      { codice: 'OE.02.001', descrizione: 'Calcestruzzo per fondazioni Rck 25', unitaMisura: 'm³', prezzo: 118.00, categoria: 'OPERE EDILI' },
+      { codice: 'OE.03.001', descrizione: 'Acciaio B450C in opera', unitaMisura: 'kg', prezzo: 1.75, categoria: 'OPERE EDILI' },
+      { codice: 'AS.01.001', descrizione: 'Intervento di consolidamento antisismico con fasciatura FRP', unitaMisura: 'm²', prezzo: 85.00, categoria: 'ANTISISMICO' },
+      { codice: 'IM.01.001', descrizione: 'Tubazione rame ø 22 per gas', unitaMisura: 'm', prezzo: 32.00, categoria: 'IMPIANTI' }
+    ]
+  },
+  {
+    id: 'emr2024',
+    nome: 'Prezzario Regione Emilia Romagna 2024',
+    regione: 'Emilia Romagna',
+    anno: 2024,
+    descrizione: 'Elenco regionale prezzi per opere pubbliche. Include specifiche voci per ricostruzione post-sisma.',
+    attivo: true,
+    voci: [
+      { codice: '01.A01.A01.001', descrizione: 'Scavo a sezione aperta in terreno ordinario', unitaMisura: 'm³', prezzo: 8.10, categoria: 'MOVIMENTI TERRA' },
+      { codice: '02.A01.A01.001', descrizione: 'Cls per fondazioni Rck 30', unitaMisura: 'm³', prezzo: 130.00, categoria: 'STRUTTURE' },
+      { codice: '02.A02.A01.001', descrizione: 'Acciaio tipo B450C', unitaMisura: 'kg', prezzo: 1.88, categoria: 'STRUTTURE' },
+      { codice: '03.A01.A01.001', descrizione: 'Muratura portante in laterizio pieno', unitaMisura: 'm³', prezzo: 280.00, categoria: 'MURATURE' },
+      { codice: '08.A01.A01.001', descrizione: 'Consolidamento solai con profili HEA', unitaMisura: 'kg', prezzo: 3.50, categoria: 'CONSOLIDAMENTI' }
+    ]
+  },
+  {
+    id: 'ven2024',
+    nome: 'Prezzario Regione Veneto 2024',
+    regione: 'Veneto',
+    anno: 2024,
+    descrizione: 'Prezzario regionale per opere pubbliche del Veneto. Include edilizia sostenibile e infrastrutture verdi.',
+    attivo: true,
+    voci: [
+      { codice: 'A.01.01.001.a', descrizione: 'Scavo di sbancamento a macchina', unitaMisura: 'm³', prezzo: 8.00, categoria: 'SCAVI E DEMOLIZIONI' },
+      { codice: 'B.01.01.001.a', descrizione: 'Calcestruzzo classe C25/30 per fondazioni', unitaMisura: 'm³', prezzo: 122.00, categoria: 'CALCESTRUZZI' },
+      { codice: 'B.02.01.001.a', descrizione: 'Acciaio B450C per armature', unitaMisura: 'kg', prezzo: 1.82, categoria: 'ARMATURE' },
+      { codice: 'D.01.01.001.a', descrizione: 'Cappotto termico in EPS spessore cm 10', unitaMisura: 'm²', prezzo: 65.00, categoria: 'ISOLAMENTI' },
+      { codice: 'F.01.01.001.a', descrizione: 'Pompa di calore aria-acqua 10 kW', unitaMisura: 'cad', prezzo: 4500.00, categoria: 'ENERGIE RINNOVABILI' }
+    ]
+  },
+  {
+    id: 'tos2024',
+    nome: 'Prezzario Regione Toscana 2024',
+    regione: 'Toscana',
+    anno: 2024,
+    descrizione: 'Prezzario ufficiale della Regione Toscana. Include restauro beni culturali e edilizia storica.',
+    attivo: true,
+    voci: [
+      { codice: '01.A01.001.001', descrizione: 'Scavo di sbancamento a sezione aperta', unitaMisura: 'm³', prezzo: 8.30, categoria: 'SCAVI' },
+      { codice: '02.A01.001.001', descrizione: 'Calcestruzzo C25/30 per strutture', unitaMisura: 'm³', prezzo: 127.00, categoria: 'CEMENTI ARMATI' },
+      { codice: '02.B01.001.001', descrizione: 'Acciaio B450C in barre', unitaMisura: 'kg', prezzo: 1.87, categoria: 'CEMENTI ARMATI' },
+      { codice: '05.A01.001.001', descrizione: 'Intonaco di calce per restauro', unitaMisura: 'm²', prezzo: 35.00, categoria: 'RESTAURO' },
+      { codice: '05.B01.001.001', descrizione: 'Pulitura superficie lapidea con impacco', unitaMisura: 'm²', prezzo: 42.00, categoria: 'RESTAURO' }
+    ]
+  },
+  {
+    id: 'pie2024',
+    nome: 'Prezzario Regione Piemonte 2024',
+    regione: 'Piemonte',
+    anno: 2024,
+    descrizione: 'Elenco prezzi della Regione Piemonte per lavori pubblici. Include edilizia montana e infrastrutture alpine.',
+    attivo: true,
+    voci: [
+      { codice: 'A01.001.a', descrizione: 'Scavo di sbancamento', unitaMisura: 'm³', prezzo: 8.80, categoria: 'MOVIMENTI TERRA' },
+      { codice: 'B01.001.a', descrizione: 'Calcestruzzo Rck 30 per fondazioni', unitaMisura: 'm³', prezzo: 132.00, categoria: 'CALCESTRUZZI' },
+      { codice: 'B02.001.a', descrizione: 'Armatura in acciaio B450C', unitaMisura: 'kg', prezzo: 1.92, categoria: 'ARMATURE' },
+      { codice: 'C01.001.a', descrizione: 'Muratura in pietra locale', unitaMisura: 'm³', prezzo: 320.00, categoria: 'MURATURE TRADIZIONALI' },
+      { codice: 'D01.001.a', descrizione: 'Copertura in lose di pietra', unitaMisura: 'm²', prezzo: 95.00, categoria: 'COPERTURE ALPINE' }
+    ]
+  },
+  {
+    id: 'sic2024',
+    nome: 'Prezzario Regione Sicilia 2024',
+    regione: 'Sicilia',
+    anno: 2024,
+    descrizione: 'Prezzario regionale siciliano per opere pubbliche. Include edilizia in zone sismiche e consolidamenti.',
+    attivo: true,
+    voci: [
+      { codice: 'A.01.001', descrizione: 'Scavo a sezione obbligata in roccia', unitaMisura: 'm³', prezzo: 28.00, categoria: 'SCAVI' },
+      { codice: 'A.02.001', descrizione: 'Scavo in terreno di qualsiasi natura', unitaMisura: 'm³', prezzo: 7.50, categoria: 'SCAVI' },
+      { codice: 'B.01.001', descrizione: 'Calcestruzzo Rck 30', unitaMisura: 'm³', prezzo: 120.00, categoria: 'STRUTTURE' },
+      { codice: 'B.02.001', descrizione: 'Acciaio B450C', unitaMisura: 'kg', prezzo: 1.80, categoria: 'STRUTTURE' },
+      { codice: 'S.01.001', descrizione: 'Consolidamento antisismico nodi c.a.', unitaMisura: 'cad', prezzo: 850.00, categoria: 'ANTISISMICO' }
     ]
   }
 ];
 
-// Sample categories
+// Default categories
 const categorieDefault: CategoriaComputo[] = [
   { id: 'cat1', codice: 'A', nome: 'OPERE EDILI', parentId: null, ordine: 1, expanded: true },
   { id: 'cat1a', codice: 'A.1', nome: 'Scavi e movimenti terra', parentId: 'cat1', ordine: 1, expanded: false },
@@ -199,12 +310,14 @@ export default function ComputoMetrico() {
     }
   ]);
 
-  const [showNewVoce, setShowNewVoce] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const [importedFileName, setImportedFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiResult, setAiResult] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const aiFileInputRef = useRef<HTMLInputElement>(null);
 
   // Get current prezzario
   const currentPreziario = prezziariDisponibili.find(p => p.id === selectedPreziario);
@@ -270,6 +383,10 @@ export default function ComputoMetrico() {
       note: ''
     };
     setVociComputo(prev => [...prev, newVoce]);
+    toast({
+      title: "Voce aggiunta",
+      description: voce.descrizione.substring(0, 50) + "...",
+    });
   };
 
   const updateQuantita = (id: string, quantita: number) => {
@@ -282,24 +399,112 @@ export default function ComputoMetrico() {
     setVociComputo(prev => prev.filter(v => v.id !== id));
   };
 
-  // Import Primus file (.xpwe, .dcf)
+  // AI Assistant functions
+  const handleAIQuery = async () => {
+    if (!aiQuery.trim()) return;
+    
+    setIsAiLoading(true);
+    setAiResult('');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('computo-ai', {
+        body: { action: 'find_code', data: aiQuery }
+      });
+
+      if (error) throw error;
+
+      if (data?.result) {
+        if (typeof data.result === 'object' && data.result.suggestions) {
+          // Format suggestions as readable text
+          const suggestions = data.result.suggestions.map((s: any) => 
+            `• ${s.codice} - ${s.descrizione}\n  Regione: ${s.regione || 'N/A'} | Prezzo: €${s.prezzoIndicativo || 'N/A'}`
+          ).join('\n\n');
+          setAiResult(suggestions || 'Nessun codice trovato per questa descrizione.');
+        } else {
+          setAiResult(typeof data.result === 'string' ? data.result : JSON.stringify(data.result, null, 2));
+        }
+      }
+    } catch (error) {
+      console.error('AI error:', error);
+      toast({
+        title: "Errore AI",
+        description: "Impossibile elaborare la richiesta. Riprova.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAIFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsAiLoading(true);
+    setAiResult('');
+
+    try {
+      const text = await file.text();
+      
+      const { data, error } = await supabase.functions.invoke('computo-ai', {
+        body: { action: 'analyze_excel', fileContent: text }
+      });
+
+      if (error) throw error;
+
+      if (data?.result?.voci) {
+        // Add imported voci
+        const importedVoci: VoceComputo[] = data.result.voci.map((v: any, index: number) => ({
+          id: `ai-${Date.now()}-${index}`,
+          codice: `AI.${index + 1}`,
+          codicePreziario: v.codice || 'N/A',
+          descrizione: v.descrizione || 'Voce importata',
+          unitaMisura: v.unitaMisura || 'cad',
+          prezzoUnitario: v.prezzoUnitario || 0,
+          quantita: v.quantita || 1,
+          importo: (v.prezzoUnitario || 0) * (v.quantita || 1),
+          categoriaId: 'cat1',
+          note: 'Importato da AI'
+        }));
+
+        setVociComputo(prev => [...prev, ...importedVoci]);
+        setAiResult(`Importate ${importedVoci.length} voci dal file.\n\n${data.result.note || ''}`);
+        
+        toast({
+          title: "Importazione AI completata",
+          description: `Aggiunte ${importedVoci.length} voci al computo`,
+        });
+      } else {
+        setAiResult(typeof data.result === 'string' ? data.result : 'Analisi completata, ma nessuna voce trovata.');
+      }
+    } catch (error) {
+      console.error('AI file error:', error);
+      toast({
+        title: "Errore analisi",
+        description: "Impossibile analizzare il file. Riprova.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAiLoading(false);
+      if (aiFileInputRef.current) aiFileInputRef.current.value = '';
+    }
+  };
+
+  // Import Primus file
   const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsProcessing(true);
-    setImportedFileName(file.name);
 
     try {
       const extension = file.name.split('.').pop()?.toLowerCase();
       
       if (extension === 'xpwe' || extension === 'dcf' || extension === 'xml') {
-        // Parse Primus/DCF XML file
         const text = await file.text();
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, 'text/xml');
         
-        // Extract voci from XML
         const vociElements = xmlDoc.querySelectorAll('Voce, voce, VOCE, Articolo, articolo');
         const importedVoci: VoceComputo[] = [];
         
@@ -342,11 +547,6 @@ export default function ComputoMetrico() {
             variant: "destructive"
           });
         }
-      } else if (extension === 'xlsx' || extension === 'xls') {
-        toast({
-          title: "File Excel rilevato",
-          description: "Per i file Excel utilizzare l'Assistente AI per l'analisi automatica",
-        });
       } else {
         toast({
           title: "Formato non supportato",
@@ -358,7 +558,7 @@ export default function ComputoMetrico() {
       console.error('Errore importazione:', error);
       toast({
         title: "Errore importazione",
-        description: "Impossibile leggere il file. Verificare il formato.",
+        description: "Impossibile leggere il file.",
         variant: "destructive"
       });
     } finally {
@@ -368,7 +568,7 @@ export default function ComputoMetrico() {
     }
   };
 
-  // Export to DCF format (Primus compatible)
+  // Export functions
   const exportToDCF = () => {
     const dcfContent = `<?xml version="1.0" encoding="UTF-8"?>
 <DCF version="1.0">
@@ -376,7 +576,6 @@ export default function ComputoMetrico() {
     <Titolo>Computo Metrico</Titolo>
     <Data>${new Date().toISOString().split('T')[0]}</Data>
     <Prezzario>${currentPreziario?.nome || 'Non specificato'}</Prezzario>
-    <Oggetto>Computo Metrico Estimativo</Oggetto>
   </Intestazione>
   <Corpo>
     <Categorie>
@@ -411,15 +610,10 @@ ${catVoci.map(voce => `        <Articolo>
     a.click();
     URL.revokeObjectURL(url);
     
-    toast({
-      title: "Esportazione DCF completata",
-      description: "File DCF compatibile con Primus scaricato",
-    });
+    toast({ title: "Esportazione DCF completata" });
   };
 
-  // Export to PDF
   const exportToPDF = () => {
-    // Create a printable HTML content
     const printContent = `
 <!DOCTYPE html>
 <html>
@@ -436,10 +630,6 @@ ${catVoci.map(voce => `        <Articolo>
     .right { text-align: right; }
     .total-row { background-color: #e8f4ff; font-weight: bold; }
     .grand-total { background-color: #1e40af; color: white; font-size: 12pt; }
-    @media print { 
-      .no-print { display: none; }
-      body { margin: 0; }
-    }
   </style>
 </head>
 <body>
@@ -492,7 +682,7 @@ ${catVoci.map(voce => `        <Articolo>
   <table style="margin-top: 30px;">
     <tr class="grand-total">
       <td colspan="5" class="right" style="padding: 15px;">TOTALE COMPLESSIVO:</td>
-      <td class="right" style="padding: 15px; width: 15%;">${formatCurrency(totali.totale)}</td>
+      <td class="right" style="padding: 15px;">${formatCurrency(totali.totale)}</td>
     </tr>
   </table>
   
@@ -505,48 +695,9 @@ ${catVoci.map(voce => `        <Articolo>
       printWindow.document.write(printContent);
       printWindow.document.close();
     }
-    
-    toast({
-      title: "Stampa PDF avviata",
-      description: "Seleziona 'Salva come PDF' nella finestra di stampa",
-    });
-  };
-
-  // Export functions
-  const exportToExcel = () => {
-    // Generate Excel-compatible content
-    const content = `
-COMPUTO METRICO ESTIMATIVO
-Data: ${new Date().toLocaleDateString('it-IT')}
-Prezzario: ${currentPreziario?.nome}
-
-${categorie.filter(c => !c.parentId).map(cat => {
-  const catVoci = vociComputo.filter(v => {
-    const vocecat = categorie.find(c => c.id === v.categoriaId);
-    return vocecat?.parentId === cat.id || vocecat?.id === cat.id;
-  });
-  if (catVoci.length === 0) return '';
-  return `
-${cat.nome}
-${catVoci.map(v => `${v.codicePreziario}\t${v.descrizione}\t${v.unitaMisura}\t${v.quantita}\t${v.prezzoUnitario}\t${v.importo}`).join('\n')}
-SUBTOTALE ${cat.nome}: ${formatCurrency(totali.byCategoria[cat.id] || 0)}
-`;
-}).join('\n')}
-
-TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'computo_metrico.txt';
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const exportToPrimus = () => {
-    // Generate Primus-compatible XPWE XML
     const primusXML = `<?xml version="1.0" encoding="UTF-8"?>
 <PrimusExport version="2.0">
   <Testata>
@@ -585,10 +736,7 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
     a.click();
     URL.revokeObjectURL(url);
     
-    toast({
-      title: "Esportazione Primus completata",
-      description: "File XPWE scaricato",
-    });
+    toast({ title: "Esportazione XPWE completata" });
   };
 
   const renderCategorieTree = (parentId: string | null = null, level: number = 0): JSX.Element[] => {
@@ -632,20 +780,23 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Computo Metrico</h1>
           <p className="text-muted-foreground">Gestione computi, preventivi e contabilità lavori</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedPreziario} onValueChange={setSelectedPreziario}>
-            <SelectTrigger className="w-72">
+            <SelectTrigger className="w-full md:w-72">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {prezziariDisponibili.map(p => (
+              {prezziariDisponibili.filter(p => p.attivo).map(p => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.nome}
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    {p.nome}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -653,8 +804,43 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
         </div>
       </div>
 
+      {/* Prezzario Info Card */}
+      {currentPreziario && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <FileSpreadsheet className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{currentPreziario.nome}</h3>
+                  <p className="text-sm text-muted-foreground">{currentPreziario.descrizione}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {currentPreziario.regione}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Anno {currentPreziario.anno}
+                    </Badge>
+                    <Badge className="text-xs bg-emerald-500">
+                      <Check className="w-3 h-3 mr-1" />
+                      Attivo
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-primary">{currentPreziario.voci.length}</p>
+                <p className="text-xs text-muted-foreground">Voci disponibili</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-2 border-primary/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -701,11 +887,11 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-500/10">
-                <FileSpreadsheet className="w-5 h-5 text-purple-500" />
+                <Globe className="w-5 h-5 text-purple-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{currentPreziario?.voci.length || 0}</p>
-                <p className="text-xs text-muted-foreground">Voci Prezzario</p>
+                <p className="text-2xl font-bold">{prezziariDisponibili.filter(p => p.attivo).length}</p>
+                <p className="text-xs text-muted-foreground">Prezziari Attivi</p>
               </div>
             </div>
           </CardContent>
@@ -713,9 +899,9 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Sidebar - Categories Tree */}
-        <div className="col-span-3">
+        <div className="lg:col-span-3">
           <Card className="h-[600px] flex flex-col">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -734,33 +920,33 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
         </div>
 
         {/* Main Area */}
-        <div className="col-span-9">
+        <div className="lg:col-span-9">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <TabsList className="w-full md:w-auto">
                 <TabsTrigger value="computo" className="gap-2">
                   <Calculator className="w-4 h-4" />
-                  Computo
+                  <span className="hidden md:inline">Computo</span>
                 </TabsTrigger>
                 <TabsTrigger value="prezzario" className="gap-2">
                   <FileSpreadsheet className="w-4 h-4" />
-                  Prezzario
+                  <span className="hidden md:inline">Prezzario</span>
                 </TabsTrigger>
                 <TabsTrigger value="riepilogo" className="gap-2">
                   <ListTree className="w-4 h-4" />
-                  Riepilogo
+                  <span className="hidden md:inline">Riepilogo</span>
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Dialog open={showAIAssistant} onOpenChange={setShowAIAssistant}>
                   <DialogTrigger asChild>
                     <Button variant="outline" className="gap-2">
                       <Wand2 className="w-4 h-4" />
-                      Assistente AI
+                      <span className="hidden md:inline">Assistente AI</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-primary" />
@@ -789,21 +975,52 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                           Suggerire voci mancanti basate su progetti simili
                         </li>
                       </ul>
+                      
+                      {/* File Upload */}
                       <div className="border-2 border-dashed rounded-lg p-6 text-center">
                         <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground">
                           Carica un file Excel per l'analisi automatica
                         </p>
-                        <Input type="file" className="mt-2" accept=".xlsx,.xls,.csv" />
+                        <Input 
+                          ref={aiFileInputRef}
+                          type="file" 
+                          className="mt-2"
+                          accept=".xlsx,.xls,.csv,.txt"
+                          onChange={handleAIFileUpload}
+                          disabled={isAiLoading}
+                        />
                       </div>
+                      
+                      {/* Text Query */}
                       <Textarea 
-                        placeholder="Oppure descrivi cosa vuoi fare... Es: 'Raggruppa le voci per impianto' o 'Trova il codice per posa tubazione in rame'"
+                        placeholder="Oppure descrivi cosa vuoi fare... Es: 'Trova il codice per posa tubazione in rame ø 22' o 'Prezzo scavo a sezione obbligata'"
                         rows={3}
+                        value={aiQuery}
+                        onChange={(e) => setAiQuery(e.target.value)}
+                        disabled={isAiLoading}
                       />
-                      <Button className="w-full gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        Elabora con AI
+                      
+                      <Button 
+                        className="w-full gap-2" 
+                        onClick={handleAIQuery}
+                        disabled={isAiLoading || !aiQuery.trim()}
+                      >
+                        {isAiLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        {isAiLoading ? 'Elaborazione...' : 'Elabora con AI'}
                       </Button>
+
+                      {/* AI Result */}
+                      {aiResult && (
+                        <div className="p-4 bg-muted rounded-lg">
+                          <h4 className="font-semibold text-sm mb-2">Risultato:</h4>
+                          <pre className="text-sm whitespace-pre-wrap font-mono">{aiResult}</pre>
+                        </div>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -812,7 +1029,7 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                   <DialogTrigger asChild>
                     <Button variant="outline" className="gap-2">
                       <FileUp className="w-4 h-4" />
-                      Importa Primus
+                      <span className="hidden md:inline">Importa</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -840,27 +1057,23 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                         />
                       </div>
                       {isProcessing && (
-                        <p className="text-sm text-center text-primary">Elaborazione in corso...</p>
+                        <div className="flex items-center justify-center gap-2 text-primary">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Elaborazione in corso...</span>
+                        </div>
                       )}
                     </div>
                   </DialogContent>
                 </Dialog>
 
-                <Button variant="outline" className="gap-2" onClick={exportToExcel}>
+                <Button variant="outline" size="icon" onClick={exportToPrimus} title="Esporta XPWE">
                   <FileDown className="w-4 h-4" />
-                  Excel
                 </Button>
-                <Button variant="outline" className="gap-2" onClick={exportToPrimus}>
-                  <FileDown className="w-4 h-4" />
-                  XPWE
+                <Button variant="outline" size="icon" onClick={exportToDCF} title="Esporta DCF">
+                  <Download className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" className="gap-2" onClick={exportToDCF}>
-                  <FileDown className="w-4 h-4" />
-                  DCF
-                </Button>
-                <Button variant="outline" className="gap-2" onClick={exportToPDF}>
+                <Button variant="outline" size="icon" onClick={exportToPDF} title="Stampa PDF">
                   <Printer className="w-4 h-4" />
-                  PDF
                 </Button>
               </div>
             </div>
@@ -869,74 +1082,69 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
             <TabsContent value="computo">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-3">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Cerca voci..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 w-64"
-                      />
-                    </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Cerca voci..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 w-64"
+                    />
                   </div>
-                  <Button className="gap-2" onClick={() => setShowNewVoce(true)}>
-                    <Plus className="w-4 h-4" />
-                    Nuova Voce
-                  </Button>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-24">Codice</TableHead>
-                        <TableHead className="w-32">Cod. Prezzario</TableHead>
-                        <TableHead>Descrizione</TableHead>
-                        <TableHead className="w-20">U.M.</TableHead>
-                        <TableHead className="w-24 text-right">Quantità</TableHead>
-                        <TableHead className="w-28 text-right">Prezzo Unit.</TableHead>
-                        <TableHead className="w-28 text-right">Importo</TableHead>
-                        <TableHead className="w-24"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {vociComputo
-                        .filter(v => !searchQuery || 
-                          v.descrizione.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          v.codicePreziario.toLowerCase().includes(searchQuery.toLowerCase())
-                        )
-                        .map((voce) => (
-                        <TableRow key={voce.id}>
-                          <TableCell className="font-mono text-xs">{voce.codice}</TableCell>
-                          <TableCell className="font-mono text-xs text-primary">{voce.codicePreziario}</TableCell>
-                          <TableCell className="text-sm">{voce.descrizione}</TableCell>
-                          <TableCell className="text-sm">{voce.unitaMisura}</TableCell>
-                          <TableCell className="text-right">
-                            <Input
-                              type="number"
-                              value={voce.quantita}
-                              onChange={(e) => updateQuantita(voce.id, parseFloat(e.target.value) || 0)}
-                              className="w-20 text-right h-8"
-                            />
-                          </TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(voce.prezzoUnitario)}</TableCell>
-                          <TableCell className="text-right font-bold text-primary">{formatCurrency(voce.importo)}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <Edit className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => deleteVoce(voce.id)}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-24">Codice</TableHead>
+                          <TableHead className="w-32">Cod. Prezzario</TableHead>
+                          <TableHead>Descrizione</TableHead>
+                          <TableHead className="w-20">U.M.</TableHead>
+                          <TableHead className="w-24 text-right">Quantità</TableHead>
+                          <TableHead className="w-28 text-right">Prezzo Unit.</TableHead>
+                          <TableHead className="w-28 text-right">Importo</TableHead>
+                          <TableHead className="w-20"></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {vociComputo
+                          .filter(v => !searchQuery || 
+                            v.descrizione.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            v.codicePreziario.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .map((voce) => (
+                          <TableRow key={voce.id}>
+                            <TableCell className="font-mono text-xs">{voce.codice}</TableCell>
+                            <TableCell className="font-mono text-xs text-primary">{voce.codicePreziario}</TableCell>
+                            <TableCell className="text-sm">{voce.descrizione}</TableCell>
+                            <TableCell className="text-sm">{voce.unitaMisura}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                value={voce.quantita}
+                                onChange={(e) => updateQuantita(voce.id, parseFloat(e.target.value) || 0)}
+                                className="w-20 text-right h-8"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right font-medium">{formatCurrency(voce.prezzoUnitario)}</TableCell>
+                            <TableCell className="text-right font-bold text-primary">{formatCurrency(voce.importo)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <Edit className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => deleteVoce(voce.id)}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                   
-                  {/* Total row */}
                   <div className="flex justify-end mt-4 p-4 bg-muted/50 rounded-lg">
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Totale Computo</p>
@@ -951,16 +1159,14 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
             <TabsContent value="prezzario">
               <Card>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center gap-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Cerca nel prezzario (codice, descrizione, categoria)..." 
-                        value={preziarioSearch}
-                        onChange={(e) => setPreziarioSearch(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Cerca nel prezzario (codice, descrizione, categoria)..." 
+                      value={preziarioSearch}
+                      onChange={(e) => setPreziarioSearch(e.target.value)}
+                      className="pl-9"
+                    />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -971,38 +1177,40 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                           <FolderTree className="w-4 h-4" />
                           {categoria}
                         </h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-40">Codice</TableHead>
-                              <TableHead>Descrizione</TableHead>
-                              <TableHead className="w-20">U.M.</TableHead>
-                              <TableHead className="w-28 text-right">Prezzo</TableHead>
-                              <TableHead className="w-20"></TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {voci.map((voce) => (
-                              <TableRow key={voce.codice}>
-                                <TableCell className="font-mono text-xs">{voce.codice}</TableCell>
-                                <TableCell className="text-sm">{voce.descrizione}</TableCell>
-                                <TableCell className="text-sm">{voce.unitaMisura}</TableCell>
-                                <TableCell className="text-right font-medium">{formatCurrency(voce.prezzo)}</TableCell>
-                                <TableCell>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="gap-1"
-                                    onClick={() => addVoceFromPreziario(voce)}
-                                  >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    Aggiungi
-                                  </Button>
-                                </TableCell>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-40">Codice</TableHead>
+                                <TableHead>Descrizione</TableHead>
+                                <TableHead className="w-20">U.M.</TableHead>
+                                <TableHead className="w-28 text-right">Prezzo</TableHead>
+                                <TableHead className="w-20"></TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {voci.map((voce) => (
+                                <TableRow key={voce.codice}>
+                                  <TableCell className="font-mono text-xs">{voce.codice}</TableCell>
+                                  <TableCell className="text-sm">{voce.descrizione}</TableCell>
+                                  <TableCell className="text-sm">{voce.unitaMisura}</TableCell>
+                                  <TableCell className="text-right font-medium">{formatCurrency(voce.prezzo)}</TableCell>
+                                  <TableCell>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="gap-1"
+                                      onClick={() => addVoceFromPreziario(voce)}
+                                    >
+                                      <Plus className="w-3.5 h-3.5" />
+                                      Aggiungi
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
                     ))}
                   </ScrollArea>
@@ -1017,50 +1225,52 @@ TOTALE COMPLESSIVO: ${formatCurrency(totali.totale)}
                   <CardTitle>Riepilogo per Categoria</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-center">N. Voci</TableHead>
-                        <TableHead className="text-right">Importo</TableHead>
-                        <TableHead className="text-right">% su Totale</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categorie.filter(c => !c.parentId).map(cat => {
-                        const catTotal = totali.byCategoria[cat.id] || 0;
-                        const numVoci = vociComputo.filter(v => {
-                          const vocecat = categorie.find(c => c.id === v.categoriaId);
-                          return vocecat?.parentId === cat.id || vocecat?.id === cat.id;
-                        }).length;
-                        const percentage = totali.totale > 0 ? (catTotal / totali.totale * 100) : 0;
-                        
-                        return (
-                          <TableRow key={cat.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs text-muted-foreground">{cat.codice}</span>
-                                {cat.nome}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">{numVoci}</TableCell>
-                            <TableCell className="text-right font-bold">{formatCurrency(catTotal)}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-primary rounded-full"
-                                    style={{ width: `${percentage}%` }}
-                                  />
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Categoria</TableHead>
+                          <TableHead className="text-center">N. Voci</TableHead>
+                          <TableHead className="text-right">Importo</TableHead>
+                          <TableHead className="text-right">% su Totale</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categorie.filter(c => !c.parentId).map(cat => {
+                          const catTotal = totali.byCategoria[cat.id] || 0;
+                          const numVoci = vociComputo.filter(v => {
+                            const vocecat = categorie.find(c => c.id === v.categoriaId);
+                            return vocecat?.parentId === cat.id || vocecat?.id === cat.id;
+                          }).length;
+                          const percentage = totali.totale > 0 ? (catTotal / totali.totale * 100) : 0;
+                          
+                          return (
+                            <TableRow key={cat.id}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs text-muted-foreground">{cat.codice}</span>
+                                  {cat.nome}
                                 </div>
-                                <span className="text-sm">{percentage.toFixed(1)}%</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              </TableCell>
+                              <TableCell className="text-center">{numVoci}</TableCell>
+                              <TableCell className="text-right font-bold">{formatCurrency(catTotal)}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-primary rounded-full"
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-sm">{percentage.toFixed(1)}%</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                   
                   <div className="mt-6 p-4 bg-primary/10 rounded-lg flex items-center justify-between">
                     <span className="font-semibold">TOTALE COMPLESSIVO</span>
