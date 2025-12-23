@@ -388,6 +388,12 @@ export function Layout() {
                   label="Sorveglianza Sanitaria" 
                   isActive={location.pathname === '/sorveglianza-sanitaria'} 
                 />
+                <NavItem 
+                  to="/checkin-sicurezza" 
+                  icon={ClipboardList} 
+                  label="Check-in Sicurezza" 
+                  isActive={location.pathname === '/checkin-sicurezza'} 
+                />
               </div>
             )}
           </div>
@@ -457,6 +463,12 @@ export function Layout() {
                 label="Computo Metrico" 
                 isActive={location.pathname === '/computo-metrico'} 
               />
+              <NavItem 
+                to="/listino-prezzi" 
+                icon={Euro} 
+                label="Listino Prezzi" 
+                isActive={location.pathname === '/listino-prezzi'} 
+              />
             </div>
           </div>
 
@@ -477,9 +489,27 @@ export function Layout() {
               />
               <NavItem 
                 to="/timbrature" 
-                icon={ClipboardList} 
+                icon={Clock} 
                 label="Timbrature" 
                 isActive={location.pathname === '/timbrature'} 
+              />
+              <NavItem 
+                to="/scadenzario" 
+                icon={Calendar} 
+                label="Scadenzario" 
+                isActive={location.pathname === '/scadenzario'} 
+              />
+              <NavItem 
+                to="/rapportini" 
+                icon={ClipboardList} 
+                label="Rapportini" 
+                isActive={location.pathname === '/rapportini'} 
+              />
+              <NavItem 
+                to="/contatti" 
+                icon={User} 
+                label="Contatti" 
+                isActive={location.pathname === '/contatti'} 
               />
             </div>
           </div>
@@ -498,6 +528,12 @@ export function Layout() {
                 icon={Truck} 
                 label="Risorse & Mezzi" 
                 isActive={location.pathname === '/risorse'} 
+              />
+              <NavItem 
+                to="/magazzino" 
+                icon={Boxes} 
+                label="Magazzino" 
+                isActive={location.pathname === '/magazzino'} 
               />
             </div>
           </div>
