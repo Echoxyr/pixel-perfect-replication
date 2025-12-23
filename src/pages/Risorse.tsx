@@ -25,7 +25,13 @@ import {
   Eye,
   Trash2,
   Clock,
-  Car
+  Car,
+  Circle,
+  RotateCcw,
+  AlertTriangle,
+  Edit,
+  MapPin,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +64,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import { Switch } from '@/components/ui/switch';
 
 interface Risorsa {
   id: string;
@@ -132,6 +139,18 @@ interface ManutenzioneRisorsa {
   created_at: string;
 }
 
+interface Segnalazione {
+  id: string;
+  risorsa_id: string;
+  tipo: 'guasto' | 'danno' | 'anomalia' | 'furto' | 'incidente';
+  descrizione: string;
+  urgenza: 'bassa' | 'media' | 'alta' | 'critica';
+  data: string;
+  segnalato_da: string;
+  stato: 'aperta' | 'in_lavorazione' | 'risolta' | 'chiusa';
+  note: string | null;
+}
+
 export default function Risorse() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -143,8 +162,12 @@ export default function Risorse() {
   const [showNewDocumento, setShowNewDocumento] = useState(false);
   const [showNewAttivita, setShowNewAttivita] = useState(false);
   const [showNewManutenzione, setShowNewManutenzione] = useState(false);
+  const [showNewSegnalazione, setShowNewSegnalazione] = useState(false);
+  const [showEditRisorsa, setShowEditRisorsa] = useState(false);
+  const [editingRisorsa, setEditingRisorsa] = useState<Risorsa | null>(null);
   const [selectedRisorsa, setSelectedRisorsa] = useState<string>('');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [filterTipo, setFilterTipo] = useState<string>('tutti');
   
   const [newRisorsa, setNewRisorsa] = useState({
     nome: '',
@@ -193,7 +216,16 @@ export default function Risorse() {
     data_programmata: '',
     km_programmati: '',
     officina: '',
+    costo_stimato: '',
     note: '',
+  });
+
+  const [newSegnalazione, setNewSegnalazione] = useState({
+    risorsa_id: '',
+    tipo: 'guasto' as Segnalazione['tipo'],
+    descrizione: '',
+    urgenza: 'media' as Segnalazione['urgenza'],
+    segnalato_da: '',
   });
 
   // Fetch risorse
@@ -325,7 +357,88 @@ export default function Risorse() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manutenzioni_risorse'] });
       setShowNewManutenzione(false);
+      setNewManutenzione({ risorsa_id: '', tipo: 'ordinaria', descrizione: '', data_programmata: '', km_programmati: '', officina: '', costo_stimato: '', note: '' });
       toast({ title: 'Manutenzione programmata' });
+    },
+  });
+
+  // Update risorsa stato
+  const updateRisorsaStatoMutation = useMutation({
+    mutationFn: async ({ id, stato }: { id: string; stato: string }) => {
+      const { error } = await supabase.from('risorse').update({ stato }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['risorse'] });
+      toast({ title: 'Stato aggiornato' });
+    },
+  });
+
+  // Update risorsa 
+  const updateRisorsaMutation = useMutation({
+    mutationFn: async (risorsa: Partial<Risorsa> & { id: string }) => {
+      const { id, ...updates } = risorsa;
+      const { error } = await supabase.from('risorse').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['risorse'] });
+      setShowEditRisorsa(false);
+      setEditingRisorsa(null);
+      toast({ title: 'Risorsa aggiornata' });
+    },
+  });
+
+  // Delete risorsa
+  const deleteRisorsaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('risorse').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['risorse'] });
+      toast({ title: 'Risorsa eliminata' });
+    },
+  });
+
+  // Delete prenotazione
+  const deletePrenotazioneMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('prenotazioni_risorse').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prenotazioni_risorse'] });
+      toast({ title: 'Prenotazione annullata' });
+    },
+  });
+
+  // Delete documento
+  const deleteDocumentoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('documenti_risorse').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documenti_risorse'] });
+      toast({ title: 'Documento eliminato' });
+    },
+  });
+
+  // Complete manutenzione
+  const completeManutenzioneeMutation = useMutation({
+    mutationFn: async ({ id, costo, km_esecuzione }: { id: string; costo?: number; km_esecuzione?: number }) => {
+      const { error } = await supabase.from('manutenzioni_risorse').update({ 
+        stato: 'completata', 
+        data_esecuzione: format(new Date(), 'yyyy-MM-dd'),
+        costo,
+        km_esecuzione 
+      }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manutenzioni_risorse'] });
+      toast({ title: 'Manutenzione completata' });
     },
   });
 
@@ -378,11 +491,17 @@ export default function Risorse() {
 
   // Stats
   const documentiScaduti = documenti.filter(d => d.data_scadenza && differenceInDays(parseISO(d.data_scadenza), new Date()) < 0).length;
+  const documentiInScadenza = documenti.filter(d => d.data_scadenza && differenceInDays(parseISO(d.data_scadenza), new Date()) <= 30 && differenceInDays(parseISO(d.data_scadenza), new Date()) >= 0).length;
   const manutenzioniProgrammate = manutenzioni.filter(m => m.stato === 'programmata').length;
   const kmTotali = attivita.reduce((sum, a) => sum + (a.km_percorsi || 0), 0);
+  const litriTotali = attivita.reduce((sum, a) => sum + (a.litri_carburante || 0), 0);
   const costiTotali = attivita.reduce((sum, a) => sum + (a.costo || 0), 0) + manutenzioni.reduce((sum, m) => sum + (m.costo || 0), 0);
+  const revisioniScadute = documenti.filter(d => d.tipo === 'revisione' && d.data_scadenza && differenceInDays(parseISO(d.data_scadenza), new Date()) < 0).length;
 
   const getRisorsaNome = (id: string) => risorse.find(r => r.id === id)?.nome || 'N/D';
+
+  // Filter risorse
+  const filteredRisorse = risorse.filter(r => filterTipo === 'tutti' || r.tipo === filterTipo);
 
   const exportToExcel = () => {
     const data = attivita.map(a => ({
@@ -401,6 +520,47 @@ export default function Risorse() {
     XLSX.utils.book_append_sheet(wb, ws, 'Attività Risorse');
     XLSX.writeFile(wb, `attivita_risorse_${format(new Date(), 'yyyyMMdd')}.xlsx`);
     toast({ title: 'Report esportato' });
+  };
+
+  const exportManutenzioniExcel = () => {
+    const data = manutenzioni.map(m => ({
+      'Risorsa': getRisorsaNome(m.risorsa_id),
+      'Tipo': m.tipo,
+      'Descrizione': m.descrizione,
+      'Data Progr.': m.data_programmata ? format(parseISO(m.data_programmata), 'dd/MM/yyyy') : '-',
+      'Data Esec.': m.data_esecuzione ? format(parseISO(m.data_esecuzione), 'dd/MM/yyyy') : '-',
+      'Km Progr.': m.km_programmati || '-',
+      'Km Esec.': m.km_esecuzione || '-',
+      'Costo €': m.costo || 0,
+      'Officina': m.officina || '-',
+      'Stato': m.stato,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Manutenzioni');
+    XLSX.writeFile(wb, `manutenzioni_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    toast({ title: 'Report manutenzioni esportato' });
+  };
+
+  const getManutenzioneIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'cambio_gomme': return <Circle className="w-4 h-4" />;
+      case 'revisione': return <FileText className="w-4 h-4" />;
+      case 'tagliando': return <Settings className="w-4 h-4" />;
+      case 'ordinaria': return <Wrench className="w-4 h-4" />;
+      case 'straordinaria': return <AlertTriangle className="w-4 h-4" />;
+      default: return <Settings className="w-4 h-4" />;
+    }
+  };
+
+  const getManutenzioneStatoBadge = (stato: string) => {
+    switch (stato) {
+      case 'programmata': return <Badge className="bg-primary/15 text-primary border-0">Programmata</Badge>;
+      case 'in_corso': return <Badge className="bg-amber-500/15 text-amber-500 border-0">In corso</Badge>;
+      case 'completata': return <Badge className="bg-emerald-500/15 text-emerald-500 border-0">Completata</Badge>;
+      case 'annullata': return <Badge className="bg-muted text-muted-foreground border-0">Annullata</Badge>;
+      default: return <Badge variant="secondary">{stato}</Badge>;
+    }
   };
 
   return (
@@ -587,35 +747,114 @@ export default function Risorse() {
 
         {/* Tab Risorse */}
         <TabsContent value="risorse" className="space-y-4">
+          {/* Filters */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filtra per tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti i tipi</SelectItem>
+                <SelectItem value="mezzo">Mezzi</SelectItem>
+                <SelectItem value="attrezzatura">Attrezzature</SelectItem>
+                <SelectItem value="macchinario">Macchinari</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">{filteredRisorse.length} risorsa/e</span>
+          </div>
+
           <div className="grid gap-4">
-            {risorse.map(risorsa => (
-              <Card key={risorsa.id} className="card-modern">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-lg bg-primary/10">
-                        {getIcon(risorsa.tipo)}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{risorsa.nome}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          {risorsa.targa && <span>Targa: {risorsa.targa}</span>}
-                          {risorsa.matricola && <span>• Matr: {risorsa.matricola}</span>}
+            {filteredRisorse.map(risorsa => {
+              const risorsaDocs = documenti.filter(d => d.risorsa_id === risorsa.id);
+              const docsScaduti = risorsaDocs.filter(d => d.data_scadenza && differenceInDays(parseISO(d.data_scadenza), new Date()) < 0).length;
+              const risorsaManutenzioni = manutenzioni.filter(m => m.risorsa_id === risorsa.id && m.stato === 'programmata');
+              const ultimoKm = attivita.filter(a => a.risorsa_id === risorsa.id && a.km_finali).sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())[0];
+              
+              return (
+                <Card key={risorsa.id} className="card-modern hover:shadow-lg transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-lg bg-primary/10">
+                          {getIcon(risorsa.tipo)}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{risorsa.nome}</h3>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                            {risorsa.targa && <span className="flex items-center gap-1"><Car className="w-3 h-3" /> {risorsa.targa}</span>}
+                            {risorsa.matricola && <span>• Matr: {risorsa.matricola}</span>}
+                            {ultimoKm?.km_finali && (
+                              <span className="flex items-center gap-1">
+                                <Gauge className="w-3 h-3" /> {ultimoKm.km_finali.toLocaleString()} km
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {docsScaduti > 0 && (
+                          <Badge className="bg-red-500/15 text-red-500 border-0">
+                            <AlertCircle className="w-3 h-3 mr-1" /> {docsScaduti} doc scaduti
+                          </Badge>
+                        )}
+                        {risorsaManutenzioni.length > 0 && (
+                          <Badge className="bg-amber-500/15 text-amber-500 border-0">
+                            <Settings className="w-3 h-3 mr-1" /> {risorsaManutenzioni.length} manutenzioni
+                          </Badge>
+                        )}
+                        {getStatoBadge(risorsa.stato)}
+                        <Badge variant="outline" className="capitalize">{risorsa.tipo}</Badge>
+                        
+                        {/* Quick Actions */}
+                        <Select
+                          value={risorsa.stato}
+                          onValueChange={(v) => updateRisorsaStatoMutation.mutate({ id: risorsa.id, stato: v })}
+                        >
+                          <SelectTrigger className="w-[130px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="disponibile">Disponibile</SelectItem>
+                            <SelectItem value="in_uso">In Uso</SelectItem>
+                            <SelectItem value="manutenzione">Manutenzione</SelectItem>
+                            <SelectItem value="guasto">Guasto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditingRisorsa(risorsa);
+                            setShowEditRisorsa(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-red-500 hover:text-red-600"
+                          onClick={() => {
+                            if (confirm('Eliminare questa risorsa?')) {
+                              deleteRisorsaMutation.mutate(risorsa.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {getStatoBadge(risorsa.stato)}
-                      <Badge variant="outline" className="capitalize">{risorsa.tipo}</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {risorse.length === 0 && (
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {filteredRisorse.length === 0 && (
               <Card className="card-modern">
                 <CardContent className="p-8 text-center text-muted-foreground">
-                  Nessuna risorsa. Aggiungi la prima risorsa.
+                  {filterTipo === 'tutti' ? 'Nessuna risorsa. Aggiungi la prima risorsa.' : 'Nessuna risorsa di questo tipo.'}
                 </CardContent>
               </Card>
             )}
@@ -1136,7 +1375,11 @@ export default function Risorse() {
 
         {/* Tab Manutenzioni */}
         <TabsContent value="manutenzioni" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-between flex-wrap gap-4">
+            <Button variant="outline" onClick={exportManutenzioniExcel}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Manutenzioni
+            </Button>
             <Dialog open={showNewManutenzione} onOpenChange={setShowNewManutenzione}>
               <DialogTrigger asChild>
                 <Button>
@@ -1176,10 +1419,14 @@ export default function Risorse() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ordinaria">Ordinaria</SelectItem>
-                          <SelectItem value="straordinaria">Straordinaria</SelectItem>
+                          <SelectItem value="ordinaria">Manutenzione Ordinaria</SelectItem>
+                          <SelectItem value="straordinaria">Manutenzione Straordinaria</SelectItem>
                           <SelectItem value="tagliando">Tagliando</SelectItem>
-                          <SelectItem value="controllo">Controllo</SelectItem>
+                          <SelectItem value="cambio_gomme">Cambio Gomme</SelectItem>
+                          <SelectItem value="revisione">Revisione</SelectItem>
+                          <SelectItem value="controllo">Controllo Periodico</SelectItem>
+                          <SelectItem value="riparazione">Riparazione</SelectItem>
+                          <SelectItem value="sostituzione_pezzi">Sostituzione Pezzi</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1200,13 +1447,21 @@ export default function Risorse() {
                       onChange={(e) => setNewManutenzione(prev => ({ ...prev, descrizione: e.target.value }))}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">Km Programmati</label>
                       <Input
                         type="number"
                         value={newManutenzione.km_programmati}
                         onChange={(e) => setNewManutenzione(prev => ({ ...prev, km_programmati: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Costo Stimato €</label>
+                      <Input
+                        type="number"
+                        value={newManutenzione.costo_stimato}
+                        onChange={(e) => setNewManutenzione(prev => ({ ...prev, costo_stimato: e.target.value }))}
                       />
                     </div>
                     <div>
@@ -1244,6 +1499,39 @@ export default function Risorse() {
               </DialogContent>
             </Dialog>
           </div>
+          
+          {/* Manutenzioni Cards per tipo */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="card-modern">
+              <CardContent className="p-4 text-center">
+                <Circle className="w-8 h-8 mx-auto mb-2 text-primary" />
+                <p className="text-2xl font-bold">{manutenzioni.filter(m => m.tipo === 'cambio_gomme').length}</p>
+                <p className="text-xs text-muted-foreground">Cambio Gomme</p>
+              </CardContent>
+            </Card>
+            <Card className="card-modern">
+              <CardContent className="p-4 text-center">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+                <p className="text-2xl font-bold">{manutenzioni.filter(m => m.tipo === 'revisione').length}</p>
+                <p className="text-xs text-muted-foreground">Revisioni</p>
+              </CardContent>
+            </Card>
+            <Card className="card-modern">
+              <CardContent className="p-4 text-center">
+                <Settings className="w-8 h-8 mx-auto mb-2 text-emerald-500" />
+                <p className="text-2xl font-bold">{manutenzioni.filter(m => m.tipo === 'tagliando').length}</p>
+                <p className="text-xs text-muted-foreground">Tagliandi</p>
+              </CardContent>
+            </Card>
+            <Card className="card-modern">
+              <CardContent className="p-4 text-center">
+                <Wrench className="w-8 h-8 mx-auto mb-2 text-red-500" />
+                <p className="text-2xl font-bold">{manutenzioni.filter(m => m.stato === 'programmata').length}</p>
+                <p className="text-xs text-muted-foreground">In Programma</p>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card className="card-modern">
             <Table>
               <TableHeader>
@@ -1252,32 +1540,46 @@ export default function Risorse() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Descrizione</TableHead>
                   <TableHead>Data Progr.</TableHead>
+                  <TableHead>Km</TableHead>
+                  <TableHead>Costo</TableHead>
                   <TableHead>Officina</TableHead>
                   <TableHead>Stato</TableHead>
+                  <TableHead className="text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {manutenzioni.map(man => (
                   <TableRow key={man.id}>
                     <TableCell className="font-medium">{getRisorsaNome(man.risorsa_id)}</TableCell>
-                    <TableCell className="capitalize">{man.tipo}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 capitalize">
+                        {getManutenzioneIcon(man.tipo)}
+                        <span>{man.tipo.replace('_', ' ')}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="max-w-[200px] truncate">{man.descrizione}</TableCell>
                     <TableCell>{man.data_programmata ? format(parseISO(man.data_programmata), 'dd/MM/yyyy') : '-'}</TableCell>
+                    <TableCell>{man.km_programmati?.toLocaleString() || '-'}</TableCell>
+                    <TableCell>{man.costo ? `€${man.costo.toFixed(2)}` : '-'}</TableCell>
                     <TableCell>{man.officina || '-'}</TableCell>
-                    <TableCell>
-                      {man.stato === 'completata' ? (
-                        <Badge className="bg-emerald-500/15 text-emerald-500 border-0">Completata</Badge>
-                      ) : man.stato === 'in_ritardo' ? (
-                        <Badge className="bg-red-500/15 text-red-500 border-0">In Ritardo</Badge>
-                      ) : (
-                        <Badge className="bg-amber-500/15 text-amber-500 border-0">Programmata</Badge>
+                    <TableCell>{getManutenzioneStatoBadge(man.stato)}</TableCell>
+                    <TableCell className="text-right">
+                      {man.stato === 'programmata' && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => completeManutenzioneeMutation.mutate({ id: man.id })}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Completa
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>
                 ))}
                 {manutenzioni.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nessuna manutenzione programmata
                     </TableCell>
                   </TableRow>
@@ -1287,6 +1589,67 @@ export default function Risorse() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Risorsa Dialog */}
+      <Dialog open={showEditRisorsa} onOpenChange={setShowEditRisorsa}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Risorsa</DialogTitle>
+          </DialogHeader>
+          {editingRisorsa && (
+            <div className="space-y-4 pt-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Nome *</label>
+                <Input
+                  value={editingRisorsa.nome}
+                  onChange={(e) => setEditingRisorsa({ ...editingRisorsa, nome: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Targa</label>
+                  <Input
+                    value={editingRisorsa.targa || ''}
+                    onChange={(e) => setEditingRisorsa({ ...editingRisorsa, targa: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Matricola</label>
+                  <Input
+                    value={editingRisorsa.matricola || ''}
+                    onChange={(e) => setEditingRisorsa({ ...editingRisorsa, matricola: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Descrizione</label>
+                <Textarea
+                  value={editingRisorsa.descrizione || ''}
+                  onChange={(e) => setEditingRisorsa({ ...editingRisorsa, descrizione: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setShowEditRisorsa(false)}>
+                  Annulla
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={() => updateRisorsaMutation.mutate({
+                    id: editingRisorsa.id,
+                    nome: editingRisorsa.nome,
+                    targa: editingRisorsa.targa,
+                    matricola: editingRisorsa.matricola,
+                    descrizione: editingRisorsa.descrizione,
+                  })}
+                  disabled={!editingRisorsa.nome}
+                >
+                  Salva
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
