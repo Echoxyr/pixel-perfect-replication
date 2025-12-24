@@ -2005,6 +2005,125 @@ export type Database = {
         }
         Relationships: []
       }
+      sal_excel_imports: {
+        Row: {
+          cantiere_id: string | null
+          cantiere_nome: string | null
+          created_at: string
+          error_message: string | null
+          file_name: string
+          id: string
+          imported_by: string | null
+          rows_imported: number | null
+          status: string | null
+          total_rows: number | null
+        }
+        Insert: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          id?: string
+          imported_by?: string | null
+          rows_imported?: number | null
+          status?: string | null
+          total_rows?: number | null
+        }
+        Update: {
+          cantiere_id?: string | null
+          cantiere_nome?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          id?: string
+          imported_by?: string | null
+          rows_imported?: number | null
+          status?: string | null
+          total_rows?: number | null
+        }
+        Relationships: []
+      }
+      sal_voci_dettaglio: {
+        Row: {
+          capitolo: string | null
+          categoria: string | null
+          codice: string | null
+          created_at: string
+          descrizione: string
+          id: string
+          import_id: string | null
+          importo_contratto: number | null
+          importo_periodo: number | null
+          importo_precedente: number | null
+          importo_totale: number | null
+          note: string | null
+          ordine: number | null
+          percentuale_avanzamento: number | null
+          prezzo_unitario: number | null
+          quantita_contratto: number | null
+          quantita_periodo: number | null
+          quantita_precedente: number | null
+          quantita_totale: number | null
+          sal_id: string | null
+          unita_misura: string | null
+        }
+        Insert: {
+          capitolo?: string | null
+          categoria?: string | null
+          codice?: string | null
+          created_at?: string
+          descrizione: string
+          id?: string
+          import_id?: string | null
+          importo_contratto?: number | null
+          importo_periodo?: number | null
+          importo_precedente?: number | null
+          importo_totale?: number | null
+          note?: string | null
+          ordine?: number | null
+          percentuale_avanzamento?: number | null
+          prezzo_unitario?: number | null
+          quantita_contratto?: number | null
+          quantita_periodo?: number | null
+          quantita_precedente?: number | null
+          quantita_totale?: number | null
+          sal_id?: string | null
+          unita_misura?: string | null
+        }
+        Update: {
+          capitolo?: string | null
+          categoria?: string | null
+          codice?: string | null
+          created_at?: string
+          descrizione?: string
+          id?: string
+          import_id?: string | null
+          importo_contratto?: number | null
+          importo_periodo?: number | null
+          importo_precedente?: number | null
+          importo_totale?: number | null
+          note?: string | null
+          ordine?: number | null
+          percentuale_avanzamento?: number | null
+          prezzo_unitario?: number | null
+          quantita_contratto?: number | null
+          quantita_periodo?: number | null
+          quantita_precedente?: number | null
+          quantita_totale?: number | null
+          sal_id?: string | null
+          unita_misura?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sal_voci_dettaglio_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "sal_excel_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scadenzario: {
         Row: {
           allegati: string[] | null
@@ -2140,6 +2259,159 @@ export type Database = {
         }
         Relationships: []
       }
+      user_calendar_events: {
+        Row: {
+          colore: string | null
+          created_at: string
+          data_fine: string | null
+          data_inizio: string
+          descrizione: string | null
+          id: string
+          promemoria_minuti: number | null
+          titolo: string
+          tutto_il_giorno: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          colore?: string | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio: string
+          descrizione?: string | null
+          id?: string
+          promemoria_minuti?: number | null
+          titolo: string
+          tutto_il_giorno?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          colore?: string | null
+          created_at?: string
+          data_fine?: string | null
+          data_inizio?: string
+          descrizione?: string | null
+          id?: string
+          promemoria_minuti?: number | null
+          titolo?: string
+          tutto_il_giorno?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_notes: {
+        Row: {
+          categoria: string | null
+          colore: string | null
+          contenuto: string | null
+          created_at: string
+          id: string
+          pinned: boolean | null
+          titolo: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          colore?: string | null
+          contenuto?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean | null
+          titolo: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          colore?: string | null
+          contenuto?: string | null
+          created_at?: string
+          id?: string
+          pinned?: boolean | null
+          titolo?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          email_notifications: boolean | null
+          id: string
+          language: string | null
+          notifications_enabled: boolean | null
+          sidebar_collapsed: boolean | null
+          theme_color: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          sidebar_collapsed?: boolean | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_notifications?: boolean | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          sidebar_collapsed?: boolean | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          cognome: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          ruolo: string | null
+          telefono: string | null
+          theme_color: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cognome?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          ruolo?: string | null
+          telefono?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cognome?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          ruolo?: string | null
+          telefono?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2158,6 +2430,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_tasks: {
+        Row: {
+          completata: boolean | null
+          created_at: string
+          data_scadenza: string | null
+          descrizione: string | null
+          id: string
+          priorita: string | null
+          stato: string | null
+          titolo: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completata?: boolean | null
+          created_at?: string
+          data_scadenza?: string | null
+          descrizione?: string | null
+          id?: string
+          priorita?: string | null
+          stato?: string | null
+          titolo: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completata?: boolean | null
+          created_at?: string
+          data_scadenza?: string | null
+          descrizione?: string | null
+          id?: string
+          priorita?: string | null
+          stato?: string | null
+          titolo?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
