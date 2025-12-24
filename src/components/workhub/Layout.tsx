@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWorkHub } from '@/contexts/WorkHubContext';
+import { useUser } from '@/contexts/UserContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +46,8 @@ import {
   Truck,
   ClipboardList,
   Boxes,
-  Euro
+  Euro,
+  UserCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -72,6 +74,7 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hseStats, tasks, cantieri, imprese, lavoratori } = useWorkHub();
+  const { profile } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -235,6 +238,23 @@ export function Layout() {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin space-y-6">
+          {/* User Section - First */}
+          <div>
+            {!sidebarCollapsed && (
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                Utente
+              </p>
+            )}
+            <div className="space-y-1">
+              <NavItem 
+                to="/utente" 
+                icon={UserCircle} 
+                label="Area Personale" 
+                isActive={location.pathname === '/utente'} 
+              />
+            </div>
+          </div>
+
           {/* Main Section */}
           <div>
             {!sidebarCollapsed && (
@@ -883,11 +903,11 @@ export function Layout() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="rounded-full flex items-center gap-2 pl-2 pr-3 py-1 h-auto">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary-foreground" />
+                    <span className="text-xs font-bold text-primary-foreground">{profile.nome[0]}{profile.cognome[0]}</span>
                   </div>
-                  <div className="hidden sm:flex flex-col items-start text-left">
-                    <span className="text-sm font-semibold text-foreground">Admin User</span>
-                    <span className="text-[10px] text-muted-foreground leading-tight">Direttore Tecnico</span>
+                  <div className="hidden sm:flex flex-col items-start text-left max-w-[120px]">
+                    <span className="text-sm font-semibold text-foreground truncate w-full">{profile.nome} {profile.cognome}</span>
+                    <span className="text-[10px] text-muted-foreground leading-tight truncate w-full">{profile.ruolo}</span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
