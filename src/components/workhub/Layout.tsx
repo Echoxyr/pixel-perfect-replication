@@ -632,6 +632,7 @@ export function Layout() {
               {/* Mobile Nav Items - Same structure as desktop */}
               <div className="space-y-1">
                 {[
+                  { to: '/utente', icon: UserCircle, label: 'Utente' },
                   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
                   { to: '/progetti', icon: FolderKanban, label: 'Progetti & Task', badge: openTasks },
                   { to: '/sal', icon: TrendingUp, label: 'SAL' },

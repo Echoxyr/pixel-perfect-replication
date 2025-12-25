@@ -105,28 +105,28 @@ export default function Impostazioni() {
       </div>
 
       <Tabs defaultValue="azienda" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="azienda" className="gap-2">
+        <TabsList className="w-full justify-start overflow-x-auto scrollbar-hidden whitespace-nowrap">
+          <TabsTrigger value="azienda" className="gap-2 flex-none text-xs sm:text-sm">
             <Building2 className="w-4 h-4" />
             Dati Azienda
           </TabsTrigger>
-          <TabsTrigger value="documenti" className="gap-2">
+          <TabsTrigger value="documenti" className="gap-2 flex-none text-xs sm:text-sm">
             <FileText className="w-4 h-4" />
             Documenti Azienda
           </TabsTrigger>
-          <TabsTrigger value="general" className="gap-2">
+          <TabsTrigger value="general" className="gap-2 flex-none text-xs sm:text-sm">
             <Settings className="w-4 h-4" />
             Generali
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2">
+          <TabsTrigger value="notifications" className="gap-2 flex-none text-xs sm:text-sm">
             <Bell className="w-4 h-4" />
             Notifiche
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
+          <TabsTrigger value="security" className="gap-2 flex-none text-xs sm:text-sm">
             <Shield className="w-4 h-4" />
             Sicurezza
           </TabsTrigger>
-          <TabsTrigger value="data" className="gap-2">
+          <TabsTrigger value="data" className="gap-2 flex-none text-xs sm:text-sm">
             <Database className="w-4 h-4" />
             Dati
           </TabsTrigger>
