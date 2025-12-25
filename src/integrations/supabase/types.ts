@@ -168,6 +168,45 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          azione: string
+          created_at: string
+          dettagli: Json | null
+          entita_id: string | null
+          entita_nome: string | null
+          entita_tipo: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          azione: string
+          created_at?: string
+          dettagli?: Json | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          azione?: string
+          created_at?: string
+          dettagli?: Json | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       budget_cantiere: {
         Row: {
           cantiere_id: string | null
@@ -2298,6 +2337,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          icona: string | null
+          id: string
+          ordine: number | null
+          titolo: string
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          icona?: string | null
+          id?: string
+          ordine?: number | null
+          titolo: string
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          icona?: string | null
+          id?: string
+          ordine?: number | null
+          titolo?: string
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_notes: {
         Row: {
           categoria: string | null
@@ -2339,9 +2408,13 @@ export type Database = {
           created_at: string
           email_notifications: boolean | null
           id: string
+          keyboard_shortcuts: Json | null
           language: string | null
           notifications_enabled: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
           sidebar_collapsed: boolean | null
+          sidebar_modules: Json | null
           theme_color: string | null
           updated_at: string
           user_id: string | null
@@ -2350,9 +2423,13 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean | null
           id?: string
+          keyboard_shortcuts?: Json | null
           language?: string | null
           notifications_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           sidebar_collapsed?: boolean | null
+          sidebar_modules?: Json | null
           theme_color?: string | null
           updated_at?: string
           user_id?: string | null
@@ -2361,9 +2438,13 @@ export type Database = {
           created_at?: string
           email_notifications?: boolean | null
           id?: string
+          keyboard_shortcuts?: Json | null
           language?: string | null
           notifications_enabled?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
           sidebar_collapsed?: boolean | null
+          sidebar_modules?: Json | null
           theme_color?: string | null
           updated_at?: string
           user_id?: string | null
