@@ -244,19 +244,20 @@ export default function Dashboard() {
 
       {/* HSE Alert Banner */}
       {totalCritical > 0 && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-4">
-          <div className="p-3 rounded-full bg-red-500/20">
-            <AlertTriangle className="w-6 h-6 text-red-500" />
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="p-3 rounded-full bg-destructive/20 self-start">
+            <AlertTriangle className="w-6 h-6 text-destructive" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-500">Attenzione: Documenti/Formazioni Scaduti</h3>
-            <p className="text-sm text-muted-foreground">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-destructive break-words">Attenzione: Documenti/Formazioni Scaduti</h3>
+            <p className="text-sm text-muted-foreground break-words">
               {hseStats.documentiScaduti} documenti, {hseStats.formazioniScadute} formazioni, {hseStats.visiteMedicheScadute} visite mediche scadute
             </p>
           </div>
-          <Button 
+          <Button
+            variant="destructive"
             onClick={() => navigate('/hse')}
-            className="bg-red-500 hover:bg-red-600 text-white"
+            className="w-full sm:w-auto"
           >
             Verifica Subito
           </Button>

@@ -204,26 +204,12 @@ const addWatermark = () => {
 };
 
 // Protect against iframe embedding
+// IMPORTANT: we intentionally do NOT block iframes because Lovable preview and some share flows
+// can run the app inside an iframe. Blocking would make the app "invisible" to users.
+// We only log the event for auditing.
 const preventIframeEmbed = () => {
   if (window.top !== window.self) {
-    // We're in an iframe
     logSecurityEvent('iframe_embed_detected');
-    
-    // Try to break out
-    try {
-      window.top!.location.href = window.self.location.href;
-    } catch {
-      // Can't break out, hide content
-      document.body.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1a2e;color:white;font-family:system-ui;">
-          <div style="text-align:center;">
-            <h1>⚠️ Accesso Non Autorizzato</h1>
-            <p>Questo contenuto non può essere visualizzato in un iframe.</p>
-            <p style="font-size:12px;color:#888;">© E-GEST S.r.l. - Software Protetto</p>
-          </div>
-        </div>
-      `;
-    }
   }
 };
 
@@ -265,7 +251,6 @@ export const initSecurityProtection = () => {
   // Initialize all protections
   disableCopyMethods();
   addWatermark();
-  preventIframeEmbed();
   protectConsole();
 
   // Start DevTools detection
