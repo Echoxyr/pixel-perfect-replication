@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { StatCard, MiniStat } from '@/components/workhub/StatCard';
 import { StatusPill, TrafficLight } from '@/components/workhub/StatusPill';
+import { QuickActions } from '@/components/workhub/QuickActions';
 import { formatDate, formatDateFull, daysUntil, calculateTrafficLight } from '@/types/workhub';
 import {
   FolderKanban,
@@ -137,7 +138,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Panoramica generale E-gest</p>
@@ -160,6 +161,9 @@ export default function Dashboard() {
           </Select>
         </div>
       </div>
+
+      {/* Quick Actions */}
+      <QuickActions />
 
       {/* Main Stats - Clickable Cards with Blue Border */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

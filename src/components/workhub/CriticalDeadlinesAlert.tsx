@@ -47,7 +47,7 @@ export function CriticalDeadlinesAlert() {
           id: doc.id,
           tipo: 'documento',
           titolo: doc.nome,
-          entita: doc.entitaTipo || '',
+          entita: doc.tipo || '',
           scadenza: scadenzaDate,
           giorni,
           urgenza: giorni < 0 ? 'scaduto' : giorni <= 7 ? 'critico' : 'attenzione',
@@ -64,7 +64,7 @@ export function CriticalDeadlinesAlert() {
         items.push({
           id: form.id,
           tipo: 'formazione',
-          titolo: form.nomeCorso,
+          titolo: form.tipoCorso,
           entita: lavoratore ? `${lavoratore.nome} ${lavoratore.cognome}` : 'N/A',
           scadenza: scadenzaDate,
           giorni,
