@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { useUser } from '@/contexts/UserContext';
+import { useSidebarModules, SIDEBAR_MODULES, SECTIONS } from '@/hooks/useSidebarModules';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EgestLogo } from './EgestLogo';
 import { NotificationCenter } from './NotificationCenter';
 import { GlobalSearch } from './GlobalSearch';
+import { CriticalDeadlinesAlert } from './CriticalDeadlinesAlert';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { OnboardingTour } from './OnboardingTour';
+import { QuickActions } from './QuickActions';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -47,7 +52,8 @@ import {
   ClipboardList,
   Boxes,
   Euro,
-  UserCircle
+  UserCircle,
+  Cog
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -69,12 +75,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { SidebarModuleSettings } from './SidebarModuleSettings';
 
 export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hseStats, tasks, cantieri, imprese, lavoratori } = useWorkHub();
   const { profile } = useUser();
+  const { isModuleVisible } = useSidebarModules();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +91,7 @@ export function Layout() {
   const [cantieriExpanded, setCantieriExpanded] = useState(true);
   const [hseExpanded, setHseExpanded] = useState(true);
   const [complianceExpanded, setComplianceExpanded] = useState(true);
+  const [moduleSettingsOpen, setModuleSettingsOpen] = useState(false);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
@@ -593,13 +602,24 @@ export function Layout() {
         )}
 
         {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
           <NavItem 
             to="/impostazioni" 
             icon={Settings} 
             label="Impostazioni" 
             isActive={location.pathname === '/impostazioni'} 
           />
+          
+          {/* Module Settings Button */}
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setModuleSettingsOpen(true)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+            >
+              <Cog className="w-5 h-5" />
+              <span>Personalizza Menu</span>
+            </button>
+          )}
           
           {/* Collapse Button */}
           <button
@@ -896,7 +916,10 @@ export function Layout() {
               </Tooltip>
             </TooltipProvider>
 
-            {/* Notifications - New Component */}
+            {/* Critical Deadlines Alert */}
+            <CriticalDeadlinesAlert />
+
+            {/* Notifications */}
             <NotificationCenter />
 
             {/* User Info + Menu */}
@@ -938,8 +961,17 @@ export function Layout() {
         </main>
       </div>
 
-      {/* Global Search - New Component */}
+      {/* Global Search */}
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      
+      {/* Module Settings Dialog */}
+      <SidebarModuleSettings open={moduleSettingsOpen} onOpenChange={setModuleSettingsOpen} />
+      
+      {/* Keyboard Shortcuts */}
+      <KeyboardShortcuts />
+      
+      {/* Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }
