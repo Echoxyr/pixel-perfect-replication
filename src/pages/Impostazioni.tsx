@@ -5,13 +5,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Settings, Bell, Shield, Database, Building2, Save, Upload, Trash2, FileText } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Settings, Bell, Shield, Database, Building2, Save, Upload, Trash2, FileText, LayoutGrid, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkHub } from '@/contexts/WorkHubContext';
+import { useSidebarModules, SIDEBAR_MODULES, SECTIONS } from '@/hooks/useSidebarModules';
+import { cn } from '@/lib/utils';
 
 export default function Impostazioni() {
   const { toast } = useToast();
   const { datiAzienda, updateDatiAzienda } = useWorkHub();
+  const {
+    isModuleVisible,
+    toggleModule,
+    toggleSection,
+    resetToDefaults,
+    isSectionFullyVisible,
+  } = useSidebarModules();
   
   const [notifications, setNotifications] = useState({
     emailScadenze: true,
@@ -113,6 +123,10 @@ export default function Impostazioni() {
           <TabsTrigger value="documenti" className="gap-2 flex-none text-xs sm:text-sm">
             <FileText className="w-4 h-4" />
             Documenti Azienda
+          </TabsTrigger>
+          <TabsTrigger value="menu" className="gap-2 flex-none text-xs sm:text-sm">
+            <LayoutGrid className="w-4 h-4" />
+            Menu
           </TabsTrigger>
           <TabsTrigger value="general" className="gap-2 flex-none text-xs sm:text-sm">
             <Settings className="w-4 h-4" />
@@ -714,6 +728,87 @@ export default function Impostazioni() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Personalizzazione Menu */}
+        <TabsContent value="menu" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5" />
+                    Personalizza Menu Sidebar
+                  </CardTitle>
+                  <CardDescription>
+                    Scegli quali moduli visualizzare nella barra laterale. Le modifiche sono applicate immediatamente.
+                  </CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={resetToDefaults}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset Default
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-6">
+                  {SECTIONS.map(section => {
+                    const sectionModules = SIDEBAR_MODULES.filter(m => m.section === section.id);
+                    const isFullyVisible = isSectionFullyVisible(section.id);
+                    
+                    return (
+                      <div key={section.id} className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold uppercase text-muted-foreground">
+                            {section.label}
+                          </Label>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => toggleSection(section.id, !isFullyVisible)}
+                          >
+                            {isFullyVisible ? 'Nascondi tutti' : 'Mostra tutti'}
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {sectionModules.map(module => (
+                            <div
+                              key={module.id}
+                              className={cn(
+                                'flex items-center justify-between p-3 rounded-lg border transition-colors',
+                                isModuleVisible(module.id) 
+                                  ? 'bg-card border-border' 
+                                  : 'bg-muted/30 border-transparent'
+                              )}
+                            >
+                              <span className={cn(
+                                'text-sm',
+                                !isModuleVisible(module.id) && 'text-muted-foreground'
+                              )}>
+                                {module.label}
+                              </span>
+                              <Switch
+                                checked={isModuleVisible(module.id)}
+                                onCheckedChange={() => toggleModule(module.id)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              
+              <p className="text-xs text-muted-foreground pt-4 mt-4 border-t">
+                Le modifiche vengono salvate automaticamente e applicate immediatamente alla sidebar.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="general" className="mt-6 space-y-6">
           <Card>
             <CardHeader>
