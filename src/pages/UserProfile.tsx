@@ -422,43 +422,53 @@ export default function UserProfile() {
                 <Palette className="w-5 h-5" />
                 Personalizza Tema
               </CardTitle>
-              <CardDescription>Scegli il colore principale dell'applicazione</CardDescription>
+              <CardDescription>Scegli i colori dell'applicazione per personalizzare la tua esperienza</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                {THEME_COLORS.map(color => (
-                  <button
-                    key={color.id}
-                    onClick={() => handleThemeChange(color.id)}
-                    className={cn(
-                      'relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all',
-                      themeColor === color.id 
-                        ? 'border-primary bg-primary/10 shadow-lg' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                    )}
-                  >
-                    <div 
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md"
-                      style={{ background: `hsl(${color.primary})` }}
-                    />
-                    <span className="text-xs sm:text-sm font-medium">{color.name}</span>
-                    {themeColor === color.id && (
-                      <div className="absolute top-2 right-2">
-                        <Check className="w-4 h-4 text-primary" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+            <CardContent className="space-y-8">
+              {/* Colore Principale */}
+              <div>
+                <h3 className="font-semibold mb-3">Colore Principale</h3>
+                <p className="text-sm text-muted-foreground mb-4">Il colore usato per pulsanti, link e elementi interattivi</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+                  {THEME_COLORS.map(color => (
+                    <button
+                      key={color.id}
+                      onClick={() => handleThemeChange(color.id)}
+                      className={cn(
+                        'relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all',
+                        themeColor === color.id 
+                          ? 'border-primary bg-primary/10 shadow-lg' 
+                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                      )}
+                    >
+                      <div 
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md"
+                        style={{ background: `hsl(${color.primary})` }}
+                      />
+                      <span className="text-xs sm:text-sm font-medium">{color.name}</span>
+                      {themeColor === color.id && (
+                        <div className="absolute top-2 right-2">
+                          <Check className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="mt-8 p-4 sm:p-6 rounded-xl border bg-card">
-                <h3 className="font-semibold mb-4">Anteprima</h3>
-                <div className="flex flex-wrap gap-3">
+              {/* Anteprima */}
+              <div className="p-4 sm:p-6 rounded-xl border bg-card">
+                <h3 className="font-semibold mb-4">Anteprima Componenti</h3>
+                <div className="flex flex-wrap gap-3 mb-4">
                   <Button>Pulsante Primario</Button>
                   <Button variant="secondary">Secondario</Button>
                   <Button variant="outline">Outline</Button>
-                  <Badge>Badge</Badge>
+                  <Button variant="ghost">Ghost</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge>Badge Primario</Badge>
                   <Badge variant="secondary">Secondary</Badge>
+                  <Badge variant="outline">Outline</Badge>
                 </div>
               </div>
             </CardContent>

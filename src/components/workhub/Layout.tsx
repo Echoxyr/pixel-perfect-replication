@@ -75,7 +75,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { SidebarModuleSettings } from './SidebarModuleSettings';
+// SidebarModuleSettings removed - now in Impostazioni page
 
 export function Layout() {
   const location = useLocation();
@@ -91,7 +91,6 @@ export function Layout() {
   const [cantieriExpanded, setCantieriExpanded] = useState(true);
   const [hseExpanded, setHseExpanded] = useState(true);
   const [complianceExpanded, setComplianceExpanded] = useState(true);
-  const [moduleSettingsOpen, setModuleSettingsOpen] = useState(false);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
@@ -272,86 +271,94 @@ export function Layout() {
               </p>
             )}
             <div className="space-y-1">
-              <NavItem 
-                to="/dashboard" 
-                icon={LayoutDashboard} 
-                label="Dashboard" 
-                isActive={location.pathname === '/dashboard'} 
-              />
-              <NavItem 
-                to="/progetti" 
-                icon={FolderKanban} 
-                label="Progetti & Task" 
-                badge={openTasks}
-                isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
-              />
-              <NavItem 
-                to="/sal" 
-                icon={TrendingUp} 
-                label="SAL" 
-                isActive={location.pathname === '/sal'} 
-              />
+              {isModuleVisible('dashboard') && (
+                <NavItem 
+                  to="/dashboard" 
+                  icon={LayoutDashboard} 
+                  label="Dashboard" 
+                  isActive={location.pathname === '/dashboard'} 
+                />
+              )}
+              {isModuleVisible('progetti') && (
+                <NavItem 
+                  to="/progetti" 
+                  icon={FolderKanban} 
+                  label="Progetti & Task" 
+                  badge={openTasks}
+                  isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
+                />
+              )}
+              {isModuleVisible('sal') && (
+                <NavItem 
+                  to="/sal" 
+                  icon={TrendingUp} 
+                  label="SAL" 
+                  isActive={location.pathname === '/sal'} 
+                />
+              )}
             </div>
           </div>
 
           {/* Cantieri Section */}
-          <div>
-            {!sidebarCollapsed ? (
-              <button
-                onClick={() => setCantieriExpanded(!cantieriExpanded)}
-                className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-              >
-                <span>Cantieri</span>
-                <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !cantieriExpanded && '-rotate-90')} />
-              </button>
-            ) : (
-              <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-            )}
-            
-            <div className="space-y-1">
-              <NavItem 
-                to="/cantieri" 
-                icon={Construction} 
-                label="Tutti i Cantieri" 
-                badge={cantieri.length}
-                isActive={location.pathname === '/cantieri'} 
-              />
-              
-              {!sidebarCollapsed && cantieriExpanded && (
-                <div className="ml-4 pl-3 border-l border-sidebar-border space-y-0.5 mt-2">
-                  {activeCantieri.slice(0, 5).map((cantiere) => {
-                    const isActive = location.pathname === `/cantieri/${cantiere.id}`;
-                    return (
-                      <Link
-                        key={cantiere.id}
-                        to={`/cantieri/${cantiere.id}`}
-                        className={cn(
-                          'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
-                          isActive
-                            ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-white/80 hover:text-white hover:bg-white/10'
-                        )}
-                      >
-                        <span className={cn(
-                          'w-1.5 h-1.5 rounded-full',
-                          cantiere.stato === 'attivo' ? 'bg-emerald-500' : 'bg-amber-500'
-                        )} />
-                        <span className="truncate">{cantiere.codiceCommessa}</span>
-                      </Link>
-                    );
-                  })}
-                  {activeCantieri.length > 5 && (
-                    <Link
-                      to="/cantieri"
-                      className="flex items-center gap-2 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:underline"
-                    >
-                      +{activeCantieri.length - 5} altri
-                    </Link>
-                  )}
-                </div>
+          {isModuleVisible('cantieri') && (
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setCantieriExpanded(!cantieriExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Cantieri</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !cantieriExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
+              
+              <div className="space-y-1">
+                <NavItem 
+                  to="/cantieri" 
+                  icon={Construction} 
+                  label="Tutti i Cantieri" 
+                  badge={cantieri.length}
+                  isActive={location.pathname === '/cantieri'} 
+                />
+                
+                {!sidebarCollapsed && cantieriExpanded && (
+                  <div className="ml-4 pl-3 border-l border-sidebar-border space-y-0.5 mt-2">
+                    {activeCantieri.slice(0, 5).map((cantiere) => {
+                      const isActive = location.pathname === `/cantieri/${cantiere.id}`;
+                      return (
+                        <Link
+                          key={cantiere.id}
+                          to={`/cantieri/${cantiere.id}`}
+                          className={cn(
+                            'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+                            isActive
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'text-white/80 hover:text-white hover:bg-white/10'
+                          )}
+                        >
+                          <span className={cn(
+                            'w-1.5 h-1.5 rounded-full',
+                            cantiere.stato === 'attivo' ? 'bg-emerald-500' : 'bg-amber-500'
+                          )} />
+                          <span className="truncate">{cantiere.codiceCommessa}</span>
+                        </Link>
+                      );
+                    })}
+                    {activeCantieri.length > 5 && (
+                      <Link
+                        to="/cantieri"
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:underline"
+                      >
+                        +{activeCantieri.length - 5} altri
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* HSE Section - Collapsible */}
           <div>
@@ -369,60 +376,76 @@ export function Layout() {
             
             {(sidebarCollapsed || hseExpanded) && (
               <div className="space-y-1">
-                <NavItem 
-                  to="/hse" 
-                  icon={ShieldCheck} 
-                  label="Dashboard HSE" 
-                  badge={totalAlerts}
-                  badgeColor="danger"
-                  isActive={location.pathname === '/hse'} 
-                />
-                <NavItem 
-                  to="/compliance/sicurezza" 
-                  icon={FileCheck} 
-                  label="D.Lgs 81/2008" 
-                  isActive={location.pathname === '/compliance/sicurezza'} 
-                />
-                <NavItem 
-                  to="/imprese" 
-                  icon={Building2} 
-                  label="Imprese Esterne" 
-                  badge={hseStats.impreseCritical}
-                  badgeColor="danger"
-                  isActive={location.pathname === '/imprese'} 
-                />
-                <NavItem 
-                  to="/lavoratori" 
-                  icon={HardHat} 
-                  label="Dipendenti" 
-                  badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
-                  badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
-                  isActive={location.pathname === '/lavoratori'} 
-                />
-                <NavItem 
-                  to="/formazione" 
-                  icon={GraduationCap} 
-                  label="Formazione" 
-                  isActive={location.pathname === '/formazione'} 
-                />
-                <NavItem 
-                  to="/dpi" 
-                  icon={ShieldAlert} 
-                  label="DPI" 
-                  isActive={location.pathname === '/dpi'} 
-                />
-                <NavItem 
-                  to="/sorveglianza-sanitaria" 
-                  icon={Stethoscope} 
-                  label="Sorveglianza Sanitaria" 
-                  isActive={location.pathname === '/sorveglianza-sanitaria'} 
-                />
-                <NavItem 
-                  to="/checkin-sicurezza" 
-                  icon={ClipboardList} 
-                  label="Check-in Sicurezza" 
-                  isActive={location.pathname === '/checkin-sicurezza'} 
-                />
+                {isModuleVisible('hse') && (
+                  <NavItem 
+                    to="/hse" 
+                    icon={ShieldCheck} 
+                    label="Dashboard HSE" 
+                    badge={totalAlerts}
+                    badgeColor="danger"
+                    isActive={location.pathname === '/hse'} 
+                  />
+                )}
+                {isModuleVisible('sicurezza') && (
+                  <NavItem 
+                    to="/compliance/sicurezza" 
+                    icon={FileCheck} 
+                    label="D.Lgs 81/2008" 
+                    isActive={location.pathname === '/compliance/sicurezza'} 
+                  />
+                )}
+                {isModuleVisible('imprese') && (
+                  <NavItem 
+                    to="/imprese" 
+                    icon={Building2} 
+                    label="Imprese Esterne" 
+                    badge={hseStats.impreseCritical}
+                    badgeColor="danger"
+                    isActive={location.pathname === '/imprese'} 
+                  />
+                )}
+                {isModuleVisible('lavoratori') && (
+                  <NavItem 
+                    to="/lavoratori" 
+                    icon={HardHat} 
+                    label="Dipendenti" 
+                    badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
+                    badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
+                    isActive={location.pathname === '/lavoratori'} 
+                  />
+                )}
+                {isModuleVisible('formazione') && (
+                  <NavItem 
+                    to="/formazione" 
+                    icon={GraduationCap} 
+                    label="Formazione" 
+                    isActive={location.pathname === '/formazione'} 
+                  />
+                )}
+                {isModuleVisible('dpi') && (
+                  <NavItem 
+                    to="/dpi" 
+                    icon={ShieldAlert} 
+                    label="DPI" 
+                    isActive={location.pathname === '/dpi'} 
+                  />
+                )}
+                {isModuleVisible('sorveglianza') && (
+                  <NavItem 
+                    to="/sorveglianza-sanitaria" 
+                    icon={Stethoscope} 
+                    label="Sorveglianza Sanitaria" 
+                    isActive={location.pathname === '/sorveglianza-sanitaria'} 
+                  />
+                )}
+                {isModuleVisible('checkin') && (
+                  <NavItem 
+                    to="/checkin-sicurezza" 
+                    icon={ClipboardList} 
+                    label="Check-in Sicurezza" 
+                    isActive={location.pathname === '/checkin-sicurezza'} 
+                  />
+                )}
               </div>
             )}
           </div>
@@ -443,30 +466,38 @@ export function Layout() {
             
             {(sidebarCollapsed || complianceExpanded) && (
               <div className="space-y-1">
-                <NavItem 
-                  to="/compliance/gdpr" 
-                  icon={Shield} 
-                  label="GDPR Privacy" 
-                  isActive={location.pathname === '/compliance/gdpr'} 
-                />
-                <NavItem 
-                  to="/compliance/qualita" 
-                  icon={Award} 
-                  label="ISO 9001 Qualità" 
-                  isActive={location.pathname === '/compliance/qualita'} 
-                />
-                <NavItem 
-                  to="/compliance/ambiente" 
-                  icon={Leaf} 
-                  label="ISO 14001 Ambiente" 
-                  isActive={location.pathname === '/compliance/ambiente'} 
-                />
-                <NavItem 
-                  to="/compliance/bi" 
-                  icon={BarChart3} 
-                  label="Business Intelligence" 
-                  isActive={location.pathname === '/compliance/bi'} 
-                />
+                {isModuleVisible('gdpr') && (
+                  <NavItem 
+                    to="/compliance/gdpr" 
+                    icon={Shield} 
+                    label="GDPR Privacy" 
+                    isActive={location.pathname === '/compliance/gdpr'} 
+                  />
+                )}
+                {isModuleVisible('qualita') && (
+                  <NavItem 
+                    to="/compliance/qualita" 
+                    icon={Award} 
+                    label="ISO 9001 Qualità" 
+                    isActive={location.pathname === '/compliance/qualita'} 
+                  />
+                )}
+                {isModuleVisible('ambiente') && (
+                  <NavItem 
+                    to="/compliance/ambiente" 
+                    icon={Leaf} 
+                    label="ISO 14001 Ambiente" 
+                    isActive={location.pathname === '/compliance/ambiente'} 
+                  />
+                )}
+                {isModuleVisible('bi') && (
+                  <NavItem 
+                    to="/compliance/bi" 
+                    icon={BarChart3} 
+                    label="Business Intelligence" 
+                    isActive={location.pathname === '/compliance/bi'} 
+                  />
+                )}
               </div>
             )}
           </div>
@@ -480,24 +511,30 @@ export function Layout() {
             )}
             
             <div className="space-y-1">
-              <NavItem 
-                to="/reparto-commerciale" 
-                icon={Briefcase} 
-                label="Reparto Commerciale" 
-                isActive={location.pathname === '/reparto-commerciale'} 
-              />
-              <NavItem 
-                to="/computo-metrico" 
-                icon={Calculator} 
-                label="Computo Metrico" 
-                isActive={location.pathname === '/computo-metrico'} 
-              />
-              <NavItem 
-                to="/listino-prezzi" 
-                icon={Euro} 
-                label="Listino Prezzi" 
-                isActive={location.pathname === '/listino-prezzi'} 
-              />
+              {isModuleVisible('commerciale') && (
+                <NavItem 
+                  to="/reparto-commerciale" 
+                  icon={Briefcase} 
+                  label="Reparto Commerciale" 
+                  isActive={location.pathname === '/reparto-commerciale'} 
+                />
+              )}
+              {isModuleVisible('computo') && (
+                <NavItem 
+                  to="/computo-metrico" 
+                  icon={Calculator} 
+                  label="Computo Metrico" 
+                  isActive={location.pathname === '/computo-metrico'} 
+                />
+              )}
+              {isModuleVisible('listino') && (
+                <NavItem 
+                  to="/listino-prezzi" 
+                  icon={Euro} 
+                  label="Listino Prezzi" 
+                  isActive={location.pathname === '/listino-prezzi'} 
+                />
+              )}
             </div>
           </div>
 
@@ -510,36 +547,46 @@ export function Layout() {
             )}
             
             <div className="space-y-1">
-              <NavItem 
-                to="/reparto-amministrazione" 
-                icon={FileText} 
-                label="Reparto Amministrazione" 
-                isActive={location.pathname === '/reparto-amministrazione'} 
-              />
-              <NavItem 
-                to="/timbrature" 
-                icon={Clock} 
-                label="Timbrature" 
-                isActive={location.pathname === '/timbrature'} 
-              />
-              <NavItem 
-                to="/scadenzario" 
-                icon={Calendar} 
-                label="Scadenzario" 
-                isActive={location.pathname === '/scadenzario'} 
-              />
-              <NavItem 
-                to="/rapportini" 
-                icon={ClipboardList} 
-                label="Rapportini" 
-                isActive={location.pathname === '/rapportini'} 
-              />
-              <NavItem 
-                to="/contatti" 
-                icon={User} 
-                label="Contatti" 
-                isActive={location.pathname === '/contatti'} 
-              />
+              {isModuleVisible('amministrazione') && (
+                <NavItem 
+                  to="/reparto-amministrazione" 
+                  icon={FileText} 
+                  label="Reparto Amministrazione" 
+                  isActive={location.pathname === '/reparto-amministrazione'} 
+                />
+              )}
+              {isModuleVisible('timbrature') && (
+                <NavItem 
+                  to="/timbrature" 
+                  icon={Clock} 
+                  label="Timbrature" 
+                  isActive={location.pathname === '/timbrature'} 
+                />
+              )}
+              {isModuleVisible('scadenzario') && (
+                <NavItem 
+                  to="/scadenzario" 
+                  icon={Calendar} 
+                  label="Scadenzario" 
+                  isActive={location.pathname === '/scadenzario'} 
+                />
+              )}
+              {isModuleVisible('rapportini') && (
+                <NavItem 
+                  to="/rapportini" 
+                  icon={ClipboardList} 
+                  label="Rapportini" 
+                  isActive={location.pathname === '/rapportini'} 
+                />
+              )}
+              {isModuleVisible('contatti') && (
+                <NavItem 
+                  to="/contatti" 
+                  icon={User} 
+                  label="Contatti" 
+                  isActive={location.pathname === '/contatti'} 
+                />
+              )}
             </div>
           </div>
 
@@ -552,18 +599,22 @@ export function Layout() {
             )}
             
             <div className="space-y-1">
-              <NavItem 
-                to="/risorse" 
-                icon={Truck} 
-                label="Risorse & Mezzi" 
-                isActive={location.pathname === '/risorse'} 
-              />
-              <NavItem 
-                to="/magazzino" 
-                icon={Boxes} 
-                label="Magazzino" 
-                isActive={location.pathname === '/magazzino'} 
-              />
+              {isModuleVisible('risorse') && (
+                <NavItem 
+                  to="/risorse" 
+                  icon={Truck} 
+                  label="Risorse & Mezzi" 
+                  isActive={location.pathname === '/risorse'} 
+                />
+              )}
+              {isModuleVisible('magazzino') && (
+                <NavItem 
+                  to="/magazzino" 
+                  icon={Boxes} 
+                  label="Magazzino" 
+                  isActive={location.pathname === '/magazzino'} 
+                />
+              )}
             </div>
           </div>
         </nav>
@@ -610,16 +661,6 @@ export function Layout() {
             isActive={location.pathname === '/impostazioni'} 
           />
           
-          {/* Module Settings Button */}
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setModuleSettingsOpen(true)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <Cog className="w-5 h-5" />
-              <span>Personalizza Menu</span>
-            </button>
-          )}
           
           {/* Collapse Button */}
           <button
@@ -963,9 +1004,6 @@ export function Layout() {
 
       {/* Global Search */}
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-      
-      {/* Module Settings Dialog */}
-      <SidebarModuleSettings open={moduleSettingsOpen} onOpenChange={setModuleSettingsOpen} />
       
       {/* Keyboard Shortcuts */}
       <KeyboardShortcuts />
