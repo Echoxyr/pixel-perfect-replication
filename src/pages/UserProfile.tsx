@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -416,63 +417,228 @@ export default function UserProfile() {
 
         {/* Tema Tab */}
         <TabsContent value="tema">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="w-5 h-5" />
-                Personalizza Tema
-              </CardTitle>
-              <CardDescription>Scegli i colori dell'applicazione per personalizzare la tua esperienza</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Colore Principale */}
-              <div>
-                <h3 className="font-semibold mb-3">Colore Principale</h3>
-                <p className="text-sm text-muted-foreground mb-4">Il colore usato per pulsanti, link e elementi interattivi</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+          <div className="space-y-6">
+            {/* Colore Principale */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  Colore Principale
+                </CardTitle>
+                <CardDescription>Il colore usato per pulsanti, link e elementi interattivi</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
                   {THEME_COLORS.map(color => (
                     <button
                       key={color.id}
                       onClick={() => handleThemeChange(color.id)}
                       className={cn(
-                        'relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all',
+                        'relative flex flex-col items-center gap-2 p-2 sm:p-3 rounded-xl border-2 transition-all hover:scale-105',
                         themeColor === color.id 
-                          ? 'border-primary bg-primary/10 shadow-lg' 
+                          ? 'border-primary bg-primary/10 shadow-lg ring-2 ring-primary/30' 
                           : 'border-border hover:border-primary/50 hover:bg-muted/50'
                       )}
                     >
                       <div 
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full shadow-md"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-md ring-2 ring-background"
                         style={{ background: `hsl(${color.primary})` }}
                       />
-                      <span className="text-xs sm:text-sm font-medium">{color.name}</span>
+                      <span className="text-[10px] sm:text-xs font-medium text-center leading-tight">{color.name}</span>
                       {themeColor === color.id && (
-                        <div className="absolute top-2 right-2">
-                          <Check className="w-4 h-4 text-primary" />
+                        <div className="absolute -top-1 -right-1">
+                          <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          </div>
                         </div>
                       )}
                     </button>
                   ))}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              {/* Anteprima */}
-              <div className="p-4 sm:p-6 rounded-xl border bg-card">
-                <h3 className="font-semibold mb-4">Anteprima Componenti</h3>
-                <div className="flex flex-wrap gap-3 mb-4">
-                  <Button>Pulsante Primario</Button>
-                  <Button variant="secondary">Secondario</Button>
-                  <Button variant="outline">Outline</Button>
-                  <Button variant="ghost">Ghost</Button>
+            {/* Personalizzazione UI Avanzata */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Personalizzazione Interfaccia
+                </CardTitle>
+                <CardDescription>Configura l'aspetto dei componenti dell'applicazione</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Stile Bordi */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Stile Bordi Pulsanti</Label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { id: 'sharp', label: 'Squadrato', radius: '0' },
+                      { id: 'soft', label: 'Morbido', radius: '0.375rem' },
+                      { id: 'rounded', label: 'Arrotondato', radius: '0.75rem' },
+                      { id: 'pill', label: 'Pillola', radius: '9999px' },
+                    ].map(style => (
+                      <button
+                        key={style.id}
+                        className="p-3 border-2 border-border rounded-lg hover:border-primary/50 transition-all"
+                      >
+                        <div 
+                          className="w-full h-8 bg-primary mb-2"
+                          style={{ borderRadius: style.radius }}
+                        />
+                        <span className="text-xs font-medium">{style.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge>Badge Primario</Badge>
-                  <Badge variant="secondary">Secondary</Badge>
-                  <Badge variant="outline">Outline</Badge>
+
+                {/* Stile Card */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Stile Card</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'flat', label: 'Piatto', shadow: 'none', border: '1px solid hsl(var(--border))' },
+                      { id: 'elevated', label: 'Elevato', shadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none' },
+                      { id: 'glass', label: 'Glass', shadow: '0 8px 32px rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' },
+                    ].map(style => (
+                      <button
+                        key={style.id}
+                        className="p-3 border-2 border-border rounded-lg hover:border-primary/50 transition-all"
+                      >
+                        <div 
+                          className="w-full h-16 rounded-lg bg-card mb-2"
+                          style={{ boxShadow: style.shadow, border: style.border }}
+                        />
+                        <span className="text-xs font-medium">{style.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Opzioni Toggle */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                    <div>
+                      <Label className="font-medium">Ombra Pulsanti</Label>
+                      <p className="text-xs text-muted-foreground">Aggiunge profondità ai pulsanti</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                    <div>
+                      <Label className="font-medium">Effetto Glass</Label>
+                      <p className="text-xs text-muted-foreground">Sfondo sfumato trasparente</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                    <div>
+                      <Label className="font-medium">Animazioni</Label>
+                      <p className="text-xs text-muted-foreground">Transizioni fluide tra gli stati</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+                    <div>
+                      <Label className="font-medium">Hover Glow</Label>
+                      <p className="text-xs text-muted-foreground">Effetto luminoso al passaggio mouse</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Anteprima Completa */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Anteprima Componenti</CardTitle>
+                <CardDescription>Visualizza come appariranno i vari elementi</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Pulsanti */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Pulsanti</Label>
+                  <div className="flex flex-wrap gap-3">
+                    <Button>Primario</Button>
+                    <Button variant="secondary">Secondario</Button>
+                    <Button variant="outline">Outline</Button>
+                    <Button variant="ghost">Ghost</Button>
+                    <Button variant="destructive">Elimina</Button>
+                    <Button variant="link">Link</Button>
+                  </div>
+                </div>
+
+                {/* Pulsanti con Icone */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Pulsanti con Icone</Label>
+                  <div className="flex flex-wrap gap-3">
+                    <Button size="sm"><Plus className="w-4 h-4 mr-1" />Aggiungi</Button>
+                    <Button size="sm" variant="outline"><Edit className="w-4 h-4 mr-1" />Modifica</Button>
+                    <Button size="sm" variant="destructive"><Trash2 className="w-4 h-4 mr-1" />Elimina</Button>
+                    <Button size="icon" variant="ghost"><Bell className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="secondary"><Settings className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+
+                {/* Badge */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Badge</Label>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge>Default</Badge>
+                    <Badge variant="secondary">Secondary</Badge>
+                    <Badge variant="outline">Outline</Badge>
+                    <Badge variant="destructive">Destructive</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Successo</Badge>
+                    <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Attenzione</Badge>
+                  </div>
+                </div>
+
+                {/* Input */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Campi Input</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input placeholder="Input standard..." />
+                    <Input placeholder="Input disabilitato" disabled />
+                  </div>
+                </div>
+
+                {/* Card Preview */}
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Card Esempio</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl border bg-card shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <User className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Card Standard</p>
+                          <p className="text-xs text-muted-foreground">Descrizione card</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant="secondary">Tag 1</Badge>
+                        <Badge variant="outline">Tag 2</Badge>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-xl border bg-gradient-to-br from-primary/10 to-primary/5 shadow-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Card Highlight</p>
+                          <p className="text-xs text-muted-foreground">Con sfondo primario</p>
+                        </div>
+                      </div>
+                      <Button size="sm" className="w-full">Azione</Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Tasks Tab */}

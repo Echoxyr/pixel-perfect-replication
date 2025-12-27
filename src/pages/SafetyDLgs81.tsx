@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import {
   POSDigitale,
@@ -109,60 +109,57 @@ export default function SafetyDLgs81() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [posDigitali, setPosDigitali] = useState<POSDigitale[]>([
-    {
-      id: '1',
-      cantiereId: cantieri[0]?.id || '',
-      impresaId: imprese[0]?.id || '',
-      versione: '1.0',
-      dataEmissione: '2024-01-15',
-      stato: 'approvato',
-      allegatiUrl: [],
-      rischioGenerico: ['Caduta dall\'alto', 'Elettrocuzione'],
-      rischioSpecifico: ['Lavori in quota', 'Impianti elettrici'],
-      misurePrevenzione: ['Uso DPI', 'Formazione specifica'],
-      dpiRichiesti: ['Casco', 'Imbracatura', 'Scarpe antinfortunistiche']
-    }
-  ]);
+  // POS Digitali con persistenza
+  const [posDigitali, setPosDigitali] = useState<POSDigitale[]>(() => {
+    const saved = localStorage.getItem('safety_pos');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [duvri, setDuvri] = useState<DUVRI[]>([
-    {
-      id: '1',
-      cantiereId: cantieri[0]?.id || '',
-      impreseInterferenti: imprese.slice(0, 2).map(i => i.id),
-      dataRedazione: '2024-01-20',
-      rischInterferenza: [
-        {
-          descrizione: 'Interferenza tra lavori elettrici e meccanici',
-          impreseCoinvolte: imprese.slice(0, 2).map(i => i.id),
-          misurePreviste: ['Coordinamento lavori', 'Delimitazione aree'],
-          responsabile: 'CSE'
-        }
-      ],
-      costiSicurezza: 15000,
-      firme: [],
-      stato: 'approvato'
-    }
-  ]);
+  // DUVRI con persistenza
+  const [duvri, setDuvri] = useState<DUVRI[]>(() => {
+    const saved = localStorage.getItem('safety_duvri');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [infortuni, setInfortuni] = useState<RegistroInfortuni[]>([]);
+  // Registro Infortuni con persistenza
+  const [infortuni, setInfortuni] = useState<RegistroInfortuni[]>(() => {
+    const saved = localStorage.getItem('safety_infortuni');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [visiteMediche, setVisiteMediche] = useState<ScadenzarioVisiteMediche[]>(
-    lavoratori.slice(0, 5).map((l, i) => ({
-      id: generateId(),
-      lavoratoreId: l.id,
-      lavoratoreNome: `${l.nome} ${l.cognome}`,
-      tipoVisita: 'periodica',
-      dataVisita: new Date(Date.now() - (i * 90 * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10),
-      dataScadenza: new Date(Date.now() + ((365 - i * 30) * 24 * 60 * 60 * 1000)).toISOString().slice(0, 10),
-      medicoCompetente: 'Dr. Bianchi',
-      idoneitaGiudizio: i % 3 === 0 ? 'idoneo_con_prescrizioni' : 'idoneo',
-      prescrizioni: i % 3 === 0 ? 'Evitare sollevamento carichi > 15kg' : undefined
-    }))
-  );
+  // Visite Mediche con persistenza
+  const [visiteMediche, setVisiteMediche] = useState<ScadenzarioVisiteMediche[]>(() => {
+    const saved = localStorage.getItem('safety_visite');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // Figure Sicurezza (RSPP e RLS)
-  const [figureSicurezza, setFigureSicurezza] = useState<FiguraSicurezza[]>([]);
+  // Figure Sicurezza (RSPP e RLS) con persistenza
+  const [figureSicurezza, setFigureSicurezza] = useState<FiguraSicurezza[]>(() => {
+    const saved = localStorage.getItem('safety_figure');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Salva automaticamente
+  useEffect(() => {
+    localStorage.setItem('safety_pos', JSON.stringify(posDigitali));
+  }, [posDigitali]);
+
+  useEffect(() => {
+    localStorage.setItem('safety_duvri', JSON.stringify(duvri));
+  }, [duvri]);
+
+  useEffect(() => {
+    localStorage.setItem('safety_infortuni', JSON.stringify(infortuni));
+  }, [infortuni]);
+
+  useEffect(() => {
+    localStorage.setItem('safety_visite', JSON.stringify(visiteMediche));
+  }, [visiteMediche]);
+
+  useEffect(() => {
+    localStorage.setItem('safety_figure', JSON.stringify(figureSicurezza));
+  }, [figureSicurezza]);
+
   const [showNewFiguraDialog, setShowNewFiguraDialog] = useState(false);
   const [showCorsiFiguraDialog, setShowCorsiFiguraDialog] = useState(false);
   const [showDocumentiFiguraDialog, setShowDocumentiFiguraDialog] = useState(false);
