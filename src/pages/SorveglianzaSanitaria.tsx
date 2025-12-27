@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { formatDateFull, daysUntil, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -135,11 +135,26 @@ export default function SorveglianzaSanitaria() {
   const [selectedMedico, setSelectedMedico] = useState<MedicoCompetente | null>(null);
   const [editingMedico, setEditingMedico] = useState<MedicoCompetente | null>(null);
 
-  // Stato medici competenti
-  const [medici, setMedici] = useState<MedicoCompetente[]>([]);
+  // Stato medici competenti con persistenza
+  const [medici, setMedici] = useState<MedicoCompetente[]>(() => {
+    const saved = localStorage.getItem('sorveglianza_medici');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // Mock data visite mediche
-  const [visiteMediche, setVisiteMediche] = useState<VisitaMedica[]>([]);
+  // Visite mediche con persistenza
+  const [visiteMediche, setVisiteMediche] = useState<VisitaMedica[]>(() => {
+    const saved = localStorage.getItem('sorveglianza_visite');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Salva automaticamente
+  useEffect(() => {
+    localStorage.setItem('sorveglianza_medici', JSON.stringify(medici));
+  }, [medici]);
+
+  useEffect(() => {
+    localStorage.setItem('sorveglianza_visite', JSON.stringify(visiteMediche));
+  }, [visiteMediche]);
 
   const [newVisita, setNewVisita] = useState({
     lavoratoreId: '',

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { formatDateFull, daysUntil, generateId } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -88,23 +88,25 @@ export default function DPI() {
   const [showNewDPIDialog, setShowNewDPIDialog] = useState(false);
   const [showAssegnaDialog, setShowAssegnaDialog] = useState(false);
 
-  // Mock data DPI
-  const [dpiInventario, setDpiInventario] = useState<DPIItem[]>([
-    { id: '1', categoria: 'testa', nome: 'Casco di protezione', marca: '3M', modello: 'G3000', normativa: 'EN 397', dataAcquisto: '2024-01-15', quantitaDisponibile: 50, quantitaAssegnata: 35 },
-    { id: '2', categoria: 'piedi', nome: 'Scarpe antinfortunistiche S3', marca: 'U-Power', modello: 'RedLion', normativa: 'EN ISO 20345', dataAcquisto: '2024-02-01', quantitaDisponibile: 40, quantitaAssegnata: 38 },
-    { id: '3', categoria: 'occhi', nome: 'Occhiali protettivi', marca: 'Uvex', modello: 'i-3', normativa: 'EN 166', dataAcquisto: '2024-01-20', quantitaDisponibile: 60, quantitaAssegnata: 42 },
-    { id: '4', categoria: 'mani', nome: 'Guanti antitaglio', marca: 'Ansell', modello: 'HyFlex', normativa: 'EN 388', dataAcquisto: '2024-03-01', quantitaDisponibile: 100, quantitaAssegnata: 65 },
-    { id: '5', categoria: 'anticaduta', nome: 'Imbracatura anticaduta', marca: 'Petzl', modello: 'Newton', normativa: 'EN 361', dataAcquisto: '2023-06-15', dataScadenza: '2028-06-15', quantitaDisponibile: 15, quantitaAssegnata: 12 },
-    { id: '6', categoria: 'vie_respiratorie', nome: 'Mascherina FFP3', marca: '3M', modello: 'Aura 9332+', normativa: 'EN 149', dataAcquisto: '2024-04-01', quantitaDisponibile: 200, quantitaAssegnata: 85 },
-    { id: '7', categoria: 'udito', nome: 'Cuffie antirumore', marca: '3M', modello: 'Peltor X5A', normativa: 'EN 352-1', dataAcquisto: '2024-02-15', quantitaDisponibile: 30, quantitaAssegnata: 22 },
-    { id: '8', categoria: 'corpo', nome: 'Gilet alta visibilità', marca: 'Portwest', modello: 'C470', normativa: 'EN ISO 20471', dataAcquisto: '2024-01-10', quantitaDisponibile: 80, quantitaAssegnata: 45 },
-  ]);
+  // Dati DPI con persistenza localStorage
+  const [dpiInventario, setDpiInventario] = useState<DPIItem[]>(() => {
+    const saved = localStorage.getItem('dpi_inventario');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [assegnazioni, setAssegnazioni] = useState<AssegnazioneDPI[]>([
-    { id: '1', dpiId: '1', lavoratoreId: lavoratori[0]?.id || '', dataConsegna: '2024-06-01', firmato: true },
-    { id: '2', dpiId: '2', lavoratoreId: lavoratori[0]?.id || '', dataConsegna: '2024-06-01', firmato: true },
-    { id: '3', dpiId: '3', lavoratoreId: lavoratori[1]?.id || '', dataConsegna: '2024-06-05', firmato: true },
-  ]);
+  const [assegnazioni, setAssegnazioni] = useState<AssegnazioneDPI[]>(() => {
+    const saved = localStorage.getItem('dpi_assegnazioni');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Salva automaticamente quando cambiano i dati
+  React.useEffect(() => {
+    localStorage.setItem('dpi_inventario', JSON.stringify(dpiInventario));
+  }, [dpiInventario]);
+
+  React.useEffect(() => {
+    localStorage.setItem('dpi_assegnazioni', JSON.stringify(assegnazioni));
+  }, [assegnazioni]);
 
   const [newDPI, setNewDPI] = useState({
     categoria: '',
