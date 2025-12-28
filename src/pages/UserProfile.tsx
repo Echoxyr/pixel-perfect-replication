@@ -55,9 +55,11 @@ export default function UserProfile() {
     tasks, 
     events, 
     notes, 
-    themeColor, 
+    themeColor,
+    uiConfig,
     updateProfile, 
     setThemeColor,
+    setUIConfig,
     addTask,
     updateTask,
     deleteTask,
@@ -480,7 +482,16 @@ export default function UserProfile() {
                     ].map(style => (
                       <button
                         key={style.id}
-                        className="p-3 border-2 border-border rounded-lg hover:border-primary/50 transition-all"
+                        onClick={() => {
+                          setUIConfig({ buttonBorderRadius: style.radius });
+                          toast({ title: 'Stile aggiornato', description: `Bordi impostati a "${style.label}"` });
+                        }}
+                        className={cn(
+                          'p-3 border-2 rounded-lg transition-all',
+                          uiConfig.buttonBorderRadius === style.radius 
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary/30' 
+                            : 'border-border hover:border-primary/50'
+                        )}
                       >
                         <div 
                           className="w-full h-8 bg-primary mb-2"
@@ -503,7 +514,16 @@ export default function UserProfile() {
                     ].map(style => (
                       <button
                         key={style.id}
-                        className="p-3 border-2 border-border rounded-lg hover:border-primary/50 transition-all"
+                        onClick={() => {
+                          setUIConfig({ cardStyle: style.id as 'flat' | 'elevated' | 'glass' });
+                          toast({ title: 'Stile card aggiornato', description: `Stile impostato a "${style.label}"` });
+                        }}
+                        className={cn(
+                          'p-3 border-2 rounded-lg transition-all',
+                          uiConfig.cardStyle === style.id 
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary/30' 
+                            : 'border-border hover:border-primary/50'
+                        )}
                       >
                         <div 
                           className="w-full h-16 rounded-lg bg-card mb-2"
@@ -522,28 +542,40 @@ export default function UserProfile() {
                       <Label className="font-medium">Ombra Pulsanti</Label>
                       <p className="text-xs text-muted-foreground">Aggiunge profondità ai pulsanti</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={uiConfig.buttonShadow} 
+                      onCheckedChange={(checked) => setUIConfig({ buttonShadow: checked })}
+                    />
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                     <div>
                       <Label className="font-medium">Effetto Glass</Label>
                       <p className="text-xs text-muted-foreground">Sfondo sfumato trasparente</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={uiConfig.glassEffect}
+                      onCheckedChange={(checked) => setUIConfig({ glassEffect: checked })}
+                    />
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                     <div>
                       <Label className="font-medium">Animazioni</Label>
                       <p className="text-xs text-muted-foreground">Transizioni fluide tra gli stati</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={uiConfig.animationsEnabled}
+                      onCheckedChange={(checked) => setUIConfig({ animationsEnabled: checked })}
+                    />
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
                     <div>
                       <Label className="font-medium">Hover Glow</Label>
                       <p className="text-xs text-muted-foreground">Effetto luminoso al passaggio mouse</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={uiConfig.hoverGlow}
+                      onCheckedChange={(checked) => setUIConfig({ hoverGlow: checked })}
+                    />
                   </div>
                 </div>
               </CardContent>

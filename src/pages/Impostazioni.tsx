@@ -39,10 +39,10 @@ export default function Impostazioni() {
     });
   };
 
-  const handleReset = () => {
-    if (confirm('Sei sicuro di voler ripristinare tutti i dati di esempio?')) {
-      localStorage.removeItem('workhub_data_v1');
-      localStorage.removeItem('workhub_data_v2');
+  const handleClearCache = () => {
+    if (confirm('Sei sicuro di voler svuotare la cache?')) {
+      localStorage.clear();
+      sessionStorage.clear();
       window.location.reload();
     }
   };
@@ -976,12 +976,16 @@ export default function Impostazioni() {
                 </div>
                 <Button variant="outline">Importa</Button>
               </div>
-              <div className="flex items-center justify-between p-4 rounded-lg border border-red-500/30 bg-red-500/5">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
                 <div>
-                  <p className="font-medium text-red-500">Ripristina dati di esempio</p>
-                  <p className="text-sm text-muted-foreground">Elimina tutti i dati e ripristina quelli di esempio</p>
+                  <p className="font-medium text-amber-600">Cancella cache locale</p>
+                  <p className="text-sm text-muted-foreground">Svuota la cache del browser per questa applicazione</p>
                 </div>
-                <Button variant="destructive" onClick={handleReset}>Ripristina</Button>
+                <Button variant="outline" onClick={() => {
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  toast({ title: 'Cache svuotata', description: 'Ricarica la pagina per applicare le modifiche.' });
+                }}>Svuota Cache</Button>
               </div>
             </CardContent>
           </Card>

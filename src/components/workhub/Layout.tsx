@@ -361,262 +361,272 @@ export function Layout() {
           )}
 
           {/* HSE Section - Collapsible */}
-          <div>
-            {!sidebarCollapsed ? (
-              <button
-                onClick={() => setHseExpanded(!hseExpanded)}
-                className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-              >
-                <span>Sicurezza & HSE</span>
-                <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !hseExpanded && '-rotate-90')} />
-              </button>
-            ) : (
-              <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-            )}
-            
-            {(sidebarCollapsed || hseExpanded) && (
-              <div className="space-y-1">
-                {isModuleVisible('hse') && (
-                  <NavItem 
-                    to="/hse" 
-                    icon={ShieldCheck} 
-                    label="Dashboard HSE" 
-                    badge={totalAlerts}
-                    badgeColor="danger"
-                    isActive={location.pathname === '/hse'} 
-                  />
-                )}
-                {isModuleVisible('sicurezza') && (
-                  <NavItem 
-                    to="/compliance/sicurezza" 
-                    icon={FileCheck} 
-                    label="D.Lgs 81/2008" 
-                    isActive={location.pathname === '/compliance/sicurezza'} 
-                  />
-                )}
-                {isModuleVisible('imprese') && (
-                  <NavItem 
-                    to="/imprese" 
-                    icon={Building2} 
-                    label="Imprese Esterne" 
-                    badge={hseStats.impreseCritical}
-                    badgeColor="danger"
-                    isActive={location.pathname === '/imprese'} 
-                  />
-                )}
-                {isModuleVisible('lavoratori') && (
-                  <NavItem 
-                    to="/lavoratori" 
-                    icon={HardHat} 
-                    label="Dipendenti" 
-                    badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
-                    badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
-                    isActive={location.pathname === '/lavoratori'} 
-                  />
-                )}
-                {isModuleVisible('formazione') && (
-                  <NavItem 
-                    to="/formazione" 
-                    icon={GraduationCap} 
-                    label="Formazione" 
-                    isActive={location.pathname === '/formazione'} 
-                  />
-                )}
-                {isModuleVisible('dpi') && (
-                  <NavItem 
-                    to="/dpi" 
-                    icon={ShieldAlert} 
-                    label="DPI" 
-                    isActive={location.pathname === '/dpi'} 
-                  />
-                )}
-                {isModuleVisible('sorveglianza') && (
-                  <NavItem 
-                    to="/sorveglianza-sanitaria" 
-                    icon={Stethoscope} 
-                    label="Sorveglianza Sanitaria" 
-                    isActive={location.pathname === '/sorveglianza-sanitaria'} 
-                  />
-                )}
-                {isModuleVisible('checkin') && (
-                  <NavItem 
-                    to="/checkin-sicurezza" 
-                    icon={ClipboardList} 
-                    label="Check-in Sicurezza" 
-                    isActive={location.pathname === '/checkin-sicurezza'} 
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          {(isModuleVisible('hse') || isModuleVisible('sicurezza') || isModuleVisible('imprese') || isModuleVisible('lavoratori') || isModuleVisible('formazione') || isModuleVisible('dpi') || isModuleVisible('sorveglianza') || isModuleVisible('checkin')) && (
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setHseExpanded(!hseExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Sicurezza & HSE</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !hseExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
+              )}
+              
+              {(sidebarCollapsed || hseExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('hse') && (
+                    <NavItem 
+                      to="/hse" 
+                      icon={ShieldCheck} 
+                      label="Dashboard HSE" 
+                      badge={totalAlerts}
+                      badgeColor="danger"
+                      isActive={location.pathname === '/hse'} 
+                    />
+                  )}
+                  {isModuleVisible('sicurezza') && (
+                    <NavItem 
+                      to="/compliance/sicurezza" 
+                      icon={FileCheck} 
+                      label="D.Lgs 81/2008" 
+                      isActive={location.pathname === '/compliance/sicurezza'} 
+                    />
+                  )}
+                  {isModuleVisible('imprese') && (
+                    <NavItem 
+                      to="/imprese" 
+                      icon={Building2} 
+                      label="Imprese Esterne" 
+                      badge={hseStats.impreseCritical}
+                      badgeColor="danger"
+                      isActive={location.pathname === '/imprese'} 
+                    />
+                  )}
+                  {isModuleVisible('lavoratori') && (
+                    <NavItem 
+                      to="/lavoratori" 
+                      icon={HardHat} 
+                      label="Dipendenti" 
+                      badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
+                      badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
+                      isActive={location.pathname === '/lavoratori'} 
+                    />
+                  )}
+                  {isModuleVisible('formazione') && (
+                    <NavItem 
+                      to="/formazione" 
+                      icon={GraduationCap} 
+                      label="Formazione" 
+                      isActive={location.pathname === '/formazione'} 
+                    />
+                  )}
+                  {isModuleVisible('dpi') && (
+                    <NavItem 
+                      to="/dpi" 
+                      icon={ShieldAlert} 
+                      label="DPI" 
+                      isActive={location.pathname === '/dpi'} 
+                    />
+                  )}
+                  {isModuleVisible('sorveglianza') && (
+                    <NavItem 
+                      to="/sorveglianza-sanitaria" 
+                      icon={Stethoscope} 
+                      label="Sorveglianza Sanitaria" 
+                      isActive={location.pathname === '/sorveglianza-sanitaria'} 
+                    />
+                  )}
+                  {isModuleVisible('checkin') && (
+                    <NavItem 
+                      to="/checkin-sicurezza" 
+                      icon={ClipboardList} 
+                      label="Check-in Sicurezza" 
+                      isActive={location.pathname === '/checkin-sicurezza'} 
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Conformità Section - Collapsible */}
-          <div>
-            {!sidebarCollapsed ? (
-              <button
-                onClick={() => setComplianceExpanded(!complianceExpanded)}
-                className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-              >
-                <span>Conformità & Certificazioni</span>
-                <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !complianceExpanded && '-rotate-90')} />
-              </button>
-            ) : (
-              <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-            )}
-            
-            {(sidebarCollapsed || complianceExpanded) && (
+          {(isModuleVisible('gdpr') || isModuleVisible('qualita') || isModuleVisible('ambiente') || isModuleVisible('bi')) && (
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setComplianceExpanded(!complianceExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Conformità & Certificazioni</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !complianceExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
+              )}
+              
+              {(sidebarCollapsed || complianceExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('gdpr') && (
+                    <NavItem 
+                      to="/compliance/gdpr" 
+                      icon={Shield} 
+                      label="GDPR Privacy" 
+                      isActive={location.pathname === '/compliance/gdpr'} 
+                    />
+                  )}
+                  {isModuleVisible('qualita') && (
+                    <NavItem 
+                      to="/compliance/qualita" 
+                      icon={Award} 
+                      label="ISO 9001 Qualità" 
+                      isActive={location.pathname === '/compliance/qualita'} 
+                    />
+                  )}
+                  {isModuleVisible('ambiente') && (
+                    <NavItem 
+                      to="/compliance/ambiente" 
+                      icon={Leaf} 
+                      label="ISO 14001 Ambiente" 
+                      isActive={location.pathname === '/compliance/ambiente'} 
+                    />
+                  )}
+                  {isModuleVisible('bi') && (
+                    <NavItem 
+                      to="/compliance/bi" 
+                      icon={BarChart3} 
+                      label="Business Intelligence" 
+                      isActive={location.pathname === '/compliance/bi'} 
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reparto Commerciale Section */}
+          {(isModuleVisible('commerciale') || isModuleVisible('computo') || isModuleVisible('listino')) && (
+            <div>
+              {!sidebarCollapsed && (
+                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                  Commerciale
+                </p>
+              )}
+              
               <div className="space-y-1">
-                {isModuleVisible('gdpr') && (
+                {isModuleVisible('commerciale') && (
                   <NavItem 
-                    to="/compliance/gdpr" 
-                    icon={Shield} 
-                    label="GDPR Privacy" 
-                    isActive={location.pathname === '/compliance/gdpr'} 
+                    to="/reparto-commerciale" 
+                    icon={Briefcase} 
+                    label="Reparto Commerciale" 
+                    isActive={location.pathname === '/reparto-commerciale'} 
                   />
                 )}
-                {isModuleVisible('qualita') && (
+                {isModuleVisible('computo') && (
                   <NavItem 
-                    to="/compliance/qualita" 
-                    icon={Award} 
-                    label="ISO 9001 Qualità" 
-                    isActive={location.pathname === '/compliance/qualita'} 
+                    to="/computo-metrico" 
+                    icon={Calculator} 
+                    label="Computo Metrico" 
+                    isActive={location.pathname === '/computo-metrico'} 
                   />
                 )}
-                {isModuleVisible('ambiente') && (
+                {isModuleVisible('listino') && (
                   <NavItem 
-                    to="/compliance/ambiente" 
-                    icon={Leaf} 
-                    label="ISO 14001 Ambiente" 
-                    isActive={location.pathname === '/compliance/ambiente'} 
-                  />
-                )}
-                {isModuleVisible('bi') && (
-                  <NavItem 
-                    to="/compliance/bi" 
-                    icon={BarChart3} 
-                    label="Business Intelligence" 
-                    isActive={location.pathname === '/compliance/bi'} 
+                    to="/listino-prezzi" 
+                    icon={Euro} 
+                    label="Listino Prezzi" 
+                    isActive={location.pathname === '/listino-prezzi'} 
                   />
                 )}
               </div>
-            )}
-          </div>
-
-          {/* Reparto Commerciale Section */}
-          <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                Commerciale
-              </p>
-            )}
-            
-            <div className="space-y-1">
-              {isModuleVisible('commerciale') && (
-                <NavItem 
-                  to="/reparto-commerciale" 
-                  icon={Briefcase} 
-                  label="Reparto Commerciale" 
-                  isActive={location.pathname === '/reparto-commerciale'} 
-                />
-              )}
-              {isModuleVisible('computo') && (
-                <NavItem 
-                  to="/computo-metrico" 
-                  icon={Calculator} 
-                  label="Computo Metrico" 
-                  isActive={location.pathname === '/computo-metrico'} 
-                />
-              )}
-              {isModuleVisible('listino') && (
-                <NavItem 
-                  to="/listino-prezzi" 
-                  icon={Euro} 
-                  label="Listino Prezzi" 
-                  isActive={location.pathname === '/listino-prezzi'} 
-                />
-              )}
             </div>
-          </div>
+          )}
 
           {/* Reparto Amministrazione Section */}
-          <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                Amministrazione
-              </p>
-            )}
-            
-            <div className="space-y-1">
-              {isModuleVisible('amministrazione') && (
-                <NavItem 
-                  to="/reparto-amministrazione" 
-                  icon={FileText} 
-                  label="Reparto Amministrazione" 
-                  isActive={location.pathname === '/reparto-amministrazione'} 
-                />
+          {(isModuleVisible('amministrazione') || isModuleVisible('timbrature') || isModuleVisible('scadenzario') || isModuleVisible('rapportini') || isModuleVisible('contatti')) && (
+            <div>
+              {!sidebarCollapsed && (
+                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                  Amministrazione
+                </p>
               )}
-              {isModuleVisible('timbrature') && (
-                <NavItem 
-                  to="/timbrature" 
-                  icon={Clock} 
-                  label="Timbrature" 
-                  isActive={location.pathname === '/timbrature'} 
-                />
-              )}
-              {isModuleVisible('scadenzario') && (
-                <NavItem 
-                  to="/scadenzario" 
-                  icon={Calendar} 
-                  label="Scadenzario" 
-                  isActive={location.pathname === '/scadenzario'} 
-                />
-              )}
-              {isModuleVisible('rapportini') && (
-                <NavItem 
-                  to="/rapportini" 
-                  icon={ClipboardList} 
-                  label="Rapportini" 
-                  isActive={location.pathname === '/rapportini'} 
-                />
-              )}
-              {isModuleVisible('contatti') && (
-                <NavItem 
-                  to="/contatti" 
-                  icon={User} 
-                  label="Contatti" 
-                  isActive={location.pathname === '/contatti'} 
-                />
-              )}
+              
+              <div className="space-y-1">
+                {isModuleVisible('amministrazione') && (
+                  <NavItem 
+                    to="/reparto-amministrazione" 
+                    icon={FileText} 
+                    label="Reparto Amministrazione" 
+                    isActive={location.pathname === '/reparto-amministrazione'} 
+                  />
+                )}
+                {isModuleVisible('timbrature') && (
+                  <NavItem 
+                    to="/timbrature" 
+                    icon={Clock} 
+                    label="Timbrature" 
+                    isActive={location.pathname === '/timbrature'} 
+                  />
+                )}
+                {isModuleVisible('scadenzario') && (
+                  <NavItem 
+                    to="/scadenzario" 
+                    icon={Calendar} 
+                    label="Scadenzario" 
+                    isActive={location.pathname === '/scadenzario'} 
+                  />
+                )}
+                {isModuleVisible('rapportini') && (
+                  <NavItem 
+                    to="/rapportini" 
+                    icon={ClipboardList} 
+                    label="Rapportini" 
+                    isActive={location.pathname === '/rapportini'} 
+                  />
+                )}
+                {isModuleVisible('contatti') && (
+                  <NavItem 
+                    to="/contatti" 
+                    icon={User} 
+                    label="Contatti" 
+                    isActive={location.pathname === '/contatti'} 
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Logistica Section */}
-          <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                Logistica
-              </p>
-            )}
-            
-            <div className="space-y-1">
-              {isModuleVisible('risorse') && (
-                <NavItem 
-                  to="/risorse" 
-                  icon={Truck} 
-                  label="Risorse & Mezzi" 
-                  isActive={location.pathname === '/risorse'} 
-                />
+          {(isModuleVisible('risorse') || isModuleVisible('magazzino')) && (
+            <div>
+              {!sidebarCollapsed && (
+                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
+                  Logistica
+                </p>
               )}
-              {isModuleVisible('magazzino') && (
-                <NavItem 
-                  to="/magazzino" 
-                  icon={Boxes} 
-                  label="Magazzino" 
-                  isActive={location.pathname === '/magazzino'} 
-                />
-              )}
+              
+              <div className="space-y-1">
+                {isModuleVisible('risorse') && (
+                  <NavItem 
+                    to="/risorse" 
+                    icon={Truck} 
+                    label="Risorse & Mezzi" 
+                    isActive={location.pathname === '/risorse'} 
+                  />
+                )}
+                {isModuleVisible('magazzino') && (
+                  <NavItem 
+                    to="/magazzino" 
+                    icon={Boxes} 
+                    label="Magazzino" 
+                    isActive={location.pathname === '/magazzino'} 
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </nav>
 
         {/* HSE Status Widget */}

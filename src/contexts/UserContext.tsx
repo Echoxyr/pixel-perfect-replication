@@ -72,21 +72,23 @@ export const THEME_COLORS = [
 // Configurazioni varianti UI personalizzabili
 export interface UIVariantConfig {
   buttonBorderRadius: string;
-  cardBorderRadius: string;
-  inputBorderRadius: string;
+  cardStyle: 'flat' | 'elevated' | 'glass';
   buttonShadow: boolean;
   glassEffect: boolean;
   animationsEnabled: boolean;
+  hoverGlow: boolean;
 }
 
 export const DEFAULT_UI_CONFIG: UIVariantConfig = {
   buttonBorderRadius: '0.5rem',
-  cardBorderRadius: '0.75rem',
-  inputBorderRadius: '0.375rem',
+  cardStyle: 'elevated',
   buttonShadow: true,
   glassEffect: true,
   animationsEnabled: true,
+  hoverGlow: true,
 };
+
+const UI_CONFIG_KEY = 'ui_variant_config';
 
 interface UserContextType {
   profile: UserProfile;
@@ -94,8 +96,10 @@ interface UserContextType {
   events: UserCalendarEvent[];
   notes: UserNote[];
   themeColor: string;
+  uiConfig: UIVariantConfig;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   setThemeColor: (color: string) => void;
+  setUIConfig: (config: Partial<UIVariantConfig>) => void;
   addTask: (task: Omit<UserTask, 'id' | 'created_at'>) => Promise<void>;
   updateTask: (id: string, updates: Partial<UserTask>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -127,6 +131,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<UserCalendarEvent[]>([]);
   const [notes, setNotes] = useState<UserNote[]>([]);
   const [themeColor, setThemeColorState] = useState('blue');
+  const [uiConfig, setUIConfigState] = useState<UIVariantConfig>(() => {
+    const stored = localStorage.getItem(UI_CONFIG_KEY);
+    return stored ? JSON.parse(stored) : DEFAULT_UI_CONFIG;
+  });
   const [loading, setLoading] = useState(true);
 
   // Load data from localStorage and Supabase
@@ -145,6 +153,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
       document.documentElement.style.setProperty('--sidebar-ring', colorConfig.primary);
     }
   }, [themeColor]);
+
+  // Apply UI config to CSS variables
+  useEffect(() => {
+    document.documentElement.style.setProperty('--radius', uiConfig.buttonBorderRadius);
+    document.documentElement.classList.toggle('no-animations', !uiConfig.animationsEnabled);
+    localStorage.setItem(UI_CONFIG_KEY, JSON.stringify(uiConfig));
+  }, [uiConfig]);
 
   const loadData = async () => {
     try {
@@ -255,6 +270,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const setThemeColor = async (color: string) => {
     setThemeColorState(color);
     await updateProfile({ theme_color: color });
+  };
+
+  const setUIConfig = (config: Partial<UIVariantConfig>) => {
+    setUIConfigState(prev => ({ ...prev, ...config }));
   };
 
   const addTask = async (task: Omit<UserTask, 'id' | 'created_at'>) => {
@@ -376,8 +395,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       events,
       notes,
       themeColor,
+      uiConfig,
       updateProfile,
       setThemeColor,
+      setUIConfig,
       addTask,
       updateTask,
       deleteTask,
