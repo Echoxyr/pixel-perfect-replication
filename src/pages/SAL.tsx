@@ -970,13 +970,15 @@ export default function SALPage() {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="sal" className="w-full">
-        <TabsList>
-          <TabsTrigger value="sal">SAL Mensili</TabsTrigger>
-          <TabsTrigger value="contratti">Contratti Lavorazioni</TabsTrigger>
-          <TabsTrigger value="previsioni">Previsioni</TabsTrigger>
-          <TabsTrigger value="gantt">Timeline Gantt</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="sal" className="w-full overflow-hidden">
+        <div className="tabs-scrollable-header">
+          <TabsList className="inline-flex w-auto min-w-max">
+            <TabsTrigger value="sal">SAL Mensili</TabsTrigger>
+            <TabsTrigger value="contratti">Contratti Lavorazioni</TabsTrigger>
+            <TabsTrigger value="previsioni">Previsioni</TabsTrigger>
+            <TabsTrigger value="gantt">Timeline Gantt</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* SAL Tab */}
         <TabsContent value="sal" className="mt-6">

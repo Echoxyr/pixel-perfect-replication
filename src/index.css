@@ -469,3 +469,66 @@
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
+
+/* UI Config CSS Custom Properties */
+:root {
+  --ui-button-radius: 0.5rem;
+  --ui-card-shadow: var(--shadow-sm);
+  --ui-card-border: 1px solid hsl(var(--border));
+  --ui-card-bg: hsl(var(--card));
+  --ui-button-shadow: none;
+  --ui-glass-blur: none;
+  --ui-glass-opacity: 1;
+  --ui-hover-glow: none;
+}
+
+/* Apply UI config to buttons */
+.btn-configurable,
+button[data-slot="button"] {
+  border-radius: var(--ui-button-radius) !important;
+  box-shadow: var(--ui-button-shadow);
+}
+
+/* Apply UI config to cards */
+.card-configurable {
+  box-shadow: var(--ui-card-shadow);
+  border: var(--ui-card-border);
+  background: var(--ui-card-bg);
+  backdrop-filter: var(--ui-glass-blur);
+}
+
+/* Reduce motion mode */
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Hover glow effect */
+button:hover,
+.hover-glow:hover {
+  box-shadow: var(--ui-hover-glow);
+}
+
+/* Mobile tabs scrollable - only tabs scroll, content stays */
+.tabs-scrollable-header {
+  @apply overflow-x-auto scrollbar-hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-scrollable-header::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure tab content doesn't cause horizontal scroll */
+.tab-content-fixed {
+  @apply overflow-x-hidden max-w-full;
+}
+
+/* Fix text overflow in cards on mobile */
+.text-wrap-responsive {
+  @apply break-words;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}

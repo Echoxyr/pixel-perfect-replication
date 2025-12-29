@@ -8,6 +8,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { Layout } from "@/components/workhub/Layout";
 import { PasswordGate } from "@/components/PasswordGate";
 import { SecurityWrapper } from "@/components/SecurityWrapper";
+import { UIConfigProvider } from "@/components/workhub/UIConfigProvider";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -52,10 +53,11 @@ const App = () => (
     <TooltipProvider>
       <WorkHubProvider>
         <UserProvider>
-          <SecurityWrapper>
-            <PasswordGate>
-              <Toaster />
-              <Sonner />
+          <UIConfigProvider>
+            <SecurityWrapper>
+              <PasswordGate>
+                <Toaster />
+                <Sonner />
               <BrowserRouter>
                 <Routes>
                   {/* All Routes - No Authentication */}
@@ -96,9 +98,10 @@ const App = () => (
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </BrowserRouter>
-            </PasswordGate>
-          </SecurityWrapper>
+                </BrowserRouter>
+              </PasswordGate>
+            </SecurityWrapper>
+          </UIConfigProvider>
         </UserProvider>
       </WorkHubProvider>
     </TooltipProvider>
