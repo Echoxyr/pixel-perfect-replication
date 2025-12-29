@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import {
   NonConformita,
@@ -58,104 +58,42 @@ export default function QualityISO() {
   const { cantieri } = useWorkHub();
   const { toast } = useToast();
   
-  const [nonConformita, setNonConformita] = useState<NonConformita[]>([
-    {
-      id: '1',
-      codice: 'NC-2024-001',
-      cantiereId: cantieri[0]?.id,
-      origine: 'interna',
-      tipoNC: 'processo',
-      descrizione: 'Procedura di saldatura non conforme alle specifiche tecniche',
-      rilevatore: 'Mario Rossi',
-      dataRilevamento: '2024-03-15',
-      gravita: 'maggiore',
-      stato: 'in_analisi',
-      allegatiUrl: []
-    }
-  ]);
+  const [nonConformita, setNonConformita] = useState<NonConformita[]>(() => {
+    const saved = localStorage.getItem('quality_nc');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [capa, setCapa] = useState<CAPA[]>([
-    {
-      id: '1',
-      nonConformitaId: '1',
-      tipo: 'correttiva',
-      codice: 'AC-2024-001',
-      descrizioneProblema: 'Saldature non conformi rilevate durante ispezione',
-      analisicausaRadice: 'Formazione insufficiente del personale sulla nuova procedura',
-      azioniPreviste: [
-        {
-          descrizione: 'Formazione aggiuntiva operatori',
-          responsabile: 'Resp. Qualità',
-          dataScadenza: '2024-04-01',
-          stato: 'in_corso'
-        },
-        {
-          descrizione: 'Revisione procedura operativa',
-          responsabile: 'Ing. Processo',
-          dataScadenza: '2024-04-15',
-          stato: 'pianificata'
-        }
-      ],
-      dataApertura: '2024-03-16',
-      stato: 'in_corso'
-    }
-  ]);
+  const [capa, setCapa] = useState<CAPA[]>(() => {
+    const saved = localStorage.getItem('quality_capa');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [auditInterni, setAuditInterni] = useState<AuditInterno[]>([
-    {
-      id: '1',
-      codice: 'AUD-2024-001',
-      tipoAudit: 'processo',
-      areaAuditata: 'Gestione Approvvigionamenti',
-      auditorLead: 'Responsabile Qualità',
-      teamAudit: ['Auditor Interno 1'],
-      dataAudit: '2024-04-20',
-      durataOre: 4,
-      checklist: [
-        { requisito: '7.1.1 Risorse', conforme: true, evidenza: 'Procedura PQ-07 applicata' },
-        { requisito: '8.4 Controllo processi esterni', conforme: true, evidenza: 'Qualifica fornitori OK' },
-        { requisito: '7.5 Informazioni documentate', conforme: false, nota: 'Da aggiornare registro' }
-      ],
-      findings: [
-        { tipo: 'nc_minore', descrizione: 'Registro fornitori non aggiornato', riferimentoNorma: '7.5.3' }
-      ],
-      conclusioni: 'Sistema sostanzialmente conforme con una NC minore',
-      stato: 'completato'
-    }
-  ]);
+  const [auditInterni, setAuditInterni] = useState<AuditInterno[]>(() => {
+    const saved = localStorage.getItem('quality_audit');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  const [documentiControllati, setDocumentiControllati] = useState<DocumentoControllato[]>([
-    {
-      id: '1',
-      codice: 'MQ-001',
-      titolo: 'Manuale Qualità',
-      tipo: 'manuale',
-      revisione: '05',
-      dataEmissione: '2024-01-01',
-      redattore: 'Resp. Qualità',
-      verificatore: 'Direttore Tecnico',
-      approvatore: 'Direzione',
-      stato: 'vigente',
-      fileUrl: '',
-      distribuzioneControlata: true,
-      elencoDistribuzione: ['Tutti i reparti']
-    },
-    {
-      id: '2',
-      codice: 'PQ-01',
-      titolo: 'Procedura Gestione Non Conformità',
-      tipo: 'procedura',
-      revisione: '03',
-      dataEmissione: '2024-02-15',
-      redattore: 'Resp. Qualità',
-      verificatore: 'Direttore Tecnico',
-      approvatore: 'Direzione',
-      stato: 'vigente',
-      fileUrl: '',
-      distribuzioneControlata: true,
-      elencoDistribuzione: ['Qualità', 'Produzione']
-    }
-  ]);
+  const [documentiControllati, setDocumentiControllati] = useState<DocumentoControllato[]>(() => {
+    const saved = localStorage.getItem('quality_docs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Auto-save
+  useEffect(() => {
+    localStorage.setItem('quality_nc', JSON.stringify(nonConformita));
+  }, [nonConformita]);
+
+  useEffect(() => {
+    localStorage.setItem('quality_capa', JSON.stringify(capa));
+  }, [capa]);
+
+  useEffect(() => {
+    localStorage.setItem('quality_audit', JSON.stringify(auditInterni));
+  }, [auditInterni]);
+
+  useEffect(() => {
+    localStorage.setItem('quality_docs', JSON.stringify(documentiControllati));
+  }, [documentiControllati]);
 
   const [showNewNCDialog, setShowNewNCDialog] = useState(false);
   const [showNewAuditDialog, setShowNewAuditDialog] = useState(false);
@@ -447,14 +385,16 @@ export default function QualityISO() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="moduli" className="w-full">
-        <TabsList>
-          <TabsTrigger value="moduli">Moduli ISO 9001</TabsTrigger>
-          <TabsTrigger value="nc">Non Conformità</TabsTrigger>
-          <TabsTrigger value="capa">CAPA</TabsTrigger>
-          <TabsTrigger value="audit">Audit Interni</TabsTrigger>
-          <TabsTrigger value="documenti">Documenti Controllati</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="moduli" className="w-full overflow-hidden">
+        <div className="tabs-scrollable-header">
+          <TabsList className="inline-flex w-auto min-w-max">
+            <TabsTrigger value="moduli">Moduli ISO 9001</TabsTrigger>
+            <TabsTrigger value="nc">Non Conformità</TabsTrigger>
+            <TabsTrigger value="capa">CAPA</TabsTrigger>
+            <TabsTrigger value="audit">Audit Interni</TabsTrigger>
+            <TabsTrigger value="documenti">Documenti Controllati</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Moduli ISO 9001 Tab */}
         <TabsContent value="moduli" className="mt-6">

@@ -136,23 +136,18 @@ export function OnboardingTour() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-lg" onInteractOutside={e => e.preventDefault()}>
+      <DialogContent className="max-w-lg [&>button]:hidden" onInteractOutside={e => e.preventDefault()}>
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-primary/10">
-                <step.icon className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <DialogTitle>{step.title}</DialogTitle>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Passo {currentStep + 1} di {tourSteps.length}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <step.icon className="w-6 h-6 text-primary" />
             </div>
-            <Button variant="ghost" size="icon" onClick={skipTour}>
-              <X className="w-4 h-4" />
-            </Button>
+            <div>
+              <DialogTitle>{step.title}</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Passo {currentStep + 1} di {tourSteps.length}
+              </p>
+            </div>
           </div>
         </DialogHeader>
 
