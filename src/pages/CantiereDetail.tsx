@@ -305,13 +305,13 @@ export default function CantiereDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="info">Informazioni</TabsTrigger>
-          <TabsTrigger value="documenti">Documenti ({cantiereDocumenti.length})</TabsTrigger>
-          <TabsTrigger value="sicurezza">Sicurezza ({docsSicurezza.length})</TabsTrigger>
-          <TabsTrigger value="dipendenti">Dipendenti ({cantiereLavoratori.length})</TabsTrigger>
-          <TabsTrigger value="ditte">Ditte ({cantiereImprese.length})</TabsTrigger>
-          <TabsTrigger value="presenze">Presenze</TabsTrigger>
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+          <TabsTrigger value="info" className="flex-shrink-0 whitespace-nowrap">Informazioni</TabsTrigger>
+          <TabsTrigger value="documenti" className="flex-shrink-0 whitespace-nowrap">Documenti ({cantiereDocumenti.length})</TabsTrigger>
+          <TabsTrigger value="sicurezza" className="flex-shrink-0 whitespace-nowrap">Sicurezza ({docsSicurezza.length})</TabsTrigger>
+          <TabsTrigger value="dipendenti" className="flex-shrink-0 whitespace-nowrap">Dipendenti ({cantiereLavoratori.length})</TabsTrigger>
+          <TabsTrigger value="ditte" className="flex-shrink-0 whitespace-nowrap">Ditte ({cantiereImprese.length})</TabsTrigger>
+          <TabsTrigger value="presenze" className="flex-shrink-0 whitespace-nowrap">Presenze</TabsTrigger>
         </TabsList>
 
         {/* Info Tab */}

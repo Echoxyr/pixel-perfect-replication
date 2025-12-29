@@ -960,12 +960,12 @@ export default function RepartoAmministrazione() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="fatture" className="flex items-center gap-2">
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+          <TabsTrigger value="fatture" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Fatture
           </TabsTrigger>
-          <TabsTrigger value="blacklist" className="flex items-center gap-2 relative">
+          <TabsTrigger value="blacklist" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2 relative">
             <AlertTriangle className="w-4 h-4" />
             Blacklist
             {blacklistData.totaleAlerts + blacklistData.totaleBlacklist > 0 && (
@@ -974,19 +974,19 @@ export default function RepartoAmministrazione() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="notespesa" className="flex items-center gap-2">
+          <TabsTrigger value="notespesa" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <Receipt className="w-4 h-4" />
             Note Spesa
           </TabsTrigger>
-          <TabsTrigger value="richieste" className="flex items-center gap-2">
+          <TabsTrigger value="richieste" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             Richieste
           </TabsTrigger>
-          <TabsTrigger value="ddt" className="flex items-center gap-2">
+          <TabsTrigger value="ddt" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <Truck className="w-4 h-4" />
             DDT
           </TabsTrigger>
-          <TabsTrigger value="organigramma" className="flex items-center gap-2">
+          <TabsTrigger value="organigramma" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
             <Users className="w-4 h-4" />
             Organigramma
           </TabsTrigger>

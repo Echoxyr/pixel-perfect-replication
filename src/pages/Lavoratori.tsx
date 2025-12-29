@@ -610,12 +610,12 @@ export default function Lavoratori() {
                 </DialogTitle>
               </DialogHeader>
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                  <TabsTrigger value="info">Info</TabsTrigger>
-                  <TabsTrigger value="formazione">Formazione</TabsTrigger>
-                  <TabsTrigger value="visita">Visita Medica</TabsTrigger>
-                  <TabsTrigger value="dpi">DPI</TabsTrigger>
-                  <TabsTrigger value="documenti">Documenti</TabsTrigger>
+                <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+                  <TabsTrigger value="info" className="flex-shrink-0 whitespace-nowrap">Info</TabsTrigger>
+                  <TabsTrigger value="formazione" className="flex-shrink-0 whitespace-nowrap">Formazione</TabsTrigger>
+                  <TabsTrigger value="visita" className="flex-shrink-0 whitespace-nowrap">Visita Medica</TabsTrigger>
+                  <TabsTrigger value="dpi" className="flex-shrink-0 whitespace-nowrap">DPI</TabsTrigger>
+                  <TabsTrigger value="documenti" className="flex-shrink-0 whitespace-nowrap">Documenti</TabsTrigger>
                 </TabsList>
                 
                 {/* Info Tab */}
