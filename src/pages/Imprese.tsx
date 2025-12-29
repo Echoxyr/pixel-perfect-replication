@@ -490,10 +490,10 @@ export default function Imprese() {
                 </DialogTitle>
               </DialogHeader>
               <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="info">Informazioni</TabsTrigger>
-                  <TabsTrigger value="documenti">Documenti</TabsTrigger>
-                  <TabsTrigger value="lavoratori">Lavoratori</TabsTrigger>
+                <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+                  <TabsTrigger value="info" className="flex-shrink-0 whitespace-nowrap">Informazioni</TabsTrigger>
+                  <TabsTrigger value="documenti" className="flex-shrink-0 whitespace-nowrap">Documenti</TabsTrigger>
+                  <TabsTrigger value="lavoratori" className="flex-shrink-0 whitespace-nowrap">Lavoratori</TabsTrigger>
                 </TabsList>
 
                 {/* Info Tab */}

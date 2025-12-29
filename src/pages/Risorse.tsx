@@ -737,12 +737,12 @@ export default function Risorse() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
-          <TabsTrigger value="risorse">Risorse</TabsTrigger>
-          <TabsTrigger value="calendario">Calendario</TabsTrigger>
-          <TabsTrigger value="documenti">Documenti</TabsTrigger>
-          <TabsTrigger value="attivita">Attività/Km</TabsTrigger>
-          <TabsTrigger value="manutenzioni">Manutenzioni</TabsTrigger>
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1 max-w-2xl">
+          <TabsTrigger value="risorse" className="flex-shrink-0 whitespace-nowrap">Risorse</TabsTrigger>
+          <TabsTrigger value="calendario" className="flex-shrink-0 whitespace-nowrap">Calendario</TabsTrigger>
+          <TabsTrigger value="documenti" className="flex-shrink-0 whitespace-nowrap">Documenti</TabsTrigger>
+          <TabsTrigger value="attivita" className="flex-shrink-0 whitespace-nowrap">Attività/Km</TabsTrigger>
+          <TabsTrigger value="manutenzioni" className="flex-shrink-0 whitespace-nowrap">Manutenzioni</TabsTrigger>
         </TabsList>
 
         {/* Tab Risorse */}

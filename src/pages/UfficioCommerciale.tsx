@@ -514,13 +514,13 @@ export default function UfficioCommerciale() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="contratti" className="flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
-          <TabsTrigger value="fornitori" className="flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
-          <TabsTrigger value="preventivi" className="flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
-          <TabsTrigger value="ordini" className="flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
-          <TabsTrigger value="listini" className="flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
-          <TabsTrigger value="computi" className="flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+          <TabsTrigger value="contratti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
+          <TabsTrigger value="fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
+          <TabsTrigger value="preventivi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
+          <TabsTrigger value="ordini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
+          <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
+          <TabsTrigger value="computi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
         </TabsList>
 
         {/* Contratti Tab */}

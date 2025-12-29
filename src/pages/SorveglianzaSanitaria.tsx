@@ -532,10 +532,10 @@ export default function SorveglianzaSanitaria() {
 
       {/* Tabs */}
       <Tabs defaultValue="visite" className="w-full">
-        <TabsList>
-          <TabsTrigger value="visite">Visite Mediche</TabsTrigger>
-          <TabsTrigger value="scadenziario">Scadenziario</TabsTrigger>
-          <TabsTrigger value="medici">Medici Competenti</TabsTrigger>
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+          <TabsTrigger value="visite" className="flex-shrink-0 whitespace-nowrap">Visite Mediche</TabsTrigger>
+          <TabsTrigger value="scadenziario" className="flex-shrink-0 whitespace-nowrap">Scadenziario</TabsTrigger>
+          <TabsTrigger value="medici" className="flex-shrink-0 whitespace-nowrap">Medici Competenti</TabsTrigger>
         </TabsList>
 
         <TabsContent value="visite" className="mt-6">
