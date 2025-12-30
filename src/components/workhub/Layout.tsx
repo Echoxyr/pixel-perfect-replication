@@ -202,7 +202,7 @@ export function Layout() {
           </Link>
         </TooltipTrigger>
         {sidebarCollapsed && (
-          <TooltipContent side="right" className="font-medium">
+          <TooltipContent side="right" className="font-medium z-[100] bg-popover text-popover-foreground border border-border shadow-lg">
             {label} {badge !== undefined && badge > 0 && `(${badge})`}
           </TooltipContent>
         )}
@@ -214,8 +214,8 @@ export function Layout() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - Desktop with Glass Effect */}
       <aside className={cn(
-        'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300',
-        'bg-sidebar/95 backdrop-blur-xl backdrop-saturate-150',
+        'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300 relative z-10',
+        'bg-sidebar',
         sidebarCollapsed ? 'w-[72px]' : 'w-64'
       )}>
         {/* Logo Header */}
