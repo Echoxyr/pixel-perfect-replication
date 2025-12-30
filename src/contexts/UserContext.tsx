@@ -44,29 +44,23 @@ export interface UserNote {
   updated_at: string;
 }
 
+// 15 colori distinti come richiesto
 export const THEME_COLORS = [
-  // Colori Standard
   { id: 'blue', name: 'Blu', primary: '217 91% 60%', accent: '217 91% 97%' },
   { id: 'emerald', name: 'Smeraldo', primary: '160 84% 39%', accent: '160 84% 95%' },
   { id: 'violet', name: 'Viola', primary: '262 83% 58%', accent: '262 83% 95%' },
   { id: 'rose', name: 'Rosa', primary: '346 77% 50%', accent: '346 77% 95%' },
   { id: 'amber', name: 'Ambra', primary: '38 92% 50%', accent: '38 92% 95%' },
-  { id: 'cyan', name: 'Ciano', primary: '189 94% 43%', accent: '189 94% 95%' },
-  { id: 'indigo', name: 'Indaco', primary: '239 84% 67%', accent: '239 84% 95%' },
+  { id: 'gold', name: 'Oro', primary: '45 93% 47%', accent: '45 93% 95%' },
   { id: 'teal', name: 'Teal', primary: '173 80% 40%', accent: '173 80% 95%' },
   { id: 'orange', name: 'Arancione', primary: '25 95% 53%', accent: '25 95% 95%' },
-  { id: 'slate', name: 'Ardesia', primary: '215 16% 47%', accent: '215 16% 95%' },
-  // Nuovi Colori Premium
   { id: 'crimson', name: 'Cremisi', primary: '348 83% 47%', accent: '348 83% 95%' },
   { id: 'lime', name: 'Lime', primary: '84 81% 44%', accent: '84 81% 95%' },
   { id: 'fuchsia', name: 'Fucsia', primary: '292 84% 61%', accent: '292 84% 95%' },
   { id: 'sky', name: 'Cielo', primary: '199 89% 48%', accent: '199 89% 95%' },
   { id: 'coral', name: 'Corallo', primary: '16 85% 60%', accent: '16 85% 95%' },
   { id: 'mint', name: 'Menta', primary: '158 64% 52%', accent: '158 64% 95%' },
-  { id: 'gold', name: 'Oro', primary: '45 93% 47%', accent: '45 93% 95%' },
-  { id: 'lavender', name: 'Lavanda', primary: '270 67% 68%', accent: '270 67% 95%' },
-  { id: 'ruby', name: 'Rubino', primary: '357 75% 52%', accent: '357 75% 95%' },
-  { id: 'ocean', name: 'Oceano', primary: '200 85% 40%', accent: '200 85% 95%' },
+  { id: 'darkgreen', name: 'Verde Scuro', primary: '140 50% 30%', accent: '140 50% 95%' },
 ];
 
 // Configurazioni varianti UI personalizzabili

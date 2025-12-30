@@ -476,25 +476,69 @@
   --ui-card-shadow: var(--shadow-sm);
   --ui-card-border: 1px solid hsl(var(--border));
   --ui-card-bg: hsl(var(--card));
+  --ui-card-backdrop: none;
   --ui-button-shadow: none;
   --ui-glass-blur: none;
   --ui-glass-opacity: 1;
   --ui-hover-glow: none;
 }
 
-/* Apply UI config to buttons */
-.btn-configurable,
-button[data-slot="button"] {
+/* Apply UI config to buttons - dynamic radius */
+.ui-button {
   border-radius: var(--ui-button-radius) !important;
+}
+
+/* Button shadow when enabled */
+.ui-button-shadow .ui-button {
   box-shadow: var(--ui-button-shadow);
 }
 
-/* Apply UI config to cards */
-.card-configurable {
-  box-shadow: var(--ui-card-shadow);
-  border: var(--ui-card-border);
+/* Hover glow effect on buttons */
+.ui-hover-glow .ui-button:hover {
+  box-shadow: var(--ui-hover-glow);
+}
+
+/* Card styling with dynamic config */
+.ui-card {
   background: var(--ui-card-bg);
-  backdrop-filter: var(--ui-glass-blur);
+  border: var(--ui-card-border);
+  box-shadow: var(--ui-card-shadow);
+  backdrop-filter: var(--ui-card-backdrop);
+  -webkit-backdrop-filter: var(--ui-card-backdrop);
+}
+
+/* Glass effect for glass mode */
+.ui-card-glass .ui-card {
+  background: hsl(var(--card) / 0.7) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid hsl(var(--border) / 0.2) !important;
+}
+
+/* Elevated card style */
+.ui-card-elevated .ui-card {
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 4px 6px -2px rgba(0,0,0,0.1) !important;
+}
+
+/* Flat card style */
+.ui-card-flat .ui-card {
+  box-shadow: none !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Glass enabled globally */
+.ui-glass-enabled .glass,
+.ui-glass-enabled .glass-effect {
+  background: hsl(var(--background) / var(--ui-glass-opacity)) !important;
+  backdrop-filter: var(--ui-glass-blur) !important;
+  -webkit-backdrop-filter: var(--ui-glass-blur) !important;
+}
+
+/* Animations enabled */
+.ui-animations-enabled * {
+  transition-property: transform, box-shadow, background-color, border-color, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Reduce motion mode */
@@ -502,12 +546,6 @@ button[data-slot="button"] {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
-}
-
-/* Hover glow effect */
-button:hover,
-.hover-glow:hover {
-  box-shadow: var(--ui-hover-glow);
 }
 
 /* Mobile tabs scrollable - only tabs scroll, content stays */
@@ -531,4 +569,12 @@ button:hover,
   word-break: break-word;
   overflow-wrap: anywhere;
   hyphens: auto;
+}
+
+/* Sidebar tooltip text visibility - always in front */
+.sidebar-tooltip-text {
+  position: relative;
+  z-index: 50;
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
 }
