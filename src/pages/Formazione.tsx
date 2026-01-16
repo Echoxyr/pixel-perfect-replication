@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { formatDateFull, daysUntil, generateId } from '@/types/workhub';
+import { formatDateFull, daysUntil } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,6 @@ import {
   Plus,
   Search,
   Filter,
-  Calendar,
   Clock,
   CheckCircle,
   AlertTriangle,
@@ -36,7 +35,6 @@ import {
   Users,
   Building2,
   FileText,
-  Download,
   Upload
 } from 'lucide-react';
 
@@ -65,18 +63,6 @@ const TIPI_CORSO = [
   { id: 'lavori_quota', nome: 'Lavori in Quota', durata: 8, validita: 5 },
   { id: 'pav_pes_pei', nome: 'PAV-PES-PEI Elettrico', durata: 16, validita: 5 },
 ];
-
-interface CorsoFormazione {
-  id: string;
-  lavoratoreId: string;
-  tipoCorso: string;
-  dataCorso: string;
-  dataScadenza?: string;
-  ore: number;
-  ente: string;
-  attestatoUrl?: string;
-  stato: 'valido' | 'in_scadenza' | 'scaduto';
-}
 
 export default function Formazione() {
   const { lavoratori, imprese, formazioni } = useWorkHub();
