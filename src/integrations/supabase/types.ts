@@ -249,6 +249,120 @@ export type Database = {
         }
         Relationships: []
       }
+      cantieri: {
+        Row: {
+          citta: string | null
+          codice_commessa: string
+          committente: string | null
+          created_at: string | null
+          cse: string | null
+          csp: string | null
+          data_fine_effettiva: string | null
+          data_fine_prevista: string | null
+          data_inizio: string | null
+          direttore_lavori: string | null
+          id: string
+          importo_contratto: number | null
+          indirizzo: string | null
+          nome: string
+          note: string | null
+          provincia: string | null
+          responsabile_sicurezza: string | null
+          stato: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          citta?: string | null
+          codice_commessa: string
+          committente?: string | null
+          created_at?: string | null
+          cse?: string | null
+          csp?: string | null
+          data_fine_effettiva?: string | null
+          data_fine_prevista?: string | null
+          data_inizio?: string | null
+          direttore_lavori?: string | null
+          id?: string
+          importo_contratto?: number | null
+          indirizzo?: string | null
+          nome: string
+          note?: string | null
+          provincia?: string | null
+          responsabile_sicurezza?: string | null
+          stato?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          citta?: string | null
+          codice_commessa?: string
+          committente?: string | null
+          created_at?: string | null
+          cse?: string | null
+          csp?: string | null
+          data_fine_effettiva?: string | null
+          data_fine_prevista?: string | null
+          data_inizio?: string | null
+          direttore_lavori?: string | null
+          id?: string
+          importo_contratto?: number | null
+          indirizzo?: string | null
+          nome?: string
+          note?: string | null
+          provincia?: string | null
+          responsabile_sicurezza?: string | null
+          stato?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cantieri_imprese: {
+        Row: {
+          cantiere_id: string
+          created_at: string | null
+          data_fine: string | null
+          data_inizio: string | null
+          id: string
+          importo_contratto: number | null
+          impresa_id: string
+          ruolo: string | null
+        }
+        Insert: {
+          cantiere_id: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          importo_contratto?: number | null
+          impresa_id: string
+          ruolo?: string | null
+        }
+        Update: {
+          cantiere_id?: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          importo_contratto?: number | null
+          impresa_id?: string
+          ruolo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cantieri_imprese_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cantieri_imprese_impresa_id_fkey"
+            columns: ["impresa_id"]
+            isOneToOne: false
+            referencedRelation: "imprese"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centri_costo: {
         Row: {
           attivo: boolean | null
@@ -617,6 +731,105 @@ export type Database = {
         }
         Relationships: []
       }
+      documenti: {
+        Row: {
+          categoria: string | null
+          created_at: string | null
+          data_emissione: string | null
+          data_scadenza: string | null
+          entita_id: string | null
+          entita_tipo: string
+          file_url: string | null
+          id: string
+          note: string | null
+          obbligatorio: boolean | null
+          stato: string | null
+          tipo: string
+          titolo: string
+          updated_at: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          entita_id?: string | null
+          entita_tipo: string
+          file_url?: string | null
+          id?: string
+          note?: string | null
+          obbligatorio?: boolean | null
+          stato?: string | null
+          tipo: string
+          titolo: string
+          updated_at?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          entita_id?: string | null
+          entita_tipo?: string
+          file_url?: string | null
+          id?: string
+          note?: string | null
+          obbligatorio?: boolean | null
+          stato?: string | null
+          tipo?: string
+          titolo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      documenti_azienda: {
+        Row: {
+          attivo: boolean | null
+          categoria: string
+          created_at: string | null
+          data_emissione: string | null
+          data_scadenza: string | null
+          descrizione: string | null
+          file_url: string | null
+          id: string
+          note: string | null
+          numero_documento: string | null
+          tipo: string
+          titolo: string
+          updated_at: string | null
+        }
+        Insert: {
+          attivo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          descrizione?: string | null
+          file_url?: string | null
+          id?: string
+          note?: string | null
+          numero_documento?: string | null
+          tipo: string
+          titolo: string
+          updated_at?: string | null
+        }
+        Update: {
+          attivo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          descrizione?: string | null
+          file_url?: string | null
+          id?: string
+          note?: string | null
+          numero_documento?: string | null
+          tipo?: string
+          titolo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       documenti_risorse: {
         Row: {
           allegato_url: string | null
@@ -663,6 +876,59 @@ export type Database = {
             columns: ["risorsa_id"]
             isOneToOne: false
             referencedRelation: "risorse"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dpi: {
+        Row: {
+          created_at: string | null
+          data_consegna: string
+          data_scadenza: string | null
+          id: string
+          lavoratore_id: string | null
+          marca: string | null
+          modello: string | null
+          note: string | null
+          quantita: number | null
+          stato: string | null
+          taglia: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_consegna: string
+          data_scadenza?: string | null
+          id?: string
+          lavoratore_id?: string | null
+          marca?: string | null
+          modello?: string | null
+          note?: string | null
+          quantita?: number | null
+          stato?: string | null
+          taglia?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          data_consegna?: string
+          data_scadenza?: string | null
+          id?: string
+          lavoratore_id?: string | null
+          marca?: string | null
+          modello?: string | null
+          note?: string | null
+          quantita?: number | null
+          stato?: string | null
+          taglia?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dpi_lavoratore_id_fkey"
+            columns: ["lavoratore_id"]
+            isOneToOne: false
+            referencedRelation: "lavoratori"
             referencedColumns: ["id"]
           },
         ]
@@ -729,6 +995,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      formazioni: {
+        Row: {
+          attestato_url: string | null
+          created_at: string | null
+          data_conseguimento: string
+          data_scadenza: string | null
+          ente_formatore: string | null
+          id: string
+          lavoratore_id: string
+          note: string | null
+          ore_durata: number | null
+          stato: string | null
+          tipo_corso: string
+          titolo_corso: string
+          updated_at: string | null
+        }
+        Insert: {
+          attestato_url?: string | null
+          created_at?: string | null
+          data_conseguimento: string
+          data_scadenza?: string | null
+          ente_formatore?: string | null
+          id?: string
+          lavoratore_id: string
+          note?: string | null
+          ore_durata?: number | null
+          stato?: string | null
+          tipo_corso: string
+          titolo_corso: string
+          updated_at?: string | null
+        }
+        Update: {
+          attestato_url?: string | null
+          created_at?: string | null
+          data_conseguimento?: string
+          data_scadenza?: string | null
+          ente_formatore?: string | null
+          id?: string
+          lavoratore_id?: string
+          note?: string | null
+          ore_durata?: number | null
+          stato?: string | null
+          tipo_corso?: string
+          titolo_corso?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formazioni_lavoratore_id_fkey"
+            columns: ["lavoratore_id"]
+            isOneToOne: false
+            referencedRelation: "lavoratori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fornitori: {
         Row: {
@@ -868,6 +1190,66 @@ export type Database = {
         }
         Relationships: []
       }
+      imprese: {
+        Row: {
+          cap: string | null
+          categoria_soa: string | null
+          citta: string | null
+          codice_fiscale: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          indirizzo: string | null
+          note: string | null
+          partita_iva: string | null
+          pec: string | null
+          provincia: string | null
+          ragione_sociale: string
+          rating: number | null
+          telefono: string | null
+          tipo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cap?: string | null
+          categoria_soa?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale: string
+          rating?: number | null
+          telefono?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cap?: string | null
+          categoria_soa?: string | null
+          citta?: string | null
+          codice_fiscale?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          note?: string | null
+          partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
+          ragione_sociale?: string
+          rating?: number | null
+          telefono?: string | null
+          tipo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       kpi_finanziari: {
         Row: {
           cash_flow_operativo: number | null
@@ -912,6 +1294,125 @@ export type Database = {
           wip?: number | null
         }
         Relationships: []
+      }
+      lavoratori: {
+        Row: {
+          citta: string | null
+          codice_fiscale: string | null
+          cognome: string
+          created_at: string | null
+          data_assunzione: string | null
+          data_cessazione: string | null
+          data_nascita: string | null
+          email: string | null
+          foto_url: string | null
+          id: string
+          impresa_id: string | null
+          indirizzo: string | null
+          livello: string | null
+          luogo_nascita: string | null
+          mansione: string | null
+          nome: string
+          note: string | null
+          telefono: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          citta?: string | null
+          codice_fiscale?: string | null
+          cognome: string
+          created_at?: string | null
+          data_assunzione?: string | null
+          data_cessazione?: string | null
+          data_nascita?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          impresa_id?: string | null
+          indirizzo?: string | null
+          livello?: string | null
+          luogo_nascita?: string | null
+          mansione?: string | null
+          nome: string
+          note?: string | null
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          citta?: string | null
+          codice_fiscale?: string | null
+          cognome?: string
+          created_at?: string | null
+          data_assunzione?: string | null
+          data_cessazione?: string | null
+          data_nascita?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          impresa_id?: string | null
+          indirizzo?: string | null
+          livello?: string | null
+          luogo_nascita?: string | null
+          mansione?: string | null
+          nome?: string
+          note?: string | null
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lavoratori_impresa_id_fkey"
+            columns: ["impresa_id"]
+            isOneToOne: false
+            referencedRelation: "imprese"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lavoratori_cantieri: {
+        Row: {
+          attivo: boolean | null
+          cantiere_id: string
+          created_at: string | null
+          data_fine: string | null
+          data_inizio: string | null
+          id: string
+          lavoratore_id: string
+        }
+        Insert: {
+          attivo?: boolean | null
+          cantiere_id: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          lavoratore_id: string
+        }
+        Update: {
+          attivo?: boolean | null
+          cantiere_id?: string
+          created_at?: string | null
+          data_fine?: string | null
+          data_inizio?: string | null
+          id?: string
+          lavoratore_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lavoratori_cantieri_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lavoratori_cantieri_lavoratore_id_fkey"
+            columns: ["lavoratore_id"]
+            isOneToOne: false
+            referencedRelation: "lavoratori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
@@ -2220,6 +2721,91 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assignee: string | null
+          cantiere_id: string | null
+          category: string | null
+          completed_date: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          impresa_id: string | null
+          note: string | null
+          ordine: number | null
+          parent_id: string | null
+          priority: string | null
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          assignee?: string | null
+          cantiere_id?: string | null
+          category?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impresa_id?: string | null
+          note?: string | null
+          ordine?: number | null
+          parent_id?: string | null
+          priority?: string | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          assignee?: string | null
+          cantiere_id?: string | null
+          category?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impresa_id?: string | null
+          note?: string | null
+          ordine?: number | null
+          parent_id?: string | null
+          priority?: string | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_impresa_id_fkey"
+            columns: ["impresa_id"]
+            isOneToOne: false
+            referencedRelation: "imprese"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timbrature: {
         Row: {
           attivita: string | null
@@ -2552,6 +3138,62 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      visite_mediche: {
+        Row: {
+          certificato_url: string | null
+          created_at: string | null
+          data_scadenza: string | null
+          data_visita: string
+          esito: string | null
+          id: string
+          lavoratore_id: string
+          limitazioni: string | null
+          medico: string | null
+          note: string | null
+          prescrizioni: string | null
+          stato: string | null
+          tipo_visita: string
+        }
+        Insert: {
+          certificato_url?: string | null
+          created_at?: string | null
+          data_scadenza?: string | null
+          data_visita: string
+          esito?: string | null
+          id?: string
+          lavoratore_id: string
+          limitazioni?: string | null
+          medico?: string | null
+          note?: string | null
+          prescrizioni?: string | null
+          stato?: string | null
+          tipo_visita: string
+        }
+        Update: {
+          certificato_url?: string | null
+          created_at?: string | null
+          data_scadenza?: string | null
+          data_visita?: string
+          esito?: string | null
+          id?: string
+          lavoratore_id?: string
+          limitazioni?: string | null
+          medico?: string | null
+          note?: string | null
+          prescrizioni?: string | null
+          stato?: string | null
+          tipo_visita?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visite_mediche_lavoratore_id_fkey"
+            columns: ["lavoratore_id"]
+            isOneToOne: false
+            referencedRelation: "lavoratori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voci_computo: {
         Row: {

@@ -1,4 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Task,
   Cantiere,
@@ -13,28 +15,10 @@ import {
   PrevisioneSAL,
   HSEStats,
   DatiAzienda,
-  generateId,
   daysUntil
 } from '@/types/workhub';
-import {
-  sampleCantieri,
-  sampleImprese,
-  sampleLavoratori,
-  sampleDocumenti,
-  sampleFormazioni,
-  sampleDPI,
-  sampleTasks
-} from '@/data/sampleData';
 
-const STORAGE_KEY = 'workhub_data_v3'; // Updated to clear old demo data
 const AZIENDA_STORAGE_KEY = 'workhub_dati_azienda';
-
-// Clear old storage keys on load
-if (typeof window !== 'undefined') {
-  localStorage.removeItem('workhub_data_v2');
-  localStorage.removeItem('workhub_data_v1');
-  localStorage.removeItem('workhub_data');
-}
 
 const defaultDatiAzienda: DatiAzienda = {
   ragioneSociale: '',
@@ -64,43 +48,12 @@ const defaultDatiAzienda: DatiAzienda = {
   timbroPositionY: 85
 };
 
-interface WorkHubData {
-  cantieri: Cantiere[];
-  imprese: Impresa[];
-  lavoratori: Lavoratore[];
-  documenti: Documento[];
-  formazioni: Formazione[];
-  dpiList: DPI[];
-  tasks: Task[];
-  sal: SAL[];
-  contratti: ContrattoLavorazione[];
-  presenze: Presenza[];
-  previsioni: PrevisioneSAL[];
-}
-
-const loadFromStorage = (): WorkHubData | null => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
-  } catch {
-    return null;
-  }
-};
-
 const loadAziendaFromStorage = (): DatiAzienda => {
   try {
     const data = localStorage.getItem(AZIENDA_STORAGE_KEY);
     return data ? { ...defaultDatiAzienda, ...JSON.parse(data) } : defaultDatiAzienda;
   } catch {
     return defaultDatiAzienda;
-  }
-};
-
-const saveToStorage = (data: WorkHubData) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('Failed to save to localStorage', e);
   }
 };
 
@@ -112,415 +65,696 @@ const saveAziendaToStorage = (data: DatiAzienda) => {
   }
 };
 
-export function useWorkHubData() {
-  const initialData = loadFromStorage() || {
-    cantieri: sampleCantieri,
-    imprese: sampleImprese,
-    lavoratori: sampleLavoratori,
-    documenti: sampleDocumenti,
-    formazioni: sampleFormazioni,
-    dpiList: sampleDPI,
-    tasks: sampleTasks,
-    sal: [],
-    contratti: [],
-    presenze: [],
-    previsioni: []
-  };
+// Helper to convert DB record to app type
+const mapCantiereFromDB = (c: any): Cantiere => ({
+  id: c.id,
+  nome: c.nome,
+  codiceCommessa: c.codice_commessa,
+  indirizzo: c.indirizzo || '',
+  committente: c.committente || '',
+  direttoreLavori: c.direttore_lavori,
+  cse: c.cse,
+  csp: c.csp,
+  dataApertura: c.data_inizio,
+  dataChiusuraPrevista: c.data_fine_prevista,
+  dataChiusuraEffettiva: c.data_fine_effettiva,
+  stato: c.stato === 'concluso' ? 'chiuso' : c.stato || 'attivo',
+  importoContratto: c.importo_contratto,
+  createdAt: c.created_at,
+  updatedAt: c.updated_at
+});
 
+const mapImpresaFromDB = (i: any, cantieriIds: string[] = []): Impresa => ({
+  id: i.id,
+  ragioneSociale: i.ragione_sociale,
+  partitaIva: i.partita_iva || '',
+  codiceFiscale: i.codice_fiscale,
+  sedeLegale: i.indirizzo || '',
+  sedeOperativa: '',
+  referenteNome: '',
+  referenteRuolo: '',
+  referenteTelefono: i.telefono,
+  referenteEmail: i.email,
+  ccnlApplicato: '',
+  tipo: (i.tipo as any) || 'subappaltatore',
+  lavorazioniPrincipali: [],
+  cantieriIds,
+  createdAt: i.created_at,
+  updatedAt: i.updated_at
+});
+
+const mapLavoratoreFromDB = (l: any, cantieriIds: string[] = []): Lavoratore => ({
+  id: l.id,
+  nome: l.nome,
+  cognome: l.cognome,
+  codiceFiscale: l.codice_fiscale || '',
+  dataNascita: l.data_nascita,
+  impresaId: l.impresa_id || '',
+  tipo: 'dipendente',
+  mansione: l.mansione || '',
+  qualifica: l.livello,
+  cantieriIds,
+  createdAt: l.created_at,
+  updatedAt: l.updated_at
+});
+
+const mapDocumentoFromDB = (d: any): Documento => ({
+  id: d.id,
+  tipo: d.tipo,
+  nome: d.titolo,
+  impresaId: d.entita_tipo === 'impresa' ? d.entita_id : undefined,
+  cantiereId: d.entita_tipo === 'cantiere' ? d.entita_id : undefined,
+  lavoratoreId: d.entita_tipo === 'lavoratore' ? d.entita_id : undefined,
+  fileUrl: d.file_url,
+  dataEmissione: d.data_emissione,
+  dataScadenza: d.data_scadenza,
+  stato: d.stato as any || 'approvato',
+  note: d.note,
+  createdAt: d.created_at,
+  updatedAt: d.updated_at
+});
+
+const mapFormazioneFromDB = (f: any): Formazione => ({
+  id: f.id,
+  lavoratoreId: f.lavoratore_id,
+  tipoCorso: f.tipo_corso,
+  categoria: f.tipo_corso,
+  dataCorso: f.data_conseguimento,
+  durataOre: f.ore_durata,
+  dataScadenza: f.data_scadenza,
+  esito: 'positivo',
+  certificatoUrl: f.attestato_url,
+  stato: f.stato as any || 'fatto',
+  note: f.note,
+  createdAt: f.created_at,
+  updatedAt: f.updated_at
+});
+
+const mapDPIFromDB = (d: any): DPI => ({
+  id: d.id,
+  lavoratoreId: d.lavoratore_id || '',
+  tipo: d.tipo,
+  dataConsegna: d.data_consegna,
+  firmaRicevuta: undefined,
+  stato: d.stato === 'scaduto' ? 'scaduto' : d.stato === 'sostituire' ? 'da_sostituire' : 'consegnato',
+  note: d.note,
+  createdAt: d.created_at,
+  updatedAt: d.created_at
+});
+
+const mapTaskFromDB = (t: any): Task => ({
+  id: t.id,
+  parentId: t.parent_id,
+  title: t.title,
+  description: t.description,
+  cantiereId: t.cantiere_id,
+  impresaId: t.impresa_id,
+  status: t.status || 'da_iniziare',
+  priority: t.priority || 'media',
+  startDate: t.start_date,
+  dueDate: t.due_date,
+  completedAt: t.completed_date,
+  note: t.note,
+  updates: [],
+  comments: [],
+  check: false,
+  tags: t.tags || [],
+  subtasks: [],
+  createdAt: t.created_at,
+  updatedAt: t.updated_at
+});
+
+export function useWorkHubData() {
+  const queryClient = useQueryClient();
   const [datiAzienda, setDatiAziendaState] = useState<DatiAzienda>(loadAziendaFromStorage());
 
-  const [cantieri, setCantieri] = useState<Cantiere[]>(initialData.cantieri);
-  const [imprese, setImprese] = useState<Impresa[]>(initialData.imprese);
-  const [lavoratori, setLavoratori] = useState<Lavoratore[]>(initialData.lavoratori);
-  const [documenti, setDocumenti] = useState<Documento[]>(initialData.documenti);
-  const [formazioni, setFormazioni] = useState<Formazione[]>(initialData.formazioni);
-  const [dpiList, setDpiList] = useState<DPI[]>(initialData.dpiList);
-  const [tasks, setTasks] = useState<Task[]>(initialData.tasks);
-  const [sal, setSal] = useState<SAL[]>(initialData.sal || []);
-  const [contratti, setContratti] = useState<ContrattoLavorazione[]>(initialData.contratti || []);
-  const [presenze, setPresenze] = useState<Presenza[]>(initialData.presenze || []);
-  const [previsioni, setPrevisioni] = useState<PrevisioneSAL[]>(initialData.previsioni || []);
+  // === FETCH DATA FROM SUPABASE ===
+  
+  const { data: cantieriData = [] } = useQuery({
+    queryKey: ['cantieri'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cantieri').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapCantiereFromDB);
+    }
+  });
 
-  // Auto-save to localStorage
-  const saveData = useCallback(() => {
-    saveToStorage({ cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze, previsioni });
-  }, [cantieri, imprese, lavoratori, documenti, formazioni, dpiList, tasks, sal, contratti, presenze, previsioni]);
+  const { data: cantieriImpreseData = [] } = useQuery({
+    queryKey: ['cantieri_imprese'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cantieri_imprese').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-  // === CANTIERI CRUD ===
-  const addCantiere = useCallback((cantiere: Omit<Cantiere, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newCantiere: Cantiere = {
-      ...cantiere,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setCantieri(prev => {
-      const updated = [...prev, newCantiere];
-      setTimeout(saveData, 0);
-      return updated;
+  const { data: impreseData = [] } = useQuery({
+    queryKey: ['imprese'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('imprese').select('*').order('ragione_sociale');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: lavoratoriCantieriData = [] } = useQuery({
+    queryKey: ['lavoratori_cantieri'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lavoratori_cantieri').select('*');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: lavoratoriData = [] } = useQuery({
+    queryKey: ['lavoratori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lavoratori').select('*').order('cognome');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: documentiData = [] } = useQuery({
+    queryKey: ['documenti'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('documenti').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapDocumentoFromDB);
+    }
+  });
+
+  const { data: formazioniData = [] } = useQuery({
+    queryKey: ['formazioni'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('formazioni').select('*').order('data_conseguimento', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapFormazioneFromDB);
+    }
+  });
+
+  const { data: dpiData = [] } = useQuery({
+    queryKey: ['dpi'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('dpi').select('*').order('data_consegna', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapDPIFromDB);
+    }
+  });
+
+  const { data: tasksData = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapTaskFromDB);
+    }
+  });
+
+  // Derive imprese with cantieri mapping
+  const imprese = useMemo(() => {
+    return impreseData.map(i => {
+      const cantieriIds = cantieriImpreseData
+        .filter(ci => ci.impresa_id === i.id)
+        .map(ci => ci.cantiere_id);
+      return mapImpresaFromDB(i, cantieriIds);
     });
-    return newCantiere;
-  }, [saveData]);
+  }, [impreseData, cantieriImpreseData]);
+
+  // Derive lavoratori with cantieri mapping
+  const lavoratori = useMemo(() => {
+    return lavoratoriData.map(l => {
+      const cantieriIds = lavoratoriCantieriData
+        .filter(lc => lc.lavoratore_id === l.id && lc.attivo)
+        .map(lc => lc.cantiere_id);
+      return mapLavoratoreFromDB(l, cantieriIds);
+    });
+  }, [lavoratoriData, lavoratoriCantieriData]);
+
+  const cantieri = cantieriData;
+  const documenti = documentiData;
+  const formazioni = formazioniData;
+  const dpiList = dpiData;
+  const tasks = tasksData;
+  
+  // Empty arrays for SAL/Contratti/Presenze/Previsioni - can be added later
+  const sal: SAL[] = [];
+  const contratti: ContrattoLavorazione[] = [];
+  const presenze: Presenza[] = [];
+  const previsioni: PrevisioneSAL[] = [];
+
+  // === MUTATIONS ===
+
+  const addCantiereMutation = useMutation({
+    mutationFn: async (cantiere: Omit<Cantiere, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('cantieri').insert({
+        codice_commessa: cantiere.codiceCommessa,
+        nome: cantiere.nome,
+        committente: cantiere.committente,
+        indirizzo: cantiere.indirizzo,
+        stato: cantiere.stato === 'chiuso' ? 'concluso' : cantiere.stato,
+        data_inizio: cantiere.dataApertura,
+        data_fine_prevista: cantiere.dataChiusuraPrevista,
+        importo_contratto: cantiere.importoContratto,
+        direttore_lavori: cantiere.direttoreLavori,
+        cse: cantiere.cse,
+        csp: cantiere.csp
+      }).select().single();
+      if (error) throw error;
+      return mapCantiereFromDB(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cantieri'] })
+  });
+
+  const updateCantiereMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Cantiere> }) => {
+      const dbUpdates: any = {};
+      if (updates.nome) dbUpdates.nome = updates.nome;
+      if (updates.codiceCommessa) dbUpdates.codice_commessa = updates.codiceCommessa;
+      if (updates.committente) dbUpdates.committente = updates.committente;
+      if (updates.indirizzo) dbUpdates.indirizzo = updates.indirizzo;
+      if (updates.stato) dbUpdates.stato = updates.stato === 'chiuso' ? 'concluso' : updates.stato;
+      if (updates.dataApertura) dbUpdates.data_inizio = updates.dataApertura;
+      if (updates.dataChiusuraPrevista) dbUpdates.data_fine_prevista = updates.dataChiusuraPrevista;
+      if (updates.importoContratto) dbUpdates.importo_contratto = updates.importoContratto;
+      
+      const { error } = await supabase.from('cantieri').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cantieri'] })
+  });
+
+  const deleteCantiereMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('cantieri').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cantieri'] })
+  });
+
+  const addImpresaMutation = useMutation({
+    mutationFn: async (impresa: Omit<Impresa, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('imprese').insert({
+        ragione_sociale: impresa.ragioneSociale,
+        partita_iva: impresa.partitaIva,
+        codice_fiscale: impresa.codiceFiscale,
+        indirizzo: impresa.sedeLegale,
+        telefono: impresa.referenteTelefono,
+        email: impresa.referenteEmail,
+        tipo: impresa.tipo === 'subappaltatore' ? 'subappaltatrice' : 'principale'
+      }).select().single();
+      if (error) throw error;
+      
+      // Link to cantieri if specified
+      if (impresa.cantieriIds?.length) {
+        const links = impresa.cantieriIds.map(cantiereId => ({
+          cantiere_id: cantiereId,
+          impresa_id: data.id
+        }));
+        await supabase.from('cantieri_imprese').insert(links);
+      }
+      
+      return mapImpresaFromDB(data, impresa.cantieriIds);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['imprese'] });
+      queryClient.invalidateQueries({ queryKey: ['cantieri_imprese'] });
+    }
+  });
+
+  const updateImpresaMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Impresa> }) => {
+      const dbUpdates: any = {};
+      if (updates.ragioneSociale) dbUpdates.ragione_sociale = updates.ragioneSociale;
+      if (updates.partitaIva) dbUpdates.partita_iva = updates.partitaIva;
+      if (updates.codiceFiscale) dbUpdates.codice_fiscale = updates.codiceFiscale;
+      if (updates.sedeLegale) dbUpdates.indirizzo = updates.sedeLegale;
+      
+      const { error } = await supabase.from('imprese').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['imprese'] })
+  });
+
+  const deleteImpresaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('imprese').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['imprese'] });
+      queryClient.invalidateQueries({ queryKey: ['cantieri_imprese'] });
+    }
+  });
+
+  const addLavoratoreMutation = useMutation({
+    mutationFn: async (lavoratore: Omit<Lavoratore, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('lavoratori').insert({
+        nome: lavoratore.nome,
+        cognome: lavoratore.cognome,
+        codice_fiscale: lavoratore.codiceFiscale,
+        data_nascita: lavoratore.dataNascita,
+        impresa_id: lavoratore.impresaId || null,
+        mansione: lavoratore.mansione,
+        livello: lavoratore.qualifica
+      }).select().single();
+      if (error) throw error;
+      
+      // Link to cantieri if specified
+      if (lavoratore.cantieriIds?.length) {
+        const links = lavoratore.cantieriIds.map(cantiereId => ({
+          cantiere_id: cantiereId,
+          lavoratore_id: data.id,
+          attivo: true
+        }));
+        await supabase.from('lavoratori_cantieri').insert(links);
+      }
+      
+      return mapLavoratoreFromDB(data, lavoratore.cantieriIds);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lavoratori'] });
+      queryClient.invalidateQueries({ queryKey: ['lavoratori_cantieri'] });
+    }
+  });
+
+  const updateLavoratoreMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Lavoratore> }) => {
+      const dbUpdates: any = {};
+      if (updates.nome) dbUpdates.nome = updates.nome;
+      if (updates.cognome) dbUpdates.cognome = updates.cognome;
+      if (updates.codiceFiscale) dbUpdates.codice_fiscale = updates.codiceFiscale;
+      if (updates.mansione) dbUpdates.mansione = updates.mansione;
+      if (updates.impresaId) dbUpdates.impresa_id = updates.impresaId;
+      
+      const { error } = await supabase.from('lavoratori').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lavoratori'] })
+  });
+
+  const deleteLavoratoreMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('lavoratori').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lavoratori'] });
+      queryClient.invalidateQueries({ queryKey: ['lavoratori_cantieri'] });
+    }
+  });
+
+  const addDocumentoMutation = useMutation({
+    mutationFn: async (documento: Omit<Documento, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const entitaTipo = documento.impresaId ? 'impresa' : documento.cantiereId ? 'cantiere' : documento.lavoratoreId ? 'lavoratore' : 'azienda';
+      const entitaId = documento.impresaId || documento.cantiereId || documento.lavoratoreId || null;
+      
+      const { data, error } = await supabase.from('documenti').insert({
+        titolo: documento.nome,
+        tipo: documento.tipo,
+        entita_tipo: entitaTipo,
+        entita_id: entitaId,
+        data_emissione: documento.dataEmissione,
+        data_scadenza: documento.dataScadenza,
+        stato: documento.stato,
+        file_url: documento.fileUrl,
+        note: documento.note
+      }).select().single();
+      if (error) throw error;
+      return mapDocumentoFromDB(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documenti'] })
+  });
+
+  const updateDocumentoMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Documento> }) => {
+      const dbUpdates: any = {};
+      if (updates.nome) dbUpdates.titolo = updates.nome;
+      if (updates.tipo) dbUpdates.tipo = updates.tipo;
+      if (updates.dataEmissione) dbUpdates.data_emissione = updates.dataEmissione;
+      if (updates.dataScadenza) dbUpdates.data_scadenza = updates.dataScadenza;
+      if (updates.stato) dbUpdates.stato = updates.stato;
+      if (updates.fileUrl) dbUpdates.file_url = updates.fileUrl;
+      
+      const { error } = await supabase.from('documenti').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documenti'] })
+  });
+
+  const deleteDocumentoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('documenti').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['documenti'] })
+  });
+
+  const addFormazioneMutation = useMutation({
+    mutationFn: async (formazione: Omit<Formazione, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('formazioni').insert({
+        lavoratore_id: formazione.lavoratoreId,
+        tipo_corso: formazione.tipoCorso,
+        titolo_corso: formazione.tipoCorso,
+        data_conseguimento: formazione.dataCorso,
+        data_scadenza: formazione.dataScadenza,
+        ore_durata: formazione.durataOre,
+        attestato_url: formazione.certificatoUrl,
+        stato: formazione.stato === 'fatto' ? 'valido' : formazione.stato,
+        note: formazione.note
+      }).select().single();
+      if (error) throw error;
+      return mapFormazioneFromDB(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['formazioni'] })
+  });
+
+  const updateFormazioneMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Formazione> }) => {
+      const dbUpdates: any = {};
+      if (updates.tipoCorso) dbUpdates.tipo_corso = updates.tipoCorso;
+      if (updates.dataCorso) dbUpdates.data_conseguimento = updates.dataCorso;
+      if (updates.dataScadenza) dbUpdates.data_scadenza = updates.dataScadenza;
+      if (updates.certificatoUrl) dbUpdates.attestato_url = updates.certificatoUrl;
+      
+      const { error } = await supabase.from('formazioni').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['formazioni'] })
+  });
+
+  const deleteFormazioneMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('formazioni').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['formazioni'] })
+  });
+
+  const addDPIMutation = useMutation({
+    mutationFn: async (dpi: Omit<DPI, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('dpi').insert({
+        lavoratore_id: dpi.lavoratoreId || null,
+        tipo: dpi.tipo,
+        data_consegna: dpi.dataConsegna,
+        stato: dpi.stato === 'da_sostituire' ? 'sostituire' : dpi.stato,
+        note: dpi.note
+      }).select().single();
+      if (error) throw error;
+      return mapDPIFromDB(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dpi'] })
+  });
+
+  const updateDPIMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<DPI> }) => {
+      const dbUpdates: any = {};
+      if (updates.tipo) dbUpdates.tipo = updates.tipo;
+      if (updates.dataConsegna) dbUpdates.data_consegna = updates.dataConsegna;
+      if (updates.stato) dbUpdates.stato = updates.stato === 'da_sostituire' ? 'sostituire' : updates.stato;
+      
+      const { error } = await supabase.from('dpi').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dpi'] })
+  });
+
+  const deleteDPIMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('dpi').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dpi'] })
+  });
+
+  const addTaskMutation = useMutation({
+    mutationFn: async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const { data, error } = await supabase.from('tasks').insert({
+        title: task.title,
+        description: task.description,
+        cantiere_id: task.cantiereId || null,
+        impresa_id: task.impresaId || null,
+        status: task.status,
+        priority: task.priority,
+        start_date: task.startDate,
+        due_date: task.dueDate,
+        note: task.note,
+        tags: task.tags,
+        parent_id: task.parentId || null
+      }).select().single();
+      if (error) throw error;
+      return mapTaskFromDB(data);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Task> }) => {
+      const dbUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+      if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate;
+      if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+      if (updates.completedAt !== undefined) dbUpdates.completed_date = updates.completedAt;
+      if (updates.note !== undefined) dbUpdates.note = updates.note;
+      if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+      if (updates.cantiereId !== undefined) dbUpdates.cantiere_id = updates.cantiereId || null;
+      if (updates.impresaId !== undefined) dbUpdates.impresa_id = updates.impresaId || null;
+      
+      const { error } = await supabase.from('tasks').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  });
+
+  // === WRAPPER FUNCTIONS ===
+  
+  const addCantiere = useCallback((cantiere: Omit<Cantiere, 'id' | 'createdAt' | 'updatedAt'>) => {
+    addCantiereMutation.mutate(cantiere);
+    return { ...cantiere, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Cantiere;
+  }, [addCantiereMutation]);
 
   const updateCantiere = useCallback((id: string, updates: Partial<Cantiere>) => {
-    setCantieri(prev => {
-      const updated = prev.map(c => 
-        c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateCantiereMutation.mutate({ id, updates });
+  }, [updateCantiereMutation]);
 
   const deleteCantiere = useCallback((id: string) => {
-    setCantieri(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteCantiereMutation.mutate(id);
+  }, [deleteCantiereMutation]);
 
-  // === IMPRESE CRUD ===
   const addImpresa = useCallback((impresa: Omit<Impresa, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newImpresa: Impresa = {
-      ...impresa,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setImprese(prev => {
-      const updated = [...prev, newImpresa];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newImpresa;
-  }, [saveData]);
+    addImpresaMutation.mutate(impresa);
+    return { ...impresa, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Impresa;
+  }, [addImpresaMutation]);
 
   const updateImpresa = useCallback((id: string, updates: Partial<Impresa>) => {
-    setImprese(prev => {
-      const updated = prev.map(i => 
-        i.id === id ? { ...i, ...updates, updatedAt: new Date().toISOString() } : i
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateImpresaMutation.mutate({ id, updates });
+  }, [updateImpresaMutation]);
 
   const deleteImpresa = useCallback((id: string) => {
-    setImprese(prev => {
-      const updated = prev.filter(i => i.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteImpresaMutation.mutate(id);
+  }, [deleteImpresaMutation]);
 
-  // === LAVORATORI CRUD ===
   const addLavoratore = useCallback((lavoratore: Omit<Lavoratore, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newLavoratore: Lavoratore = {
-      ...lavoratore,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setLavoratori(prev => {
-      const updated = [...prev, newLavoratore];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newLavoratore;
-  }, [saveData]);
+    addLavoratoreMutation.mutate(lavoratore);
+    return { ...lavoratore, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Lavoratore;
+  }, [addLavoratoreMutation]);
 
   const updateLavoratore = useCallback((id: string, updates: Partial<Lavoratore>) => {
-    setLavoratori(prev => {
-      const updated = prev.map(l => 
-        l.id === id ? { ...l, ...updates, updatedAt: new Date().toISOString() } : l
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateLavoratoreMutation.mutate({ id, updates });
+  }, [updateLavoratoreMutation]);
 
   const deleteLavoratore = useCallback((id: string) => {
-    setLavoratori(prev => {
-      const updated = prev.filter(l => l.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteLavoratoreMutation.mutate(id);
+  }, [deleteLavoratoreMutation]);
 
-  // === DOCUMENTI CRUD ===
   const addDocumento = useCallback((documento: Omit<Documento, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newDocumento: Documento = {
-      ...documento,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setDocumenti(prev => {
-      const updated = [...prev, newDocumento];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newDocumento;
-  }, [saveData]);
+    addDocumentoMutation.mutate(documento);
+    return { ...documento, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Documento;
+  }, [addDocumentoMutation]);
 
   const updateDocumento = useCallback((id: string, updates: Partial<Documento>) => {
-    setDocumenti(prev => {
-      const updated = prev.map(d => 
-        d.id === id ? { ...d, ...updates, updatedAt: new Date().toISOString() } : d
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateDocumentoMutation.mutate({ id, updates });
+  }, [updateDocumentoMutation]);
 
   const deleteDocumento = useCallback((id: string) => {
-    setDocumenti(prev => {
-      const updated = prev.filter(d => d.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteDocumentoMutation.mutate(id);
+  }, [deleteDocumentoMutation]);
 
-  // === FORMAZIONI CRUD ===
   const addFormazione = useCallback((formazione: Omit<Formazione, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newFormazione: Formazione = {
-      ...formazione,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setFormazioni(prev => {
-      const updated = [...prev, newFormazione];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newFormazione;
-  }, [saveData]);
+    addFormazioneMutation.mutate(formazione);
+    return { ...formazione, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Formazione;
+  }, [addFormazioneMutation]);
 
   const updateFormazione = useCallback((id: string, updates: Partial<Formazione>) => {
-    setFormazioni(prev => {
-      const updated = prev.map(f => 
-        f.id === id ? { ...f, ...updates, updatedAt: new Date().toISOString() } : f
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateFormazioneMutation.mutate({ id, updates });
+  }, [updateFormazioneMutation]);
 
   const deleteFormazione = useCallback((id: string) => {
-    setFormazioni(prev => {
-      const updated = prev.filter(f => f.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteFormazioneMutation.mutate(id);
+  }, [deleteFormazioneMutation]);
 
-  // === DPI CRUD ===
   const addDPI = useCallback((dpi: Omit<DPI, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newDPI: DPI = {
-      ...dpi,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setDpiList(prev => {
-      const updated = [...prev, newDPI];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newDPI;
-  }, [saveData]);
+    addDPIMutation.mutate(dpi);
+    return { ...dpi, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as DPI;
+  }, [addDPIMutation]);
 
   const updateDPI = useCallback((id: string, updates: Partial<DPI>) => {
-    setDpiList(prev => {
-      const updated = prev.map(d => 
-        d.id === id ? { ...d, ...updates, updatedAt: new Date().toISOString() } : d
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateDPIMutation.mutate({ id, updates });
+  }, [updateDPIMutation]);
 
   const deleteDPI = useCallback((id: string) => {
-    setDpiList(prev => {
-      const updated = prev.filter(d => d.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteDPIMutation.mutate(id);
+  }, [deleteDPIMutation]);
 
-  // === TASKS CRUD ===
   const addTask = useCallback((task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTask: Task = {
-      ...task,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setTasks(prev => {
-      const updated = [...prev, newTask];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newTask;
-  }, [saveData]);
+    addTaskMutation.mutate(task);
+    return { ...task, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Task;
+  }, [addTaskMutation]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
-    setTasks(prev => {
-      const updated = prev.map(t => 
-        t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    updateTaskMutation.mutate({ id, updates });
+  }, [updateTaskMutation]);
 
   const deleteTask = useCallback((id: string) => {
-    setTasks(prev => {
-      const updated = prev.filter(t => t.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
+    deleteTaskMutation.mutate(id);
+  }, [deleteTaskMutation]);
 
-  // === SAL CRUD ===
+  // Stub functions for SAL/Contratti/Presenze/Previsioni
   const addSAL = useCallback((salItem: Omit<SAL, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newSAL: SAL = {
-      ...salItem,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setSal(prev => {
-      const updated = [...prev, newSAL];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newSAL;
-  }, [saveData]);
+    return { ...salItem, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as SAL;
+  }, []);
+  const updateSAL = useCallback((id: string, updates: Partial<SAL>) => {}, []);
+  const deleteSAL = useCallback((id: string) => {}, []);
 
-  const updateSAL = useCallback((id: string, updates: Partial<SAL>) => {
-    setSal(prev => {
-      const updated = prev.map(s => 
-        s.id === id ? { ...s, ...updates, updatedAt: new Date().toISOString() } : s
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  const deleteSAL = useCallback((id: string) => {
-    setSal(prev => {
-      const updated = prev.filter(s => s.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  // === CONTRATTI CRUD ===
   const addContratto = useCallback((contratto: Omit<ContrattoLavorazione, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newContratto: ContrattoLavorazione = {
-      ...contratto,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setContratti(prev => {
-      const updated = [...prev, newContratto];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newContratto;
-  }, [saveData]);
+    return { ...contratto, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as ContrattoLavorazione;
+  }, []);
+  const updateContratto = useCallback((id: string, updates: Partial<ContrattoLavorazione>) => {}, []);
+  const deleteContratto = useCallback((id: string) => {}, []);
 
-  const updateContratto = useCallback((id: string, updates: Partial<ContrattoLavorazione>) => {
-    setContratti(prev => {
-      const updated = prev.map(c => 
-        c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  const deleteContratto = useCallback((id: string) => {
-    setContratti(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  // === PRESENZE CRUD ===
   const addPresenza = useCallback((presenza: Omit<Presenza, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newPresenza: Presenza = {
-      ...presenza,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setPresenze(prev => {
-      const updated = [...prev, newPresenza];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newPresenza;
-  }, [saveData]);
+    return { ...presenza, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Presenza;
+  }, []);
+  const updatePresenza = useCallback((id: string, updates: Partial<Presenza>) => {}, []);
+  const deletePresenza = useCallback((id: string) => {}, []);
 
-  const updatePresenza = useCallback((id: string, updates: Partial<Presenza>) => {
-    setPresenze(prev => {
-      const updated = prev.map(p => 
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  const deletePresenza = useCallback((id: string) => {
-    setPresenze(prev => {
-      const updated = prev.filter(p => p.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  // === PREVISIONI CRUD ===
   const addPrevisione = useCallback((previsione: Omit<PrevisioneSAL, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newPrevisione: PrevisioneSAL = {
-      ...previsione,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    setPrevisioni(prev => {
-      const updated = [...prev, newPrevisione];
-      setTimeout(saveData, 0);
-      return updated;
-    });
-    return newPrevisione;
-  }, [saveData]);
+    return { ...previsione, id: 'temp', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as PrevisioneSAL;
+  }, []);
+  const updatePrevisione = useCallback((id: string, updates: Partial<PrevisioneSAL>) => {}, []);
+  const deletePrevisione = useCallback((id: string) => {}, []);
 
-  const updatePrevisione = useCallback((id: string, updates: Partial<PrevisioneSAL>) => {
-    setPrevisioni(prev => {
-      const updated = prev.map(p => 
-        p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
-      );
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  const deletePrevisione = useCallback((id: string) => {
-    setPrevisioni(prev => {
-      const updated = prev.filter(p => p.id !== id);
-      setTimeout(saveData, 0);
-      return updated;
-    });
-  }, [saveData]);
-
-  // Get presenze for a cantiere
   const getPresenzeCantiere = useCallback((cantiereId: string, data?: string) => {
     return presenze.filter(p => {
       if (p.cantiereId !== cantiereId) return false;
@@ -529,17 +763,14 @@ export function useWorkHubData() {
     });
   }, [presenze]);
 
-  // Get SAL for a cantiere
   const getSALCantiere = useCallback((cantiereId: string) => {
     return sal.filter(s => s.cantiereId === cantiereId);
   }, [sal]);
 
-  // Get contratti for a cantiere
   const getContrattiCantiere = useCallback((cantiereId: string) => {
     return contratti.filter(c => c.cantiereId === cantiereId);
   }, [contratti]);
 
-  // Get previsioni for a cantiere
   const getPrevisioniCantiere = useCallback((cantiereId: string) => {
     return previsioni.filter(p => p.cantiereId === cantiereId);
   }, [previsioni]);
