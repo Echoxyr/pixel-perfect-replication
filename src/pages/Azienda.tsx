@@ -121,15 +121,28 @@ export default function Azienda() {
     entita_nome: '',
   });
 
-  // Fetch documenti - using localStorage for now
+  // Fetch documenti from Supabase
   const { data: documenti = [], isLoading } = useQuery({
     queryKey: ['documenti-azienda'],
     queryFn: async () => {
-      const stored = localStorage.getItem('documenti-azienda');
-      if (stored) {
-        return JSON.parse(stored) as DocumentoAzienda[];
-      }
-      return [];
+      const { data, error } = await supabase
+        .from('documenti_azienda')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        titolo: d.titolo,
+        categoria: d.categoria,
+        tipo: d.tipo,
+        descrizione: d.descrizione,
+        dataEmissione: d.data_emissione,
+        dataScadenza: d.data_scadenza,
+        numeroDocumento: d.numero_documento,
+        fileUrl: d.file_url,
+        note: d.note,
+        createdAt: d.created_at
+      })) as DocumentoAzienda[];
     },
   });
 
