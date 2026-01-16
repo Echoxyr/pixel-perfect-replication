@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import { StatCard, MiniStat } from '@/components/workhub/StatCard';
-import { TrafficLight, StatusPill } from '@/components/workhub/StatusPill';
+import { MiniStat } from '@/components/workhub/StatCard';
+import { TrafficLight } from '@/components/workhub/StatusPill';
 import { formatDateFull, daysUntil, calculateTrafficLight } from '@/types/workhub';
 import {
   ShieldCheck,
@@ -18,7 +18,7 @@ import {
   Filter,
   ExternalLink
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,11 +38,9 @@ export default function HSEDashboard() {
     lavoratori,
     documenti,
     formazioni,
-    hseStats,
     getDocumentiImpresa,
     getImpreseCantiere,
     getLavoratoriCantiere,
-    getFormazioniLavoratore
   } = useWorkHub();
 
   // Filters

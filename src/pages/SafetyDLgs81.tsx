@@ -5,7 +5,6 @@ import {
   DUVRI,
   RegistroInfortuni,
   ScadenzarioVisiteMediche,
-  generateComplianceId
 } from '@/types/compliance';
 import { formatDateFull, generateId, daysUntil } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -36,15 +35,12 @@ import {
   FileText,
   AlertTriangle,
   Stethoscope,
-  UserCheck,
   Plus,
-  Calendar,
   CheckCircle,
   XCircle,
   Clock,
   Download,
   Building2,
-  HardHat,
   ClipboardList,
   User,
   Phone,
@@ -105,7 +101,7 @@ interface DocumentoFigura {
 }
 
 export default function SafetyDLgs81() {
-  const { cantieri, imprese, lavoratori } = useWorkHub();
+  const { cantieri, imprese } = useWorkHub();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
