@@ -100,6 +100,14 @@ const TIPI_DOCUMENTI = [
   { value: 'f24', label: 'F24', categoria: 'fiscale' },
   { value: 'modello_unico', label: 'Modello Unico', categoria: 'fiscale' },
 ];
+// Helper to calculate stato from date (used during data fetching)
+const getStatoFromDate = (dataScadenza: string | null): DocumentoAzienda['stato'] => {
+  if (!dataScadenza) return 'valido';
+  const giorni = differenceInDays(new Date(dataScadenza), new Date());
+  if (giorni < 0) return 'scaduto';
+  if (giorni <= 30) return 'in_scadenza';
+  return 'valido';
+};
 
 export default function Azienda() {
   const { toast } = useToast();
@@ -133,15 +141,15 @@ export default function Azienda() {
       return (data || []).map((d: any) => ({
         id: d.id,
         titolo: d.titolo,
-        categoria: d.categoria,
+        categoria: d.categoria as DocumentoAzienda['categoria'],
         tipo: d.tipo,
-        descrizione: d.descrizione,
-        dataEmissione: d.data_emissione,
-        dataScadenza: d.data_scadenza,
-        numeroDocumento: d.numero_documento,
-        fileUrl: d.file_url,
-        note: d.note,
-        createdAt: d.created_at
+        descrizione: d.descrizione || '',
+        data_emissione: d.data_emissione || '',
+        data_scadenza: d.data_scadenza,
+        allegato_url: d.file_url,
+        entita_nome: null,
+        stato: getStatoFromDate(d.data_scadenza),
+        created_at: d.created_at,
       })) as DocumentoAzienda[];
     },
   });
