@@ -16,7 +16,6 @@ import { QuickActions } from './QuickActions';
 import {
   LayoutDashboard,
   FolderKanban,
-  Construction,
   Building2,
   HardHat,
   ShieldCheck,
@@ -89,7 +88,6 @@ export function Layout() {
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [principaleExpanded, setPrincipaleExpanded] = useState(false);
-  const [cantieriExpanded, setCantieriExpanded] = useState(false);
   const [hseExpanded, setHseExpanded] = useState(false);
   const [complianceExpanded, setComplianceExpanded] = useState(false);
   const [commercialeExpanded, setCommercialeExpanded] = useState(false);
@@ -314,22 +312,16 @@ export function Layout() {
             </div>
           )}
 
-          {/* Cantieri Section - Solo il link diretto senza header di sezione */}
+          {/* Cantieri - Solo modulo diretto, nessun header di sezione */}
           {isModuleVisible('cantieri') && (
-            <div>
-              {sidebarCollapsed && (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              <div className="space-y-1">
-                <NavItem 
-                  to="/cantieri" 
-                  icon={Construction} 
-                  label="Cantieri" 
-                  badge={cantieri.length}
-                  isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
-                />
-              </div>
+            <div className="space-y-1">
+              <NavItem 
+                to="/cantieri" 
+                icon={Building2} 
+                label="Cantieri" 
+                badge={cantieri.length}
+                isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
+              />
             </div>
           )}
 
@@ -713,7 +705,6 @@ export function Layout() {
               <div className="h-px bg-sidebar-border" />
               
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Cantieri</p>
                 <Link
                   to="/cantieri"
                   onClick={() => setMobileMenuOpen(false)}
@@ -724,7 +715,7 @@ export function Layout() {
                       : 'text-muted-foreground hover:bg-muted/50'
                   )}
                 >
-                  <Construction className="w-5 h-5" />
+                  <Building2 className="w-5 h-5" />
                   <span className="font-medium">Cantieri</span>
                   <Badge variant="secondary" className="ml-auto">{cantieri.length}</Badge>
                 </Link>
