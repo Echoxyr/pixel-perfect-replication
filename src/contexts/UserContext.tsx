@@ -65,6 +65,7 @@ export const THEME_COLORS = [
 
 // Sidebar background colors
 export const SIDEBAR_COLORS = [
+  { id: 'brown', name: 'Marrone', background: '25 35% 18%', foreground: '30 20% 95%' },
   { id: 'dark', name: 'Scuro', background: '222 47% 14%', foreground: '220 14% 96%' },
   { id: 'darker', name: 'Nero', background: '220 25% 8%', foreground: '210 20% 95%' },
   { id: 'navy', name: 'Blu Navy', background: '224 47% 18%', foreground: '220 14% 96%' },
