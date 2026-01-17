@@ -214,10 +214,10 @@ export function Layout() {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Sidebar - Desktop with Glass Effect */}
       <aside className={cn(
-        'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300 relative z-10',
+        'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300 relative z-10 h-screen',
         'bg-sidebar',
         sidebarCollapsed ? 'w-[72px]' : 'w-64'
       )}>
@@ -248,7 +248,7 @@ export function Layout() {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin space-y-6">
+        <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain scrollbar-thin space-y-6">
           {/* User Section - First */}
           <div>
             {!sidebarCollapsed && (
@@ -900,7 +900,7 @@ export function Layout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
           <div className="flex items-center gap-4">
@@ -985,7 +985,7 @@ export function Layout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto scrollbar-thin bg-content-glass backdrop-blur-sm">
+        <main className="flex-1 p-4 md:p-6 overflow-auto overscroll-contain scrollbar-thin bg-content-glass backdrop-blur-sm">
           <Outlet />
         </main>
       </div>
