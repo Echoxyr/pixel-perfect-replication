@@ -830,6 +830,62 @@ export type Database = {
         }
         Relationships: []
       }
+      documenti_fornitori: {
+        Row: {
+          created_at: string | null
+          data_emissione: string | null
+          data_scadenza: string | null
+          ente_emittente: string | null
+          file_url: string | null
+          fornitore_id: string
+          id: string
+          note: string | null
+          numero_documento: string | null
+          obbligatorio: boolean | null
+          stato: string | null
+          tipo_documento: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          ente_emittente?: string | null
+          file_url?: string | null
+          fornitore_id: string
+          id?: string
+          note?: string | null
+          numero_documento?: string | null
+          obbligatorio?: boolean | null
+          stato?: string | null
+          tipo_documento: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_emissione?: string | null
+          data_scadenza?: string | null
+          ente_emittente?: string | null
+          file_url?: string | null
+          fornitore_id?: string
+          id?: string
+          note?: string | null
+          numero_documento?: string | null
+          obbligatorio?: boolean | null
+          stato?: string | null
+          tipo_documento?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documenti_fornitori_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documenti_risorse: {
         Row: {
           allegato_url: string | null
