@@ -59,37 +59,43 @@ const CATEGORIE_ATTREZZATURE = [
   { id: 'segnaletica', nome: 'Segnaletica', icon: Shield },
 ];
 
-// Tipi attrezzature con normativa e revisione
+// Tipi attrezzature con normativa e revisione CORRETTI secondo UNI 9994-1:2013 e normative vigenti
 const TIPI_ATTREZZATURE = [
-  // Antincendio - D.M. 10/03/1998, D.Lgs 81/2008 art. 46
-  { id: 'estintore_polvere', nome: 'Estintore a Polvere', categoria: 'antincendio', revisioneAnni: 0.5, controlloMesi: 6, normativa: 'D.M. 10/03/1998, UNI 9994-1', obbligatorio: true },
-  { id: 'estintore_co2', nome: 'Estintore CO2', categoria: 'antincendio', revisioneAnni: 0.5, controlloMesi: 6, normativa: 'D.M. 10/03/1998, UNI 9994-1', obbligatorio: true },
-  { id: 'estintore_schiuma', nome: 'Estintore a Schiuma', categoria: 'antincendio', revisioneAnni: 0.5, controlloMesi: 6, normativa: 'D.M. 10/03/1998, UNI 9994-1', obbligatorio: true },
-  { id: 'idrante', nome: 'Idrante', categoria: 'antincendio', revisioneAnni: 1, controlloMesi: 6, normativa: 'UNI EN 671-3', obbligatorio: false },
-  { id: 'naspo', nome: 'Naspo Antincendio', categoria: 'antincendio', revisioneAnni: 1, controlloMesi: 6, normativa: 'UNI EN 671-3', obbligatorio: false },
-  { id: 'coperta_antifiamma', nome: 'Coperta Antifiamma', categoria: 'antincendio', revisioneAnni: 1, controlloMesi: 12, normativa: 'EN 1869', obbligatorio: false },
-  { id: 'rilevatore_fumo', nome: 'Rilevatore di Fumo', categoria: 'antincendio', revisioneAnni: 1, controlloMesi: 12, normativa: 'UNI 9795', obbligatorio: false },
-  { id: 'pulsante_emergenza', nome: 'Pulsante Allarme', categoria: 'antincendio', revisioneAnni: 1, controlloMesi: 6, normativa: 'UNI EN 54', obbligatorio: true },
+  // Antincendio - D.M. 10/03/1998, D.Lgs 81/2008 art. 46, UNI 9994-1:2013
+  // NOTA: UNI 9994-1:2013 prevede: Sorveglianza (trimestrale), Controllo (semestrale), Revisione (varia per tipo), Collaudo (varia)
+  { id: 'estintore_polvere', nome: 'Estintore a Polvere', categoria: 'antincendio', revisioneAnni: 3, collaudoAnni: 6, controlloMesi: 6, normativa: 'UNI 9994-1:2013 Tab. 1', obbligatorio: true, note: 'Revisione 36 mesi, Collaudo 72 mesi (12 anni per bombole)' },
+  { id: 'estintore_co2', nome: 'Estintore CO2', categoria: 'antincendio', revisioneAnni: 5, collaudoAnni: 10, controlloMesi: 6, normativa: 'UNI 9994-1:2013 Tab. 1', obbligatorio: true, note: 'Revisione 60 mesi, Collaudo 120 mesi' },
+  { id: 'estintore_schiuma', nome: 'Estintore a Schiuma', categoria: 'antincendio', revisioneAnni: 1.5, collaudoAnni: 6, controlloMesi: 6, normativa: 'UNI 9994-1:2013 Tab. 1', obbligatorio: true, note: 'Revisione 18 mesi, Collaudo 72 mesi' },
+  { id: 'estintore_acqua', nome: 'Estintore ad Acqua', categoria: 'antincendio', revisioneAnni: 2, collaudoAnni: 6, controlloMesi: 6, normativa: 'UNI 9994-1:2013 Tab. 1', obbligatorio: false, note: 'Revisione 24 mesi, Collaudo 72 mesi' },
+  { id: 'estintore_idrocarburi', nome: 'Estintore Idrocarburi Alogenati', categoria: 'antincendio', revisioneAnni: 6, collaudoAnni: 6, controlloMesi: 6, normativa: 'UNI 9994-1:2013 Tab. 1', obbligatorio: false, note: 'Revisione 72 mesi, Collaudo 72 mesi' },
+  { id: 'idrante', nome: 'Idrante a Muro', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 12, controlloMesi: 6, normativa: 'UNI EN 671-3:2009', obbligatorio: false, note: 'Controllo semestrale, Revisione annuale' },
+  { id: 'naspo', nome: 'Naspo Antincendio', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 12, controlloMesi: 6, normativa: 'UNI EN 671-3:2009', obbligatorio: false, note: 'Controllo semestrale, Revisione annuale' },
+  { id: 'coperta_antifiamma', nome: 'Coperta Antifiamma', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 12, normativa: 'UNI EN 1869:2019', obbligatorio: false, note: 'Ispezione annuale, Sostituzione se danneggiata' },
+  { id: 'rilevatore_fumo', nome: 'Rilevatore di Fumo', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 10, controlloMesi: 6, normativa: 'UNI 9795:2021, UNI 11224:2019', obbligatorio: false, note: 'Manutenzione semestrale, Sostituzione 10 anni' },
+  { id: 'centrale_antincendio', nome: 'Centrale Rivelazione Incendi', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 6, normativa: 'UNI EN 54-2, UNI 11224:2019', obbligatorio: false, note: 'Manutenzione semestrale' },
+  { id: 'pulsante_emergenza', nome: 'Pulsante Manuale Allarme', categoria: 'antincendio', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 6, normativa: 'UNI EN 54-11, UNI 11224:2019', obbligatorio: true, note: 'Verifica funzionamento semestrale' },
   
   // Primo Soccorso - D.M. 388/2003, D.Lgs 81/2008 art. 45
-  { id: 'cassetta_ps_a', nome: 'Cassetta Primo Soccorso (Cat. A)', categoria: 'primo_soccorso', revisioneAnni: 0.5, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 1', obbligatorio: true },
-  { id: 'cassetta_ps_b', nome: 'Cassetta Primo Soccorso (Cat. B/C)', categoria: 'primo_soccorso', revisioneAnni: 0.5, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 2', obbligatorio: true },
-  { id: 'pacchetto_medicazione', nome: 'Pacchetto di Medicazione', categoria: 'primo_soccorso', revisioneAnni: 0.5, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 2', obbligatorio: true },
-  { id: 'dae', nome: 'DAE (Defibrillatore)', categoria: 'primo_soccorso', revisioneAnni: 2, controlloMesi: 1, normativa: 'L. 116/2021, D.M. 18/03/2011', obbligatorio: false },
-  { id: 'barella', nome: 'Barella', categoria: 'primo_soccorso', revisioneAnni: 2, controlloMesi: 12, normativa: 'D.M. 388/2003', obbligatorio: false },
-  { id: 'coperta_termica', nome: 'Coperta Termica', categoria: 'primo_soccorso', revisioneAnni: 5, controlloMesi: 12, normativa: 'D.M. 388/2003', obbligatorio: true },
+  { id: 'cassetta_ps_a', nome: 'Cassetta Primo Soccorso (Cat. A)', categoria: 'primo_soccorso', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 1', obbligatorio: true, note: 'Controllo trimestrale contenuto e scadenze' },
+  { id: 'cassetta_ps_b', nome: 'Cassetta Primo Soccorso (Cat. B/C)', categoria: 'primo_soccorso', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 2', obbligatorio: true, note: 'Controllo trimestrale contenuto e scadenze' },
+  { id: 'pacchetto_medicazione', nome: 'Pacchetto di Medicazione', categoria: 'primo_soccorso', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 3, normativa: 'D.M. 388/2003 All. 2', obbligatorio: true, note: 'Controllo trimestrale contenuto e scadenze' },
+  { id: 'dae', nome: 'DAE (Defibrillatore)', categoria: 'primo_soccorso', revisioneAnni: 0.5, collaudoAnni: 8, controlloMesi: 1, normativa: 'L. 116/2021, D.M. 18/03/2011', obbligatorio: false, note: 'Autotest mensile, Manutenzione semestrale, Piastre 2 anni, Batteria 4-5 anni' },
+  { id: 'barella', nome: 'Barella di Emergenza', categoria: 'primo_soccorso', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.M. 388/2003', obbligatorio: false, note: 'Ispezione annuale integrità' },
+  { id: 'coperta_termica', nome: 'Coperta Termica Isotermica', categoria: 'primo_soccorso', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.M. 388/2003', obbligatorio: true, note: 'Verifica integrità confezione annuale' },
   
   // Emergenza - D.Lgs 81/2008 art. 43-46
-  { id: 'luce_emergenza', nome: 'Luce di Emergenza', categoria: 'emergenza', revisioneAnni: 1, controlloMesi: 6, normativa: 'UNI EN 1838', obbligatorio: true },
-  { id: 'sirena_allarme', nome: 'Sirena Allarme', categoria: 'emergenza', revisioneAnni: 1, controlloMesi: 6, normativa: 'UNI EN 54', obbligatorio: true },
-  { id: 'megafono', nome: 'Megafono', categoria: 'emergenza', revisioneAnni: 2, controlloMesi: 12, normativa: 'Piano Emergenza', obbligatorio: false },
-  { id: 'torcia_emergenza', nome: 'Torcia Emergenza', categoria: 'emergenza', revisioneAnni: 1, controlloMesi: 6, normativa: 'Piano Emergenza', obbligatorio: true },
+  { id: 'luce_emergenza', nome: 'Apparecchio Illuminazione Emergenza', categoria: 'emergenza', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 6, normativa: 'UNI EN 1838:2019, UNI 11222:2013', obbligatorio: true, note: 'Test funzionale mensile, Autonomia completa semestrale' },
+  { id: 'sirena_allarme', nome: 'Sirena/Pannello Allarme', categoria: 'emergenza', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 6, normativa: 'UNI EN 54-3', obbligatorio: true, note: 'Verifica funzionamento semestrale' },
+  { id: 'megafono', nome: 'Megafono Emergenza', categoria: 'emergenza', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 6, normativa: 'Piano Emergenza Aziendale', obbligatorio: false, note: 'Verifica batterie e funzionamento' },
+  { id: 'torcia_emergenza', nome: 'Torcia di Emergenza', categoria: 'emergenza', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 3, normativa: 'Piano Emergenza Aziendale', obbligatorio: true, note: 'Verifica batterie trimestrale' },
+  { id: 'uscita_emergenza', nome: 'Maniglione Antipanico', categoria: 'emergenza', revisioneAnni: 1, collaudoAnni: 0, controlloMesi: 6, normativa: 'UNI EN 1125:2008', obbligatorio: true, note: 'Manutenzione semestrale obbligatoria' },
   
-  // Segnaletica - D.Lgs 81/2008 Allegato XXV
-  { id: 'cartello_uscita', nome: 'Cartello Uscita Emergenza', categoria: 'segnaletica', revisioneAnni: 5, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV', obbligatorio: true },
-  { id: 'cartello_estintore', nome: 'Cartello Posizione Estintore', categoria: 'segnaletica', revisioneAnni: 5, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV', obbligatorio: true },
-  { id: 'cartello_ps', nome: 'Cartello Primo Soccorso', categoria: 'segnaletica', revisioneAnni: 5, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV', obbligatorio: true },
-  { id: 'planimetria', nome: 'Planimetria Emergenza', categoria: 'segnaletica', revisioneAnni: 0, controlloMesi: 12, normativa: 'D.M. 10/03/1998', obbligatorio: true },
+  // Segnaletica - D.Lgs 81/2008 Allegato XXV, UNI 7543-1
+  { id: 'cartello_uscita', nome: 'Cartello Uscita Emergenza', categoria: 'segnaletica', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV, UNI EN ISO 7010', obbligatorio: true, note: 'Verifica visibilità e integrità annuale' },
+  { id: 'cartello_estintore', nome: 'Cartello Posizione Estintore', categoria: 'segnaletica', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV, UNI EN ISO 7010', obbligatorio: true, note: 'Verifica visibilità e integrità annuale' },
+  { id: 'cartello_ps', nome: 'Cartello Primo Soccorso', categoria: 'segnaletica', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV, UNI EN ISO 7010', obbligatorio: true, note: 'Verifica visibilità e integrità annuale' },
+  { id: 'planimetria', nome: 'Planimetria Emergenza', categoria: 'segnaletica', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.M. 10/03/1998, UNI ISO 23601:2021', obbligatorio: true, note: 'Aggiornamento ad ogni modifica layout' },
+  { id: 'cartello_divieto', nome: 'Cartello Divieto/Pericolo', categoria: 'segnaletica', revisioneAnni: 0, collaudoAnni: 0, controlloMesi: 12, normativa: 'D.Lgs 81/2008 All. XXV, UNI EN ISO 7010', obbligatorio: true, note: 'Verifica visibilità e integrità annuale' },
 ];
 
 // Contenuto obbligatorio cassetta primo soccorso Cat. A (D.M. 388/2003 All. 1)

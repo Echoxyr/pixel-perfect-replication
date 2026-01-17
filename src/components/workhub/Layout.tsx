@@ -88,6 +88,7 @@ export function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [principaleExpanded, setPrincipaleExpanded] = useState(false);
   const [cantieriExpanded, setCantieriExpanded] = useState(false);
   const [hseExpanded, setHseExpanded] = useState(false);
   const [complianceExpanded, setComplianceExpanded] = useState(false);
@@ -266,41 +267,52 @@ export function Layout() {
             </div>
           </div>
 
-          {/* Main Section */}
-          <div>
-            {!sidebarCollapsed && (
-              <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                Principale
-              </p>
-            )}
-            <div className="space-y-1">
-              {isModuleVisible('dashboard') && (
-                <NavItem 
-                  to="/dashboard" 
-                  icon={LayoutDashboard} 
-                  label="Dashboard" 
-                  isActive={location.pathname === '/dashboard'} 
-                />
+          {/* Main Section - Collapsible */}
+          {(isModuleVisible('dashboard') || isModuleVisible('progetti') || isModuleVisible('sal')) && (
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setPrincipaleExpanded(!principaleExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Principale</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !principaleExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
-              {isModuleVisible('progetti') && (
-                <NavItem 
-                  to="/progetti" 
-                  icon={FolderKanban} 
-                  label="Progetti & Task" 
-                  badge={openTasks}
-                  isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
-                />
-              )}
-          {isModuleVisible('sal') && (
-                <NavItem 
-                  to="/sal" 
-                  icon={TrendingUp} 
-                  label="Consuntivo" 
-                  isActive={location.pathname === '/sal'} 
-                />
+              
+              {(sidebarCollapsed || principaleExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('dashboard') && (
+                    <NavItem 
+                      to="/dashboard" 
+                      icon={LayoutDashboard} 
+                      label="Dashboard" 
+                      isActive={location.pathname === '/dashboard'} 
+                    />
+                  )}
+                  {isModuleVisible('progetti') && (
+                    <NavItem 
+                      to="/progetti" 
+                      icon={FolderKanban} 
+                      label="Progetti & Task" 
+                      badge={openTasks}
+                      isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
+                    />
+                  )}
+                  {isModuleVisible('sal') && (
+                    <NavItem 
+                      to="/sal" 
+                      icon={TrendingUp} 
+                      label="Consuntivo" 
+                      isActive={location.pathname === '/sal'} 
+                    />
+                  )}
+                </div>
               )}
             </div>
-          </div>
+          )}
 
           {/* Cantieri Section */}
           {isModuleVisible('cantieri') && (

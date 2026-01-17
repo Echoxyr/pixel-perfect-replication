@@ -48,7 +48,11 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  XCircle
+  XCircle,
+  FileCheck,
+  AlertOctagon,
+  CheckCircle2,
+  FileBadge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -517,6 +521,7 @@ export default function UfficioCommerciale() {
         <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
           <TabsTrigger value="contratti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
           <TabsTrigger value="fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
+          <TabsTrigger value="documenti-fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileBadge className="w-4 h-4" />Documenti Fornitori</TabsTrigger>
           <TabsTrigger value="preventivi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
           <TabsTrigger value="ordini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
           <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
@@ -601,6 +606,113 @@ export default function UfficioCommerciale() {
                   )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Documenti Fornitori - Compliance Tab */}
+        <TabsContent value="documenti-fornitori" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileBadge className="w-5 h-5" />
+                Regolarità Documentale Fornitori
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Verifica veloce della documentazione obbligatoria per pagamenti e compliance</p>
+            </CardHeader>
+            <CardContent>
+              {/* Documenti obbligatori per fornitore */}
+              <div className="space-y-4">
+                {fornitori.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Nessun fornitore registrato. Aggiungi fornitori per monitorare la documentazione.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fornitore</TableHead>
+                        <TableHead className="text-center">DURC</TableHead>
+                        <TableHead className="text-center">Visura Camerale</TableHead>
+                        <TableHead className="text-center">Cert. ISO</TableHead>
+                        <TableHead className="text-center">Polizza RCT/RCO</TableHead>
+                        <TableHead className="text-center">Dich. Antimafia</TableHead>
+                        <TableHead className="text-center">Fatture Regolari</TableHead>
+                        <TableHead>Stato Pagamenti</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fornitori.map(f => {
+                        // Simulazione stato documenti (in produzione verrebbe da DB)
+                        const docs = {
+                          durc: Math.random() > 0.3,
+                          visura: Math.random() > 0.2,
+                          iso: Math.random() > 0.5,
+                          polizza: Math.random() > 0.4,
+                          antimafia: Math.random() > 0.3,
+                          fatture: Math.random() > 0.2
+                        };
+                        const completeCount = Object.values(docs).filter(Boolean).length;
+                        const totalDocs = 6;
+                        const isComplete = completeCount === totalDocs;
+                        const hasWarning = completeCount >= 4 && completeCount < totalDocs;
+                        const hasCritical = completeCount < 4;
+
+                        return (
+                          <TableRow key={f.id}>
+                            <TableCell>
+                              <div className="font-medium">{f.ragione_sociale}</div>
+                              <div className="text-xs text-muted-foreground">{f.partita_iva || 'P.IVA mancante'}</div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.durc ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.visura ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.iso ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <Clock className="w-5 h-5 text-amber-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.polizza ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.antimafia ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {docs.fatture ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <Clock className="w-5 h-5 text-amber-500 mx-auto" />}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={cn(
+                                "gap-1",
+                                isComplete ? "bg-emerald-500/15 text-emerald-500" :
+                                hasWarning ? "bg-amber-500/15 text-amber-500" :
+                                "bg-red-500/15 text-red-500"
+                              )}>
+                                {isComplete ? <CheckCircle className="w-3 h-3" /> : hasCritical ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                {isComplete ? 'Pagabile' : hasWarning ? 'In Attesa Doc.' : 'Blocco Pagamento'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-2">Legenda Documenti Obbligatori</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                    <div><strong>DURC:</strong> Documento Unico Regolarità Contributiva (validità 120gg)</div>
+                    <div><strong>Visura:</strong> Visura Camerale aggiornata (max 6 mesi)</div>
+                    <div><strong>Cert. ISO:</strong> Certificazioni qualità (opzionale ma consigliato)</div>
+                    <div><strong>Polizza RCT/RCO:</strong> Responsabilità Civile Terzi/Operai</div>
+                    <div><strong>Antimafia:</strong> Dichiarazione sostitutiva antimafia</div>
+                    <div><strong>Fatture:</strong> Fatture conformi e regolarmente emesse</div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
