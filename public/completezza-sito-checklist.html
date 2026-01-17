@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gest-e | Checklist Completezza Sito</title>
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --card: #12171f;
+      --border: rgba(255,255,255,0.1);
+      --text: #e0e6ed;
+      --muted: #8e9aaf;
+      --accent: #4f8cff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; color: #fff; }
+    h2 { font-size: 1.5rem; margin: 2rem 0 1rem; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: #fff; }
+    .intro { font-size: 1.1rem; color: var(--muted); margin-bottom: 2rem; }
+    
+    .category {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .category h3 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 16px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.done { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge.todo { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    
+    ul { list-style: none; }
+    li {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    li:last-child { border-bottom: none; }
+    .status {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .status.done { background: var(--success); }
+    .status.todo { background: var(--warning); }
+    .status.critical { background: var(--danger); }
+    
+    .item-content { flex: 1; }
+    .item-title { font-weight: 600; color: #fff; }
+    .item-desc { font-size: 0.9rem; color: var(--muted); margin-top: 4px; }
+    
+    .priority-section {
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.1), rgba(168, 85, 247, 0.1));
+      border: 1px solid rgba(79, 140, 255, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 40px 0;
+    }
+    
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .summary-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .summary-card .number {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .summary-card .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    code {
+      background: rgba(79, 140, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Gest-e: Checklist Completezza</h1>
+    <p class="intro">
+      Questo documento serve come guida master per rendere il gestionale 100% funzionale,
+      eliminando contenuti demo/fittizi e integrando tutte le funzionalità in modo omogeneo.
+    </p>
+    
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="number" style="color: var(--success);">25+</div>
+        <div class="label">Moduli Attivi</div>
+      </div>
+      <div class="summary-card">
+        <div class="number" style="color: var(--warning);">~15</div>
+        <div class="label">Da Completare</div>
+      </div>
+      <div class="summary-card">
+        <div class="number" style="color: var(--accent);">Supabase</div>
+        <div class="label">Backend Integrato</div>
+      </div>
+    </div>
+    
+    <!-- PRIORITY FIXES -->
+    <div class="priority-section">
+      <h2>🎯 Priorità Immediata (Da Fare Subito)</h2>
+      <ul>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">Sidebar: Tutti i moduli collassati per default</div>
+            <div class="item-desc">I gruppi (Cantieri, HSE, Conformità, Commerciale, Amministrazione, Logistica) devono essere chiusi all'avvio. L'utente sceglie cosa aprire.</div>
+          </div>
+        </li>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">Registro Infortuni: Form completo e funzionale</div>
+            <div class="item-desc">Il dialog "Registra Infortunio" deve avere tutti i campi INAIL: lavoratore, data, ora, luogo, descrizione, prognosi, testimoni, ecc.</div>
+          </div>
+        </li>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">POS: Form completo con tutti i campi</div>
+            <div class="item-desc">Il form nuovo POS deve includere: rischi generici, rischi specifici, misure prevenzione, DPI richiesti, allegati, non solo cantiere/impresa/revisione.</div>
+          </div>
+        </li>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">Eliminare riferimenti "Demo"</div>
+            <div class="item-desc">In <code>guida-investitori.html</code>: rimuovere "Demo Live", "Accedi alla Demo" e riferimenti a dati fittizi.</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- BACKEND INTEGRATION -->
+    <div class="category">
+      <h3><span style="color: var(--success);">✅</span> Backend Supabase Integrato</h3>
+      <ul>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Cantieri</div>
+            <div class="item-desc">CRUD completo su tabella <code>cantieri</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Imprese</div>
+            <div class="item-desc">CRUD su <code>imprese</code> + relazione cantieri</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Lavoratori</div>
+            <div class="item-desc">CRUD su <code>lavoratori</code> + associazione impresa/cantiere</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Documenti</div>
+            <div class="item-desc">Upload su Supabase Storage con metadata in <code>documenti</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Formazioni</div>
+            <div class="item-desc">Tracciamento corsi in <code>formazioni</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Tasks</div>
+            <div class="item-desc">Gestione task/progetti in <code>tasks</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Magazzino</div>
+            <div class="item-desc">Inventario su <code>magazzino</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Rapportini</div>
+            <div class="item-desc">Registrazione ore su <code>rapportini</code></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- LOCAL STORAGE MODULES -->
+    <div class="category">
+      <h3><span style="color: var(--warning);">⚠️</span> Moduli con localStorage (funzionali ma locali)</h3>
+      <p style="color: var(--muted); margin-bottom: 16px;">
+        Questi moduli funzionano correttamente ma i dati sono salvati nel browser. 
+        Migrazione a Supabase opzionale per persistenza multi-dispositivo.
+      </p>
+      <ul>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">DPI Inventario</div>
+            <div class="item-desc">Gestione dispositivi protezione individuale - <code>localStorage: dpi_*</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Sorveglianza Sanitaria</div>
+            <div class="item-desc">Visite mediche e medici competenti - <code>localStorage: sorveglianza_*</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">ISO 9001 Qualità</div>
+            <div class="item-desc">Non conformità, CAPA, audit interni - <code>localStorage: quality_*</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">ISO 14001 Ambiente</div>
+            <div class="item-desc">Gestione rifiuti, impronta carbonio - <code>localStorage: env_*</code></div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">GDPR Compliance</div>
+            <div class="item-desc">Consensi, trattamenti, audit privacy</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">D.Lgs 81/2008</div>
+            <div class="item-desc">POS, DUVRI, Figure sicurezza, Infortuni - <code>localStorage: safety_*</code></div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- UI CONSISTENCY -->
+    <div class="category">
+      <h3><span style="color: var(--accent);">🎨</span> Consistenza UI/UX</h3>
+      <ul>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Sidebar Collassabile</div>
+            <div class="item-desc">Tutti i gruppi hanno freccia espandi/comprimi (Cantieri, HSE, Conformità, Commerciale, Amministrazione, Logistica)</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">15 Temi Colore</div>
+            <div class="item-desc">Sistema di theming completo con selezione in Impostazioni</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Effetti Glass/Glassmorphism</div>
+            <div class="item-desc">Backdrop-blur attivo su card e sidebar</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Rich Text Editor</div>
+            <div class="item-desc">TipTap integrato per editing POS e documenti</div>
+          </div>
+        </li>
+        <li>
+          <div class="status todo"></div>
+          <div class="item-content">
+            <div class="item-title">Dialogs interattivi omogenei</div>
+            <div class="item-desc">Tutti i moduli devono avere form dialog con stessa struttura</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- MODULES AUDIT -->
+    <div class="category">
+      <h3><span style="color: var(--warning);">📦</span> Audit Moduli - Funzionalità Attese</h3>
+      <ul>
+        <li>
+          <div class="status todo"></div>
+          <div class="item-content">
+            <div class="item-title">SAL (Stato Avanzamento Lavori)</div>
+            <div class="item-desc">Rimuovere dati azienda hardcoded ("GEST-E S.r.l.", "Via Example 123"). Usare datiAzienda dal context.</div>
+          </div>
+        </li>
+        <li>
+          <div class="status todo"></div>
+          <div class="item-content">
+            <div class="item-title">Computo Metrico</div>
+            <div class="item-desc">Prezziari regionali (Veneto, Toscana, Lombardia) sono esempi utili. Permettere importazione/aggiunta custom.</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Check-in Sicurezza</div>
+            <div class="item-desc">Registrazione ingressi con QR, funzionale</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Scadenzario</div>
+            <div class="item-desc">Calendario scadenze documenti, integrato</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Contatti</div>
+            <div class="item-desc">Rubrica aziendale funzionale</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Timbrature</div>
+            <div class="item-desc">Registrazione ore lavoratori</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Risorse (Mezzi/Attrezzature)</div>
+            <div class="item-desc">Inventario mezzi con scadenze</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Listino Prezzi</div>
+            <div class="item-desc">Gestione articoli e prezzi</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- FORMS TO COMPLETE -->
+    <div class="category">
+      <h3><span style="color: var(--danger);">🔧</span> Form da Completare/Integrare</h3>
+      <ul>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">Registro Infortuni - Form Completo</div>
+            <div class="item-desc">
+              Campi richiesti: Lavoratore (select), Data infortunio, Ora, Luogo (cantiere select), 
+              Descrizione evento, Tipologia lesione, Parte del corpo, Giorni prognosi, 
+              Testimoni, Denuncia INAIL (sì/no + data), Note, Allegati
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">POS - Form Completo Multistep</div>
+            <div class="item-desc">
+              Step 1: Cantiere, Impresa, Versione<br>
+              Step 2: Rischi Generici (lista checkable)<br>
+              Step 3: Rischi Specifici (textarea + aggiungi)<br>
+              Step 4: Misure Prevenzione (lista)<br>
+              Step 5: DPI Richiesti (multiselect)<br>
+              Step 6: Allegati + Rich Text Editor
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="status todo"></div>
+          <div class="item-content">
+            <div class="item-title">DUVRI - Form Generazione</div>
+            <div class="item-desc">Form per creare nuovo DUVRI con selezione imprese interferenti e rischi</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- DEMO CONTENT TO REMOVE -->
+    <div class="category">
+      <h3><span style="color: var(--danger);">🗑️</span> Contenuti Demo da Rimuovere</h3>
+      <ul>
+        <li>
+          <div class="status critical"></div>
+          <div class="item-content">
+            <div class="item-title">guida-investitori.html</div>
+            <div class="item-desc">
+              Righe 621, 635, 1334: "Accedi alla Demo", "Esplora la Demo Live" → 
+              Sostituire con "Accedi al Sistema", "Inizia Ora"
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="status todo"></div>
+          <div class="item-content">
+            <div class="item-title">SAL.tsx - Dati Azienda Hardcoded</div>
+            <div class="item-desc">
+              Righe 476-480: "GEST-E S.r.l.", "Via Example 123" → 
+              Usare <code>datiAzienda</code> dal WorkHubContext
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- INTEGRATIONS -->
+    <div class="category">
+      <h3><span style="color: var(--accent);">🔌</span> Integrazioni Attive</h3>
+      <ul>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Supabase Database</div>
+            <div class="item-desc">PostgreSQL con RLS policies attive</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Supabase Storage</div>
+            <div class="item-desc">Upload documenti e allegati</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">Edge Function: computo-ai</div>
+            <div class="item-desc">AI per analisi prezziari e suggerimenti codici</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">TipTap Rich Editor</div>
+            <div class="item-desc">Editor documenti integrato</div>
+          </div>
+        </li>
+        <li>
+          <div class="status done"></div>
+          <div class="item-content">
+            <div class="item-title">TanStack Query</div>
+            <div class="item-desc">Gestione stato server e caching</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <footer style="margin-top: 60px; padding-top: 30px; border-top: 1px solid var(--border); text-align: center; color: var(--muted);">
+      <p>Gest-e Construction Management Platform</p>
+      <p style="font-size: 0.85rem;">Documento generato per audit completezza - Versione 1.0</p>
+    </footer>
+  </div>
+</body>
+</html>

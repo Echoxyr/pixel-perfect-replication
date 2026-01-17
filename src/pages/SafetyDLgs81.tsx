@@ -102,7 +102,7 @@ interface DocumentoFigura {
 }
 
 export default function SafetyDLgs81() {
-  const { cantieri, imprese } = useWorkHub();
+  const { cantieri, imprese, lavoratori } = useWorkHub();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -186,7 +186,40 @@ export default function SafetyDLgs81() {
   const [showPOSEditorDialog, setShowPOSEditorDialog] = useState(false);
   const [editingPOS, setEditingPOS] = useState<POSDigitale | null>(null);
   const [editingPOSContent, setEditingPOSContent] = useState('');
-  const [newPOSData, setNewPOSData] = useState({ cantiereId: '', impresaId: '', versione: '1.0' });
+  const [posStep, setPosStep] = useState(1);
+  const [newPOSData, setNewPOSData] = useState({ 
+    cantiereId: '', 
+    impresaId: '', 
+    versione: '1.0',
+    rischioGenerico: [] as string[],
+    rischioSpecifico: [] as string[],
+    misurePrevenzione: [] as string[],
+    dpiRichiesti: [] as string[],
+    newRischio: '',
+    newMisura: ''
+  });
+
+  // Nuovo infortunio form state
+  const [newInfortunio, setNewInfortunio] = useState({
+    lavoratoreId: '',
+    lavoratoreNome: '',
+    cantiereId: '',
+    impresaId: '',
+    dataInfortunio: '',
+    oraInfortunio: '',
+    luogo: '',
+    descrizioneEvento: '',
+    natureLesioni: '',
+    sedeLesioni: '',
+    giorniPrognosi: 0,
+    giorniAssenza: 0,
+    denunciaINAIL: false,
+    denunciaINAILNumero: '',
+    denunciaINAILData: '',
+    testimoni: '',
+    misureCorrettive: '',
+    note: ''
+  });
 
   // Contenuti POS salvati localmente (estensione del tipo base)
   const [posContents, setPosContents] = useState<Record<string, string>>(() => {
@@ -1290,95 +1323,605 @@ export default function SafetyDLgs81() {
         </DialogContent>
       </Dialog>
 
-      {/* New POS Dialog */}
-      <Dialog open={showNewPOSDialog} onOpenChange={setShowNewPOSDialog}>
-        <DialogContent className="max-w-lg">
+      {/* New Infortunio Dialog - COMPLETE */}
+      <Dialog open={showNewInfortunioDialog} onOpenChange={setShowNewInfortunioDialog}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nuovo POS Digitale</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Registrazione Infortunio
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>Cantiere *</Label>
-              <Select value={newPOSData.cantiereId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, cantiereId: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona cantiere" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cantieri.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-6 py-4">
+            {/* Dati Lavoratore */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h4 className="font-medium mb-4 text-sm text-muted-foreground">DATI LAVORATORE</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Lavoratore *</Label>
+                  <Select 
+                    value={newInfortunio.lavoratoreId} 
+                    onValueChange={(v) => {
+                      const lav = lavoratori.find(l => l.id === v);
+                      setNewInfortunio(prev => ({ 
+                        ...prev, 
+                        lavoratoreId: v, 
+                        lavoratoreNome: lav ? `${lav.nome} ${lav.cognome}` : '',
+                        impresaId: lav?.impresaId || ''
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona lavoratore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lavoratori.map(l => (
+                        <SelectItem key={l.id} value={l.id}>{l.nome} {l.cognome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Impresa</Label>
+                  <Select value={newInfortunio.impresaId} onValueChange={(v) => setNewInfortunio(prev => ({ ...prev, impresaId: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona impresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {imprese.map(i => (
+                        <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div>
-              <Label>Impresa *</Label>
-              <Select value={newPOSData.impresaId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, impresaId: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona impresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {imprese.map(i => (
-                    <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            {/* Dati Evento */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h4 className="font-medium mb-4 text-sm text-muted-foreground">DATI EVENTO</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Data Infortunio *</Label>
+                  <Input 
+                    type="date"
+                    value={newInfortunio.dataInfortunio}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, dataInfortunio: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Ora Infortunio *</Label>
+                  <Input 
+                    type="time"
+                    value={newInfortunio.oraInfortunio}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, oraInfortunio: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Cantiere/Luogo *</Label>
+                  <Select value={newInfortunio.cantiereId} onValueChange={(v) => {
+                    const c = cantieri.find(c => c.id === v);
+                    setNewInfortunio(prev => ({ ...prev, cantiereId: v, luogo: c ? `${c.codiceCommessa} - ${c.nome}` : '' }));
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona cantiere" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cantieri.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label>Descrizione Evento *</Label>
+                <Textarea 
+                  value={newInfortunio.descrizioneEvento}
+                  onChange={(e) => setNewInfortunio(prev => ({ ...prev, descrizioneEvento: e.target.value }))}
+                  placeholder="Descrizione dettagliata di come si è verificato l'infortunio..."
+                  rows={3}
+                />
+              </div>
             </div>
-            <div>
-              <Label>Versione</Label>
-              <Input 
-                value={newPOSData.versione} 
-                onChange={(e) => setNewPOSData(prev => ({ ...prev, versione: e.target.value }))}
-                placeholder="1.0" 
-              />
+
+            {/* Dati Lesione */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h4 className="font-medium mb-4 text-sm text-muted-foreground">DATI LESIONE</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Natura Lesione *</Label>
+                  <Select value={newInfortunio.natureLesioni} onValueChange={(v) => setNewInfortunio(prev => ({ ...prev, natureLesioni: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tipo di lesione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="contusione">Contusione</SelectItem>
+                      <SelectItem value="ferita">Ferita</SelectItem>
+                      <SelectItem value="frattura">Frattura</SelectItem>
+                      <SelectItem value="lussazione">Lussazione</SelectItem>
+                      <SelectItem value="distorsione">Distorsione</SelectItem>
+                      <SelectItem value="ustione">Ustione</SelectItem>
+                      <SelectItem value="amputazione">Amputazione</SelectItem>
+                      <SelectItem value="intossicazione">Intossicazione</SelectItem>
+                      <SelectItem value="schiacciamento">Schiacciamento</SelectItem>
+                      <SelectItem value="altro">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sede Lesione *</Label>
+                  <Select value={newInfortunio.sedeLesioni} onValueChange={(v) => setNewInfortunio(prev => ({ ...prev, sedeLesioni: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Parte del corpo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="testa">Testa</SelectItem>
+                      <SelectItem value="collo">Collo</SelectItem>
+                      <SelectItem value="spalla">Spalla</SelectItem>
+                      <SelectItem value="braccio">Braccio</SelectItem>
+                      <SelectItem value="mano">Mano</SelectItem>
+                      <SelectItem value="dita_mano">Dita mano</SelectItem>
+                      <SelectItem value="torace">Torace</SelectItem>
+                      <SelectItem value="schiena">Schiena</SelectItem>
+                      <SelectItem value="addome">Addome</SelectItem>
+                      <SelectItem value="bacino">Bacino</SelectItem>
+                      <SelectItem value="gamba">Gamba</SelectItem>
+                      <SelectItem value="ginocchio">Ginocchio</SelectItem>
+                      <SelectItem value="piede">Piede</SelectItem>
+                      <SelectItem value="dita_piede">Dita piede</SelectItem>
+                      <SelectItem value="multiple">Lesioni multiple</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Giorni Prognosi *</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={newInfortunio.giorniPrognosi}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, giorniPrognosi: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label>Giorni Assenza</Label>
+                  <Input 
+                    type="number"
+                    min="0"
+                    value={newInfortunio.giorniAssenza}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, giorniAssenza: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Denuncia INAIL */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h4 className="font-medium mb-4 text-sm text-muted-foreground">DENUNCIA INAIL</h4>
+              <div className="flex items-center gap-3 mb-4">
+                <input 
+                  type="checkbox"
+                  id="denunciaINAIL"
+                  checked={newInfortunio.denunciaINAIL}
+                  onChange={(e) => setNewInfortunio(prev => ({ ...prev, denunciaINAIL: e.target.checked }))}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <Label htmlFor="denunciaINAIL">Infortunio denunciato all'INAIL</Label>
+              </div>
+              {newInfortunio.denunciaINAIL && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Numero Denuncia</Label>
+                    <Input 
+                      value={newInfortunio.denunciaINAILNumero}
+                      onChange={(e) => setNewInfortunio(prev => ({ ...prev, denunciaINAILNumero: e.target.value }))}
+                      placeholder="Numero protocollo INAIL"
+                    />
+                  </div>
+                  <div>
+                    <Label>Data Denuncia</Label>
+                    <Input 
+                      type="date"
+                      value={newInfortunio.denunciaINAILData}
+                      onChange={(e) => setNewInfortunio(prev => ({ ...prev, denunciaINAILData: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Altri Dati */}
+            <div className="p-4 rounded-xl border border-border bg-muted/30">
+              <h4 className="font-medium mb-4 text-sm text-muted-foreground">INFORMAZIONI AGGIUNTIVE</h4>
+              <div className="space-y-4">
+                <div>
+                  <Label>Testimoni</Label>
+                  <Input 
+                    value={newInfortunio.testimoni}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, testimoni: e.target.value }))}
+                    placeholder="Nomi dei testimoni separati da virgola"
+                  />
+                </div>
+                <div>
+                  <Label>Misure Correttive Adottate</Label>
+                  <Textarea 
+                    value={newInfortunio.misureCorrettive}
+                    onChange={(e) => setNewInfortunio(prev => ({ ...prev, misureCorrettive: e.target.value }))}
+                    placeholder="Descrivere le misure correttive adottate a seguito dell'infortunio..."
+                    rows={2}
+                  />
+                </div>
+              </div>
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewPOSDialog(false)}>Annulla</Button>
-            <Button onClick={() => {
-              if (!newPOSData.cantiereId || !newPOSData.impresaId) {
-                toast({ title: 'Errore', description: 'Seleziona cantiere e impresa', variant: 'destructive' });
-                return;
-              }
-              // Crea nuovo POS e apri l'editor
-              const newPOS: POSDigitale = {
-                id: generateId(),
-                cantiereId: newPOSData.cantiereId,
-                impresaId: newPOSData.impresaId,
-                versione: newPOSData.versione || '1.0',
-                dataEmissione: new Date().toISOString().split('T')[0],
-                stato: 'bozza',
-                rischioGenerico: [],
-                rischioSpecifico: [],
-                misurePrevenzione: [],
-                dpiRichiesti: [],
-                allegatiUrl: [],
-              };
+            <Button variant="outline" onClick={() => {
+              setShowNewInfortunioDialog(false);
+              setNewInfortunio({
+                lavoratoreId: '', lavoratoreNome: '', cantiereId: '', impresaId: '',
+                dataInfortunio: '', oraInfortunio: '', luogo: '', descrizioneEvento: '',
+                natureLesioni: '', sedeLesioni: '', giorniPrognosi: 0, giorniAssenza: 0,
+                denunciaINAIL: false, denunciaINAILNumero: '', denunciaINAILData: '',
+                testimoni: '', misureCorrettive: '', note: ''
+              });
+            }}>
+              Annulla
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!newInfortunio.lavoratoreId || !newInfortunio.dataInfortunio || !newInfortunio.descrizioneEvento) {
+                  toast({ title: 'Errore', description: 'Compila i campi obbligatori', variant: 'destructive' });
+                  return;
+                }
+
+                const infortunio: RegistroInfortuni = {
+                  id: generateId(),
+                  cantiereId: newInfortunio.cantiereId || undefined,
+                  impresaId: newInfortunio.impresaId || undefined,
+                  lavoratoreId: newInfortunio.lavoratoreId,
+                  lavoratoreNome: newInfortunio.lavoratoreNome,
+                  dataInfortunio: newInfortunio.dataInfortunio,
+                  oraInfortunio: newInfortunio.oraInfortunio,
+                  luogo: newInfortunio.luogo || getCantiereName(newInfortunio.cantiereId),
+                  descrizioneEvento: newInfortunio.descrizioneEvento,
+                  natureLesioni: newInfortunio.natureLesioni,
+                  sedeLesioni: newInfortunio.sedeLesioni,
+                  giorniPrognosi: newInfortunio.giorniPrognosi,
+                  giorniAssenza: newInfortunio.giorniAssenza,
+                  denunciaINAIL: newInfortunio.denunciaINAIL ? {
+                    numero: newInfortunio.denunciaINAILNumero,
+                    data: newInfortunio.denunciaINAILData
+                  } : undefined,
+                  testimoni: newInfortunio.testimoni ? newInfortunio.testimoni.split(',').map(t => t.trim()) : [],
+                  misureCorrettive: newInfortunio.misureCorrettive ? newInfortunio.misureCorrettive.split('\n').filter(Boolean) : [],
+                  allegatiUrl: []
+                };
+
+                setInfortuni(prev => [...prev, infortunio]);
+                toast({ title: 'Infortunio registrato', description: 'L\'infortunio è stato aggiunto al registro' });
+                setShowNewInfortunioDialog(false);
+                setNewInfortunio({
+                  lavoratoreId: '', lavoratoreNome: '', cantiereId: '', impresaId: '',
+                  dataInfortunio: '', oraInfortunio: '', luogo: '', descrizioneEvento: '',
+                  natureLesioni: '', sedeLesioni: '', giorniPrognosi: 0, giorniAssenza: 0,
+                  denunciaINAIL: false, denunciaINAILNumero: '', denunciaINAILData: '',
+                  testimoni: '', misureCorrettive: '', note: ''
+                });
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Registra Infortunio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New POS Dialog - ENHANCED */}
+      <Dialog open={showNewPOSDialog} onOpenChange={(open) => {
+        setShowNewPOSDialog(open);
+        if (!open) {
+          setPosStep(1);
+          setNewPOSData({ cantiereId: '', impresaId: '', versione: '1.0', rischioGenerico: [], rischioSpecifico: [], misurePrevenzione: [], dpiRichiesti: [], newRischio: '', newMisura: '' });
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nuovo POS Digitale - Step {posStep}/3</DialogTitle>
+          </DialogHeader>
+          
+          {/* Step 1: Dati Base */}
+          {posStep === 1 && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 rounded-xl border border-border bg-muted/30">
+                <h4 className="font-medium mb-4">Dati Generali</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Cantiere *</Label>
+                    <Select value={newPOSData.cantiereId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, cantiereId: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona cantiere" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cantieri.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Impresa *</Label>
+                    <Select value={newPOSData.impresaId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, impresaId: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona impresa" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imprese.map(i => (
+                          <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Label>Versione</Label>
+                  <Input 
+                    value={newPOSData.versione} 
+                    onChange={(e) => setNewPOSData(prev => ({ ...prev, versione: e.target.value }))}
+                    placeholder="1.0" 
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Rischi */}
+          {posStep === 2 && (
+            <div className="space-y-4 py-4">
+              {/* Rischi Generici */}
+              <div className="p-4 rounded-xl border border-border bg-muted/30">
+                <h4 className="font-medium mb-4">Rischi Generici di Cantiere</h4>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {['Caduta dall\'alto', 'Caduta materiali', 'Elettrocuzione', 'Rumore', 'Vibrazioni', 'Polveri', 'Movimentazione carichi', 'Investimento', 'Schiacciamento', 'Incendio'].map(rischio => (
+                    <label key={rischio} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newPOSData.rischioGenerico.includes(rischio)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewPOSData(prev => ({ ...prev, rischioGenerico: [...prev.rischioGenerico, rischio] }));
+                          } else {
+                            setNewPOSData(prev => ({ ...prev, rischioGenerico: prev.rischioGenerico.filter(r => r !== rischio) }));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-border"
+                      />
+                      <span className="text-sm">{rischio}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rischi Specifici */}
+              <div className="p-4 rounded-xl border border-border bg-muted/30">
+                <h4 className="font-medium mb-4">Rischi Specifici dell'Attività</h4>
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    value={newPOSData.newRischio}
+                    onChange={(e) => setNewPOSData(prev => ({ ...prev, newRischio: e.target.value }))}
+                    placeholder="Descrivi rischio specifico..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPOSData.newRischio.trim()) {
+                        setNewPOSData(prev => ({ 
+                          ...prev, 
+                          rischioSpecifico: [...prev.rischioSpecifico, prev.newRischio.trim()],
+                          newRischio: '' 
+                        }));
+                      }
+                    }}
+                  />
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (newPOSData.newRischio.trim()) {
+                        setNewPOSData(prev => ({ 
+                          ...prev, 
+                          rischioSpecifico: [...prev.rischioSpecifico, prev.newRischio.trim()],
+                          newRischio: '' 
+                        }));
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                {newPOSData.rischioSpecifico.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {newPOSData.rischioSpecifico.map((r, i) => (
+                      <Badge key={i} variant="outline" className="gap-1">
+                        {r}
+                        <button 
+                          onClick={() => setNewPOSData(prev => ({ ...prev, rischioSpecifico: prev.rischioSpecifico.filter((_, idx) => idx !== i) }))}
+                          className="ml-1 hover:text-red-500"
+                        >×</button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Misure e DPI */}
+          {posStep === 3 && (
+            <div className="space-y-4 py-4">
+              {/* Misure Prevenzione */}
+              <div className="p-4 rounded-xl border border-border bg-muted/30">
+                <h4 className="font-medium mb-4">Misure di Prevenzione e Protezione</h4>
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    value={newPOSData.newMisura}
+                    onChange={(e) => setNewPOSData(prev => ({ ...prev, newMisura: e.target.value }))}
+                    placeholder="Descrivi misura di prevenzione..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPOSData.newMisura.trim()) {
+                        setNewPOSData(prev => ({ 
+                          ...prev, 
+                          misurePrevenzione: [...prev.misurePrevenzione, prev.newMisura.trim()],
+                          newMisura: '' 
+                        }));
+                      }
+                    }}
+                  />
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      if (newPOSData.newMisura.trim()) {
+                        setNewPOSData(prev => ({ 
+                          ...prev, 
+                          misurePrevenzione: [...prev.misurePrevenzione, prev.newMisura.trim()],
+                          newMisura: '' 
+                        }));
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                {newPOSData.misurePrevenzione.length > 0 && (
+                  <div className="space-y-1">
+                    {newPOSData.misurePrevenzione.map((m, i) => (
+                      <div key={i} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg text-sm">
+                        <span>{m}</span>
+                        <button 
+                          onClick={() => setNewPOSData(prev => ({ ...prev, misurePrevenzione: prev.misurePrevenzione.filter((_, idx) => idx !== i) }))}
+                          className="text-red-500 hover:text-red-600"
+                        ><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* DPI Richiesti */}
+              <div className="p-4 rounded-xl border border-border bg-muted/30">
+                <h4 className="font-medium mb-4">DPI Richiesti</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Casco protettivo', 'Guanti', 'Occhiali protettivi', 'Scarpe antinfortunistiche', 'Gilet alta visibilità', 'Imbracatura', 'Mascherina FFP2', 'Cuffie antirumore', 'Tuta protettiva', 'Stivali di sicurezza'].map(dpi => (
+                    <label key={dpi} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newPOSData.dpiRichiesti.includes(dpi)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewPOSData(prev => ({ ...prev, dpiRichiesti: [...prev.dpiRichiesti, dpi] }));
+                          } else {
+                            setNewPOSData(prev => ({ ...prev, dpiRichiesti: prev.dpiRichiesti.filter(d => d !== dpi) }));
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-border"
+                      />
+                      <span className="text-sm">{dpi}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex justify-between">
+            <div>
+              {posStep > 1 && (
+                <Button variant="outline" onClick={() => setPosStep(s => s - 1)}>
+                  Indietro
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                setShowNewPOSDialog(false);
+                setPosStep(1);
+              }}>Annulla</Button>
               
-              const defaultContent = `<h2>Piano Operativo di Sicurezza</h2>
+              {posStep < 3 ? (
+                <Button onClick={() => {
+                  if (posStep === 1 && (!newPOSData.cantiereId || !newPOSData.impresaId)) {
+                    toast({ title: 'Errore', description: 'Seleziona cantiere e impresa', variant: 'destructive' });
+                    return;
+                  }
+                  setPosStep(s => s + 1);
+                }}>
+                  Avanti
+                </Button>
+              ) : (
+                <Button onClick={() => {
+                  // Crea nuovo POS con tutti i dati
+                  const newPOS: POSDigitale = {
+                    id: generateId(),
+                    cantiereId: newPOSData.cantiereId,
+                    impresaId: newPOSData.impresaId,
+                    versione: newPOSData.versione || '1.0',
+                    dataEmissione: new Date().toISOString().split('T')[0],
+                    stato: 'bozza',
+                    rischioGenerico: newPOSData.rischioGenerico,
+                    rischioSpecifico: newPOSData.rischioSpecifico,
+                    misurePrevenzione: newPOSData.misurePrevenzione,
+                    dpiRichiesti: newPOSData.dpiRichiesti,
+                    allegatiUrl: [],
+                  };
+                  
+                  const defaultContent = `<h2>Piano Operativo di Sicurezza</h2>
 <p><strong>Cantiere:</strong> ${getCantiereName(newPOSData.cantiereId)}</p>
 <p><strong>Impresa:</strong> ${getImpresaName(newPOSData.impresaId)}</p>
 <p><strong>Versione:</strong> ${newPOSData.versione || '1.0'}</p>
+<p><strong>Data Emissione:</strong> ${new Date().toLocaleDateString('it-IT')}</p>
+
 <h3>1. Dati Generali dell'Impresa</h3>
-<p>...</p>
-<h3>2. Descrizione delle Attività</h3>
-<p>...</p>
-<h3>3. Rischi Identificati</h3>
-<p>...</p>
+<p>Inserire qui i dati identificativi dell'impresa esecutrice...</p>
+
+<h3>2. Rischi Generici Identificati</h3>
+<ul>
+${newPOSData.rischioGenerico.map(r => `<li>${r}</li>`).join('\n')}
+</ul>
+
+<h3>3. Rischi Specifici dell'Attività</h3>
+<ul>
+${newPOSData.rischioSpecifico.map(r => `<li>${r}</li>`).join('\n')}
+</ul>
+
 <h3>4. Misure di Prevenzione e Protezione</h3>
-<p>...</p>
+<ul>
+${newPOSData.misurePrevenzione.map(m => `<li>${m}</li>`).join('\n')}
+</ul>
+
 <h3>5. DPI Richiesti</h3>
-<p>...</p>
+<ul>
+${newPOSData.dpiRichiesti.map(d => `<li>${d}</li>`).join('\n')}
+</ul>
+
 <h3>6. Procedure di Emergenza</h3>
-<p>...</p>`;
-              
-              setPosContents(prev => ({ ...prev, [newPOS.id]: defaultContent }));
-              setPosDigitali(prev => [...prev, newPOS]);
-              setEditingPOS(newPOS);
-              setEditingPOSContent(defaultContent);
-              setShowNewPOSDialog(false);
-              setShowPOSEditorDialog(true);
-              setNewPOSData({ cantiereId: '', impresaId: '', versione: '1.0' });
-            }}>Crea e Modifica</Button>
+<p>Descrivere le procedure da seguire in caso di emergenza...</p>
+
+<h3>7. Allegati</h3>
+<p>Elencare eventuali allegati al presente documento...</p>`;
+                  
+                  setPosContents(prev => ({ ...prev, [newPOS.id]: defaultContent }));
+                  setPosDigitali(prev => [...prev, newPOS]);
+                  setEditingPOS(newPOS);
+                  setEditingPOSContent(defaultContent);
+                  setShowNewPOSDialog(false);
+                  setShowPOSEditorDialog(true);
+                  setNewPOSData({ cantiereId: '', impresaId: '', versione: '1.0', rischioGenerico: [], rischioSpecifico: [], misurePrevenzione: [], dpiRichiesti: [], newRischio: '', newMisura: '' });
+                  setPosStep(1);
+                  toast({ title: 'POS creato', description: 'Ora puoi modificare il documento nel rich editor' });
+                }}>
+                  Crea e Modifica
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
