@@ -664,6 +664,22 @@ export function Layout() {
 
         {/* Footer */}
         <div className="p-3 border-t border-sidebar-border space-y-1">
+          {/* Investor Guide Link */}
+          <a
+            href="/guida-investitori.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
+              'text-white hover:text-white hover:bg-white/10'
+            )}
+          >
+            <HelpCircle className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
+            {!sidebarCollapsed && (
+              <span className="font-medium text-sm text-white">Guida Investitori</span>
+            )}
+          </a>
+          
           <NavItem 
             to="/impostazioni" 
             icon={Settings} 
