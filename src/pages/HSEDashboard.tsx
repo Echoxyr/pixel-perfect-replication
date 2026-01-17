@@ -408,8 +408,8 @@ export default function HSEDashboard() {
         {/* Documenti */}
         <div className="p-5 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <FileWarning className="w-5 h-5 text-blue-500" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileWarning className="w-5 h-5 text-primary" />
             </div>
             <h3 className="font-semibold">Documenti Aziendali</h3>
           </div>

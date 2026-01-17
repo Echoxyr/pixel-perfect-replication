@@ -55,7 +55,7 @@ export function QuickActions({ className }: QuickActionsProps) {
       description: 'Crea un rapportino giornaliero',
       icon: FileText,
       action: () => navigate('/rapportini'),
-      color: 'text-blue-500',
+      color: 'text-primary',
     },
     {
       id: 'new-checkin',

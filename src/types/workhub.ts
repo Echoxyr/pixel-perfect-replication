@@ -120,7 +120,7 @@ export const STATO_SAL_LABELS: Record<StatoSAL, string> = {
 
 export const STATUS_COLORS: Record<TaskStatus, string> = {
   da_iniziare: 'bg-gray-500',
-  in_corso: 'bg-blue-500',
+  in_corso: 'bg-primary',
   in_attesa: 'bg-amber-500',
   bloccato: 'bg-red-500',
   fatto: 'bg-emerald-500'
@@ -137,7 +137,7 @@ export const PRIORITY_COLORS: Record<TaskPriority, string> = {
 
 export const DOC_STATUS_COLORS: Record<DocumentStatus, string> = {
   da_richiedere: 'bg-gray-500',
-  in_verifica: 'bg-blue-500',
+  in_verifica: 'bg-primary',
   approvato: 'bg-emerald-500',
   in_scadenza: 'bg-amber-500',
   scaduto: 'bg-red-500'
@@ -145,7 +145,7 @@ export const DOC_STATUS_COLORS: Record<DocumentStatus, string> = {
 
 export const STATO_SAL_COLORS: Record<StatoSAL, string> = {
   in_preparazione: 'bg-gray-500',
-  presentato: 'bg-blue-500',
+  presentato: 'bg-primary',
   approvato: 'bg-emerald-500',
   pagato: 'bg-green-600',
   contestato: 'bg-red-500'

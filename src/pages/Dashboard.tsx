@@ -172,8 +172,8 @@ export default function Dashboard() {
           className="p-5 rounded-xl border-2 border-primary/50 bg-card card-clickable hover:border-primary shadow-sm hover:shadow-primary/20"
         >
           <div className="flex items-center justify-between">
-            <div className="p-2 rounded-lg bg-sky-500/10">
-              <Construction className="w-5 h-5 text-sky-500" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Construction className="w-5 h-5 text-primary" />
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>

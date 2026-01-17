@@ -354,8 +354,8 @@ export default function GDPRCompliance() {
         </div>
         <div className="p-4 rounded-xl border border-border bg-card">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <FileText className="w-4 h-4 text-blue-500" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="w-4 h-4 text-primary" />
             </div>
             <span className="text-sm text-muted-foreground">Trattamenti</span>
           </div>
@@ -570,7 +570,7 @@ export default function GDPRCompliance() {
                         <Badge variant="outline" className={cn(
                           log.action === 'delete' && 'bg-red-500/10 text-red-500',
                           log.action === 'create' && 'bg-emerald-500/10 text-emerald-500',
-                          log.action === 'update' && 'bg-blue-500/10 text-blue-500',
+                          log.action === 'update' && 'bg-primary/10 text-primary',
                           log.action === 'export' && 'bg-amber-500/10 text-amber-500'
                         )}>
                           {log.action}
