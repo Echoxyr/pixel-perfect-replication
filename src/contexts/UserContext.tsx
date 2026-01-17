@@ -97,6 +97,13 @@ export const DEFAULT_UI_CONFIG: UIVariantConfig = {
 
 const UI_CONFIG_KEY = 'ui_variant_config';
 
+// Default brand color must match the design system (Corallo)
+const DEFAULT_THEME_COLOR = 'coral';
+
+const normalizeThemeColor = (value: string | null | undefined) => {
+  return value && THEME_COLORS.some(c => c.id === value) ? value : DEFAULT_THEME_COLOR;
+};
+
 interface UserContextType {
   profile: UserProfile;
   tasks: UserTask[];
@@ -127,7 +134,7 @@ const defaultProfile: UserProfile = {
   email: 'admin@gest-e.it',
   telefono: '+39 049 1234567',
   avatar_url: '',
-  theme_color: 'blue',
+  theme_color: DEFAULT_THEME_COLOR,
 };
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -137,7 +144,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [events, setEvents] = useState<UserCalendarEvent[]>([]);
   const [notes, setNotes] = useState<UserNote[]>([]);
-  const [themeColor, setThemeColorState] = useState('blue');
+  const [themeColor, setThemeColorState] = useState(DEFAULT_THEME_COLOR);
   const [uiConfig, setUIConfigState] = useState<UIVariantConfig>(() => {
     const stored = localStorage.getItem(UI_CONFIG_KEY);
     return stored ? JSON.parse(stored) : DEFAULT_UI_CONFIG;
@@ -175,9 +182,27 @@ export function UserProvider({ children }: { children: ReactNode }) {
         .from('user_profiles')
         .select('*')
         .limit(1);
-      
+
       if (profiles && profiles.length > 0) {
         const p = profiles[0];
+
+        const rawTheme = (p.theme_color as string | null | undefined) ?? undefined;
+        const normalizedTheme = normalizeThemeColor(rawTheme);
+
+        // If the DB row still uses the old seeded default (blue), migrate it to brand default (coral).
+        // This avoids the app showing "still blue" everywhere for the default admin profile.
+        const isLegacySeedProfile =
+          rawTheme === 'blue' &&
+          (p.nome ?? 'Admin') === defaultProfile.nome &&
+          (p.cognome ?? 'User') === defaultProfile.cognome &&
+          (p.email ?? defaultProfile.email) === defaultProfile.email;
+
+        const finalTheme = isLegacySeedProfile ? DEFAULT_THEME_COLOR : normalizedTheme;
+
+        if (isLegacySeedProfile) {
+          await supabase.from('user_profiles').update({ theme_color: finalTheme }).eq('id', p.id);
+        }
+
         setProfile({
           id: p.id,
           nome: p.nome || 'Admin',
@@ -186,9 +211,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
           email: p.email || '',
           telefono: p.telefono || '',
           avatar_url: p.avatar_url || '',
-          theme_color: p.theme_color || 'blue',
+          theme_color: finalTheme,
         });
-        setThemeColorState(p.theme_color || 'blue');
+        setThemeColorState(finalTheme);
       } else {
         // Create default profile
         const { data: newProfile } = await supabase
