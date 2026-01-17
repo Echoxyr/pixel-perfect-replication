@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gest-e | Guida Investitori - Piattaforma Gestione Cantieri</title>
+  <meta name="description" content="Guida completa per investitori: scopri Gest-e, la piattaforma all-in-one per la gestione di cantieri edili, sicurezza, conformità e amministrazione.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #1e293b;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 1rem 2rem;
+    }
+
+    .nav-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .cta-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 8rem 2rem 4rem;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.875rem;
+      color: var(--primary);
+      margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 2rem;
+      max-width: 800px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+
+    /* Section Styles */
+    .section {
+      padding: 5rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Module Grid */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+    }
+
+    .module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .module-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+    }
+
+    .module-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .module-icon.blue { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .module-icon.green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .module-icon.orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .module-icon.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .module-icon.purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+    .module-icon.cyan { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+
+    .module-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .module-card p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .feature-list li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Workflow Section */
+    .workflow {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .workflow-step {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .step-content h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content p {
+      color: var(--text-secondary);
+    }
+
+    /* Architecture Diagram */
+    .architecture {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem;
+      text-align: center;
+    }
+
+    .arch-layers {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 2rem auto;
+    }
+
+    .arch-layer {
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .arch-layer.frontend {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .arch-layer.backend {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .arch-layer.database {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .arch-layer h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .tech-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .tech-badge {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* Value Proposition */
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .value-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .value-card h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 1rem 0 0.5rem;
+    }
+
+    .value-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .value-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      position: sticky;
+      top: 100px;
+    }
+
+    .toc h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toc-list {
+      list-style: none;
+    }
+
+    .toc-list li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toc-list li:last-child {
+      border-bottom: none;
+    }
+
+    .toc-list a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .toc-list a:hover {
+      color: var(--primary);
+    }
+
+    .toc-number {
+      width: 28px;
+      height: 28px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* Comparison Table */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comparison-table th {
+      background: var(--bg-card);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table td {
+      font-size: 0.95rem;
+    }
+
+    .check-icon {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .x-icon {
+      color: var(--danger);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-top: 5rem;
+    }
+
+    .footer p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding: 6rem 1rem 3rem;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .workflow-step {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .module-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding: 3rem 1rem;
+      }
+
+      .nav {
+        padding: 1rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">G</div>
+        Gest-e
+      </a>
+      <ul class="nav-links">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#modules">Moduli</a></li>
+        <li><a href="#workflow">Workflow</a></li>
+        <li><a href="#architecture">Architettura</a></li>
+        <li><a href="#value">Value Proposition</a></li>
+      </ul>
+      <a href="/" class="cta-btn">Accedi alla Demo →</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-badge">
+      🏗️ Construction Management Platform
+    </div>
+    <h1>La Piattaforma All-in-One per la Gestione Cantieri</h1>
+    <p>
+      Gest-e è una soluzione enterprise per imprese edili che unifica gestione cantieri, 
+      sicurezza, conformità normativa e amministrazione in un unico ecosistema digitale.
+    </p>
+    <a href="/" class="cta-btn">Esplora la Demo Live →</a>
+
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-value">30+</div>
+        <div class="stat-label">Moduli Integrati</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Cloud Native</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">5</div>
+        <div class="stat-label">Reparti Aziendali</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">∞</div>
+        <div class="stat-label">Scalabilità</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Overview Section -->
+  <section id="overview" class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Panoramica della Piattaforma</h2>
+      <p class="section-subtitle">
+        Gest-e digitalizza l'intero ciclo di vita di un progetto edile, 
+        dalla pianificazione alla chiusura cantiere.
+      </p>
+    </div>
+
+    <div class="architecture">
+      <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Architettura Multi-Dipartimentale</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+        Ogni reparto aziendale ha un workspace dedicato con dati, workflow e documenti isolati
+      </p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <div class="value-card">
+          <div class="value-icon">🛡️</div>
+          <h4>Sicurezza & HSE</h4>
+          <p>Team sicurezza, RSPP, coordinatori</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🏥</div>
+          <h4>Sorveglianza Sanitaria</h4>
+          <p>Medico competente, visite</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">💼</div>
+          <h4>Ufficio Commerciale</h4>
+          <p>Preventivi, CRM, acquisizione</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📊</div>
+          <h4>Amministrazione</h4>
+          <p>Fatture, ordini, contabilità</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🏗️</div>
+          <h4>Direzione Lavori</h4>
+          <p>SAL, rapportini, risorse</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modules Section -->
+  <section id="modules" class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Moduli Funzionali</h2>
+      <p class="section-subtitle">
+        Ogni modulo è progettato per risolvere esigenze specifiche del settore edile
+      </p>
+    </div>
+
+    <div class="module-grid">
+      <!-- Dashboard -->
+      <div class="module-card">
+        <div class="module-icon blue">📊</div>
+        <h3>Dashboard Centrale</h3>
+        <p>Centro di comando con KPI in tempo reale, alert automatici e vista d'insieme su tutti i cantieri.</p>
+        <ul class="feature-list">
+          <li>Statistiche cantieri attivi, task, scadenze</li>
+          <li>Filtro per singolo cantiere con dati isolati</li>
+          <li>Alert HSE con documenti/formazioni scadute</li>
+          <li>Quick Actions per operazioni frequenti</li>
+        </ul>
+      </div>
+
+      <!-- Cantieri -->
+      <div class="module-card">
+        <div class="module-icon green">🏗️</div>
+        <h3>Gestione Cantieri</h3>
+        <p>Anagrafica completa di ogni cantiere con tutte le entità collegate e stato avanzamento.</p>
+        <ul class="feature-list">
+          <li>Scheda cantiere con dati committente, DL, CSE</li>
+          <li>Imprese e lavoratori assegnati</li>
+          <li>Documenti di cantiere con scadenze</li>
+          <li>Tracciamento stato (attivo/sospeso/chiuso)</li>
+        </ul>
+      </div>
+
+      <!-- Progetti & Task -->
+      <div class="module-card">
+        <div class="module-icon purple">📋</div>
+        <h3>Progetti & Task</h3>
+        <p>Sistema di project management con Kanban board, Gantt e gestione priorità.</p>
+        <ul class="feature-list">
+          <li>Kanban con drag & drop</li>
+          <li>Timeline Gantt interattiva</li>
+          <li>Priorità, scadenze, assegnatari</li>
+          <li>Collegamento task → cantiere</li>
+        </ul>
+      </div>
+
+      <!-- SAL -->
+      <div class="module-card">
+        <div class="module-icon orange">📈</div>
+        <h3>SAL - Avanzamento Lavori</h3>
+        <p>Monitoraggio Stato Avanzamento Lavori con import Excel e comparazione budget.</p>
+        <ul class="feature-list">
+          <li>Import massivo da Excel</li>
+          <li>Grafico comparativo previsto/consuntivo</li>
+          <li>Storico SAL per cantiere</li>
+          <li>Export report per DL</li>
+        </ul>
+      </div>
+
+      <!-- HSE Dashboard -->
+      <div class="module-card">
+        <div class="module-icon red">🛡️</div>
+        <h3>Dashboard HSE</h3>
+        <p>Cruscotto sicurezza con semafori, scadenze critiche e compliance overview.</p>
+        <ul class="feature-list">
+          <li>Semafori verde/giallo/rosso per ogni entità</li>
+          <li>Documenti, formazioni, visite scadute</li>
+          <li>Filtri per cantiere/impresa/lavoratore</li>
+          <li>Alert automatici pre-scadenza</li>
+        </ul>
+      </div>
+
+      <!-- Imprese Esterne -->
+      <div class="module-card">
+        <div class="module-icon cyan">🏢</div>
+        <h3>Imprese Esterne</h3>
+        <p>Gestione subappaltatori con documenti obbligatori e verifica idoneità tecnico-professionale.</p>
+        <ul class="feature-list">
+          <li>Anagrafica impresa con P.IVA, SOA</li>
+          <li>Documenti con scadenze (DURC, Visura, ecc.)</li>
+          <li>Lavoratori assegnati per impresa</li>
+          <li>Storico cantieri per impresa</li>
+        </ul>
+      </div>
+
+      <!-- Lavoratori -->
+      <div class="module-card">
+        <div class="module-icon blue">👷</div>
+        <h3>Dipendenti & Lavoratori</h3>
+        <p>Anagrafica personale con documenti, formazione, DPI e idoneità sanitaria.</p>
+        <ul class="feature-list">
+          <li>Scheda lavoratore completa</li>
+          <li>Corsi formazione con scadenze</li>
+          <li>Consegna DPI tracciata</li>
+          <li>Visite mediche e idoneità</li>
+        </ul>
+      </div>
+
+      <!-- Formazione -->
+      <div class="module-card">
+        <div class="module-icon green">🎓</div>
+        <h3>Formazione</h3>
+        <p>Tracciamento corsi obbligatori con scadenze, attestati e pianificazione rinnovi.</p>
+        <ul class="feature-list">
+          <li>Catalogo corsi con durata/validità</li>
+          <li>Attestati allegabili</li>
+          <li>Scadenze automatiche</li>
+          <li>Report per impresa/lavoratore</li>
+        </ul>
+      </div>
+
+      <!-- DPI -->
+      <div class="module-card">
+        <div class="module-icon orange">🦺</div>
+        <h3>DPI - Dispositivi di Protezione</h3>
+        <p>Gestione consegna DPI con categorie, taglie, scadenze e storico per lavoratore.</p>
+        <ul class="feature-list">
+          <li>Categorie DPI complete (testa, mani, piedi...)</li>
+          <li>Tracciamento consegne con firma</li>
+          <li>Scadenze per DPI a tempo</li>
+          <li>Report per lavoratore</li>
+        </ul>
+      </div>
+
+      <!-- Sorveglianza Sanitaria -->
+      <div class="module-card">
+        <div class="module-icon red">🏥</div>
+        <h3>Sorveglianza Sanitaria</h3>
+        <p>Visite mediche, idoneità, protocollo sanitario e scadenzario medico competente.</p>
+        <ul class="feature-list">
+          <li>Calendario visite mediche</li>
+          <li>Esiti e limitazioni</li>
+          <li>Scadenzario automatico</li>
+          <li>Integrazione con lavoratori</li>
+        </ul>
+      </div>
+
+      <!-- D.Lgs 81/2008 -->
+      <div class="module-card">
+        <div class="module-icon purple">📜</div>
+        <h3>D.Lgs 81/2008</h3>
+        <p>Compliance sicurezza lavoro con DVR, POS, PSC, DUVRI e registro infortuni.</p>
+        <ul class="feature-list">
+          <li>Template POS generabili</li>
+          <li>Gestione DVR per cantiere</li>
+          <li>Registro infortuni digitalizzato</li>
+          <li>DUVRI e interferenze</li>
+        </ul>
+      </div>
+
+      <!-- Check-in Sicurezza -->
+      <div class="module-card">
+        <div class="module-icon cyan">✅</div>
+        <h3>Check-in Sicurezza</h3>
+        <p>Verifica giornaliera pre-lavoro con checklist DPI, condizioni meteo e briefing.</p>
+        <ul class="feature-list">
+          <li>Checklist configurabile</li>
+          <li>Firma digitale responsabile</li>
+          <li>Foto allegabili</li>
+          <li>Storico per cantiere</li>
+        </ul>
+      </div>
+
+      <!-- GDPR -->
+      <div class="module-card">
+        <div class="module-icon blue">🔒</div>
+        <h3>GDPR Compliance</h3>
+        <p>Gestione privacy con registro trattamenti, consensi, audit e data processing.</p>
+        <ul class="feature-list">
+          <li>Registro trattamenti dati</li>
+          <li>Gestione consensi</li>
+          <li>Audit privacy</li>
+          <li>Export documentazione</li>
+        </ul>
+      </div>
+
+      <!-- ISO 9001 -->
+      <div class="module-card">
+        <div class="module-icon green">🏆</div>
+        <h3>ISO 9001 - Qualità</h3>
+        <p>Sistema gestione qualità con non conformità, audit, azioni correttive.</p>
+        <ul class="feature-list">
+          <li>Registro non conformità</li>
+          <li>Azioni correttive/preventive</li>
+          <li>Audit interni pianificati</li>
+          <li>Documenti controllati</li>
+        </ul>
+      </div>
+
+      <!-- ISO 14001 -->
+      <div class="module-card">
+        <div class="module-icon green">🌿</div>
+        <h3>ISO 14001 - Ambiente</h3>
+        <p>Gestione ambientale con registro rifiuti, FIR, carbon footprint.</p>
+        <ul class="feature-list">
+          <li>Registro rifiuti con CER</li>
+          <li>Tracciamento FIR</li>
+          <li>Calcolo carbon footprint</li>
+          <li>Checklist ambientali</li>
+        </ul>
+      </div>
+
+      <!-- Ufficio Commerciale -->
+      <div class="module-card">
+        <div class="module-icon orange">💼</div>
+        <h3>Ufficio Commerciale</h3>
+        <p>CRM con lead, preventivi, pipeline commerciale e conversione clienti.</p>
+        <ul class="feature-list">
+          <li>Gestione lead con pipeline</li>
+          <li>Preventivi con righe prodotto</li>
+          <li>Probabilità e valore stimato</li>
+          <li>Conversione in cantiere</li>
+        </ul>
+      </div>
+
+      <!-- Amministrazione -->
+      <div class="module-card">
+        <div class="module-icon red">📑</div>
+        <h3>Reparto Amministrazione</h3>
+        <p>Ciclo passivo completo: fornitori, preventivi, ordini, DDT, fatture.</p>
+        <ul class="feature-list">
+          <li>Anagrafica fornitori</li>
+          <li>Ordini a fornitore</li>
+          <li>DDT entrata/uscita</li>
+          <li>Fatture attive/passive</li>
+        </ul>
+      </div>
+
+      <!-- Computo Metrico -->
+      <div class="module-card">
+        <div class="module-icon purple">🧮</div>
+        <h3>Computo Metrico</h3>
+        <p>Creazione computi metrici estimativi con categorie, voci e calcolo automatico.</p>
+        <ul class="feature-list">
+          <li>Struttura gerarchica lavorazioni</li>
+          <li>Importazione listini prezzi</li>
+          <li>Calcolo automatico totali</li>
+          <li>Export in Excel/PDF</li>
+        </ul>
+      </div>
+
+      <!-- Listino Prezzi -->
+      <div class="module-card">
+        <div class="module-icon cyan">💰</div>
+        <h3>Listino Prezzi</h3>
+        <p>Prezzari con categorie, unità di misura, margini e importazione massiva.</p>
+        <ul class="feature-list">
+          <li>Listini multipli per fornitore</li>
+          <li>Import da Excel</li>
+          <li>Calcolo margine automatico</li>
+          <li>Ricerca e filtri avanzati</li>
+        </ul>
+      </div>
+
+      <!-- Risorse -->
+      <div class="module-card">
+        <div class="module-icon blue">🚜</div>
+        <h3>Risorse & Mezzi</h3>
+        <p>Gestione flotta mezzi, attrezzature, manutenzioni e prenotazioni.</p>
+        <ul class="feature-list">
+          <li>Anagrafica mezzi/attrezzature</li>
+          <li>Piano manutenzioni</li>
+          <li>Prenotazione per cantiere</li>
+          <li>Tracking km e carburante</li>
+        </ul>
+      </div>
+
+      <!-- Magazzino -->
+      <div class="module-card">
+        <div class="module-icon green">📦</div>
+        <h3>Magazzino</h3>
+        <p>Gestione scorte con movimenti, giacenze, sottoscorta e ubicazioni.</p>
+        <ul class="feature-list">
+          <li>Articoli con codice/categoria</li>
+          <li>Movimenti carico/scarico</li>
+          <li>Alert sottoscorta</li>
+          <li>Collegamento a cantieri</li>
+        </ul>
+      </div>
+
+      <!-- Rapportini -->
+      <div class="module-card">
+        <div class="module-icon orange">📝</div>
+        <h3>Rapportini Giornalieri</h3>
+        <p>Report giornaliero cantiere con presenze, lavorazioni, meteo e foto.</p>
+        <ul class="feature-list">
+          <li>Presenze per lavoratore</li>
+          <li>Lavorazioni eseguite</li>
+          <li>Materiali utilizzati</li>
+          <li>Foto allegabili</li>
+        </ul>
+      </div>
+
+      <!-- Timbrature -->
+      <div class="module-card">
+        <div class="module-icon red">⏱️</div>
+        <h3>Timbrature</h3>
+        <p>Sistema presenze con entrata/uscita, ore lavorate e report mensili.</p>
+        <ul class="feature-list">
+          <li>Timbratura digitale</li>
+          <li>Calcolo ore automatico</li>
+          <li>Report per dipendente</li>
+          <li>Export per paghe</li>
+        </ul>
+      </div>
+
+      <!-- Scadenzario -->
+      <div class="module-card">
+        <div class="module-icon purple">📅</div>
+        <h3>Scadenzario</h3>
+        <p>Calendario unificato di tutte le scadenze: documenti, formazioni, visite, contratti.</p>
+        <ul class="feature-list">
+          <li>Vista calendario/lista</li>
+          <li>Filtri per tipo scadenza</li>
+          <li>Alert automatici</li>
+          <li>Integrazione email</li>
+        </ul>
+      </div>
+
+      <!-- Contatti -->
+      <div class="module-card">
+        <div class="module-icon cyan">👥</div>
+        <h3>Rubrica Contatti</h3>
+        <p>Anagrafica centralizzata clienti, fornitori, professionisti con tag e note.</p>
+        <ul class="feature-list">
+          <li>Categorie personalizzabili</li>
+          <li>Dati fiscali completi</li>
+          <li>Tag e preferiti</li>
+          <li>Ricerca avanzata</li>
+        </ul>
+      </div>
+
+      <!-- Azienda -->
+      <div class="module-card">
+        <div class="module-icon blue">🏛️</div>
+        <h3>Documenti Azienda</h3>
+        <p>Repository centrale documenti aziendali: fiscali, legali, certificazioni.</p>
+        <ul class="feature-list">
+          <li>Categorie (fiscale, dipendenti, sicurezza)</li>
+          <li>Scadenze con alert</li>
+          <li>Upload allegati</li>
+          <li>Export per gare</li>
+        </ul>
+      </div>
+
+      <!-- Business Intelligence -->
+      <div class="module-card">
+        <div class="module-icon orange">📊</div>
+        <h3>Business Intelligence</h3>
+        <p>Analytics avanzati con KPI finanziari, margini, trend e report automatici.</p>
+        <ul class="feature-list">
+          <li>KPI finanziari real-time</li>
+          <li>Grafici interattivi</li>
+          <li>Report schedulati</li>
+          <li>Export multi-formato</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Workflow Section -->
+  <section id="workflow" class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Workflow Operativo</h2>
+      <p class="section-subtitle">
+        Come Gest-e supporta l'intero ciclo di vita di un progetto edile
+      </p>
+    </div>
+
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Acquisizione Commessa</h3>
+          <p>
+            L'ufficio commerciale gestisce il lead, crea il preventivo e, una volta confermato, 
+            converte automaticamente in nuovo cantiere con tutti i dati pre-compilati.
+          </p>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Setup Cantiere</h3>
+          <p>
+            Creazione anagrafica cantiere, assegnazione imprese esterne con verifica documenti,
+            inserimento lavoratori con controllo formazione e idoneità sanitaria.
+          </p>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Gestione Sicurezza</h3>
+          <p>
+            Generazione POS, gestione DVR, consegna DPI tracciata, check-in giornalieri,
+            briefing sicurezza con alert automatici su scadenze.
+          </p>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h3>Esecuzione Lavori</h3>
+          <p>
+            Rapportini giornalieri, gestione task con Kanban, tracciamento risorse e mezzi,
+            ordini a fornitori con DDT, movimenti magazzino.
+          </p>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-number">5</div>
+        <div class="step-content">
+          <h3>Contabilità Lavori</h3>
+          <p>
+            Creazione SAL con import Excel, comparazione budget, fatturazione attiva,
+            registrazione costi, analisi margini per commessa.
+          </p>
+        </div>
+      </div>
+
+      <div class="workflow-step">
+        <div class="step-number">6</div>
+        <div class="step-content">
+          <h3>Chiusura & Analisi</h3>
+          <p>
+            Archiviazione documenti, report finale, analisi Business Intelligence,
+            lesson learned e metriche per miglioramento continuo.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section id="architecture" class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Stack Tecnologico</h2>
+      <p class="section-subtitle">
+        Architettura moderna, scalabile e cloud-native
+      </p>
+    </div>
+
+    <div class="architecture">
+      <div class="arch-layers">
+        <div class="arch-layer frontend">
+          <h4>Frontend</h4>
+          <div class="tech-badges">
+            <span class="tech-badge">React 18</span>
+            <span class="tech-badge">TypeScript</span>
+            <span class="tech-badge">Tailwind CSS</span>
+            <span class="tech-badge">Vite</span>
+            <span class="tech-badge">shadcn/ui</span>
+            <span class="tech-badge">React Query</span>
+          </div>
+        </div>
+
+        <div class="arch-layer backend">
+          <h4>Backend (Lovable Cloud)</h4>
+          <div class="tech-badges">
+            <span class="tech-badge">Supabase</span>
+            <span class="tech-badge">PostgreSQL</span>
+            <span class="tech-badge">Edge Functions</span>
+            <span class="tech-badge">Row Level Security</span>
+            <span class="tech-badge">Realtime</span>
+          </div>
+        </div>
+
+        <div class="arch-layer database">
+          <h4>Dati & Storage</h4>
+          <div class="tech-badges">
+            <span class="tech-badge">40+ Tabelle</span>
+            <span class="tech-badge">Relazioni FK</span>
+            <span class="tech-badge">File Storage</span>
+            <span class="tech-badge">Backup Automatici</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Proposition Section -->
+  <section id="value" class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Value Proposition</h2>
+      <p class="section-subtitle">
+        Perché Gest-e è un'opportunità di investimento unica
+      </p>
+    </div>
+
+    <div class="value-grid">
+      <div class="value-card">
+        <div class="value-icon">🎯</div>
+        <h4>Mercato Target</h4>
+        <p>PMI edili italiane (50.000+ aziende) con esigenze di digitalizzazione e compliance normativa obbligatoria.</p>
+      </div>
+
+      <div class="value-card">
+        <div class="value-icon">⚖️</div>
+        <h4>Compliance Driven</h4>
+        <p>D.Lgs 81/2008, GDPR, ISO 9001/14001 sono obblighi di legge. Il software diventa necessità, non opzione.</p>
+      </div>
+
+      <div class="value-card">
+        <div class="value-icon">🔄</div>
+        <h4>Ricavi Ricorrenti</h4>
+        <p>Modello SaaS con subscription mensile/annuale. Alta retention per switching cost e dati storici.</p>
+      </div>
+
+      <div class="value-card">
+        <div class="value-icon">📈</div>
+        <h4>Scalabilità</h4>
+        <p>Architettura cloud-native senza limiti di crescita. Costi marginali decrescenti per utente.</p>
+      </div>
+
+      <div class="value-card">
+        <div class="value-icon">🏆</div>
+        <h4>All-in-One</h4>
+        <p>Unica soluzione che copre tutti i reparti vs. 5-10 software separati. ROI immediato per il cliente.</p>
+      </div>
+
+      <div class="value-card">
+        <div class="value-icon">🌍</div>
+        <h4>Espandibilità</h4>
+        <p>Dopo Italia: mercati EU con normative simili (D.Lgs 81 ≈ Framework Directive 89/391/EEC).</p>
+      </div>
+    </div>
+
+    <!-- Comparison -->
+    <div style="margin-top: 4rem;">
+      <h3 style="text-align: center; font-size: 1.5rem; margin-bottom: 2rem;">Confronto Competitivo</h3>
+      <div style="overflow-x: auto;">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Funzionalità</th>
+              <th>Gest-e</th>
+              <th>Software Sicurezza</th>
+              <th>Gestionale ERP</th>
+              <th>PM Tools</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gestione Cantieri</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>HSE & D.Lgs 81/2008</td>
+              <td class="check-icon">✓</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>Formazione & DPI</td>
+              <td class="check-icon">✓</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>SAL & Contabilità Lavori</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>Project Management</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+              <td class="check-icon">✓</td>
+            </tr>
+            <tr>
+              <td>CRM Commerciale</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>GDPR & ISO</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td>Magazzino & Risorse</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+              <td class="check-icon">✓</td>
+              <td class="x-icon">✗</td>
+            </tr>
+            <tr>
+              <td><strong>Soluzione Unica</strong></td>
+              <td class="check-icon"><strong>✓</strong></td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+              <td class="x-icon">✗</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="section" style="text-align: center; padding-bottom: 2rem;">
+    <h2 style="font-size: 2rem; margin-bottom: 1rem;">Pronto a Esplorare?</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+      Accedi alla demo live per esplorare tutti i moduli funzionanti con dati realistici.
+    </p>
+    <a href="/" class="cta-btn" style="font-size: 1.1rem; padding: 1rem 2rem;">
+      Accedi alla Demo Live →
+    </a>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      <strong>Gest-e</strong> — Piattaforma Gestione Cantieri<br>
+      © 2025 Tutti i diritti riservati
+    </p>
+  </footer>
+
+</body>
+</html>
