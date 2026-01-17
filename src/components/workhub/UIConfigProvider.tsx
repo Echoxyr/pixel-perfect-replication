@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useUser, SIDEBAR_COLORS } from '@/contexts/UserContext';
 
 // This component applies UI config as CSS custom properties to the document
 export function UIConfigProvider({ children }: { children: React.ReactNode }) {
@@ -66,6 +66,13 @@ export function UIConfigProvider({ children }: { children: React.ReactNode }) {
       root.style.setProperty('--ui-hover-glow', '0 0 25px -5px hsl(var(--primary) / 0.5)');
     } else {
       root.style.setProperty('--ui-hover-glow', 'none');
+    }
+    
+    // Apply sidebar color
+    const sidebarColorConfig = SIDEBAR_COLORS.find(c => c.id === uiConfig.sidebarColor);
+    if (sidebarColorConfig) {
+      root.style.setProperty('--sidebar-background', sidebarColorConfig.background);
+      root.style.setProperty('--sidebar-foreground', sidebarColorConfig.foreground);
     }
     
   }, [uiConfig, themeColor]);

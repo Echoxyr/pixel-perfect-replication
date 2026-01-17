@@ -63,6 +63,16 @@ export const THEME_COLORS = [
   { id: 'darkgreen', name: 'Verde Scuro', primary: '140 50% 30%', accent: '140 50% 95%' },
 ];
 
+// Sidebar background colors
+export const SIDEBAR_COLORS = [
+  { id: 'dark', name: 'Scuro', background: '222 47% 14%', foreground: '220 14% 96%' },
+  { id: 'darker', name: 'Nero', background: '220 25% 8%', foreground: '210 20% 95%' },
+  { id: 'navy', name: 'Blu Navy', background: '224 47% 18%', foreground: '220 14% 96%' },
+  { id: 'charcoal', name: 'Antracite', background: '210 15% 15%', foreground: '210 20% 95%' },
+  { id: 'slate', name: 'Ardesia', background: '215 28% 17%', foreground: '210 20% 95%' },
+  { id: 'graphite', name: 'Grafite', background: '0 0% 15%', foreground: '0 0% 95%' },
+];
+
 // Configurazioni varianti UI personalizzabili
 export interface UIVariantConfig {
   buttonBorderRadius: string;
@@ -71,6 +81,7 @@ export interface UIVariantConfig {
   glassEffect: boolean;
   animationsEnabled: boolean;
   hoverGlow: boolean;
+  sidebarColor: string;
 }
 
 export const DEFAULT_UI_CONFIG: UIVariantConfig = {
@@ -80,6 +91,7 @@ export const DEFAULT_UI_CONFIG: UIVariantConfig = {
   glassEffect: true,
   animationsEnabled: true,
   hoverGlow: true,
+  sidebarColor: 'dark',
 };
 
 const UI_CONFIG_KEY = 'ui_variant_config';

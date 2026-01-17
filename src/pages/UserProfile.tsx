@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useUser, THEME_COLORS, UserTask, UserNote, UserCalendarEvent } from '@/contexts/UserContext';
+import { useUser, THEME_COLORS, SIDEBAR_COLORS, UserTask, UserNote, UserCalendarEvent } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -805,6 +805,33 @@ export default function UserProfile() {
                       <p className="text-xs text-muted-foreground">Effetto luminoso al passaggio mouse</p>
                     </div>
                     <Switch checked={uiConfig.hoverGlow} onCheckedChange={(checked) => setUIConfig({ hoverGlow: checked })} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-semibold mb-3 block">Sfondo Sidebar</Label>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                    {SIDEBAR_COLORS.map(color => (
+                      <button
+                        key={color.id}
+                        onClick={() => {
+                          setUIConfig({ sidebarColor: color.id });
+                          toast({ title: 'Sfondo sidebar aggiornato' });
+                        }}
+                        className={cn(
+                          'p-3 border-2 rounded-lg transition-all flex flex-col items-center gap-2',
+                          uiConfig.sidebarColor === color.id 
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary/30' 
+                            : 'border-border hover:border-primary/50'
+                        )}
+                      >
+                        <div 
+                          className="w-full h-10 rounded-md shadow-inner" 
+                          style={{ background: `hsl(${color.background})` }} 
+                        />
+                        <span className="text-xs font-medium">{color.name}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
               </CardContent>

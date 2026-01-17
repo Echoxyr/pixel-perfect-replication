@@ -227,11 +227,25 @@ export function Layout() {
           sidebarCollapsed ? 'justify-center px-2' : 'px-4'
         )}>
           <Link to="/dashboard" className="flex items-center">
-            {sidebarCollapsed ? <EgestLogo size="sm" showText={false} /> : <EgestLogo size="md" />}
+            {sidebarCollapsed ? <EgestLogo size="sm" showText={false} inSidebar /> : <EgestLogo size="md" inSidebar />}
           </Link>
         </div>
 
-        {/* Search removed - using header search only */}
+        {/* Search Bar in Sidebar */}
+        {!sidebarCollapsed && (
+          <div className="px-3 py-3 border-b border-sidebar-border">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-sidebar-accent/50 text-white/70 hover:bg-sidebar-accent hover:text-white transition-colors text-sm"
+            >
+              <Search className="w-4 h-4" />
+              <span>Cerca...</span>
+              <kbd className="ml-auto h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] hidden lg:inline-flex">
+                <Command className="w-3 h-3" />K
+              </kbd>
+            </button>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin space-y-6">
@@ -420,60 +434,6 @@ export function Layout() {
             </div>
           )}
 
-          {/* Conformità Section - Collapsible */}
-          {(isModuleVisible('gdpr') || isModuleVisible('qualita') || isModuleVisible('ambiente') || isModuleVisible('bi')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setComplianceExpanded(!complianceExpanded)}
-                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Conformità & Certificazioni</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !complianceExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || complianceExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('gdpr') && (
-                    <NavItem 
-                      to="/compliance/gdpr" 
-                      icon={Shield} 
-                      label="GDPR Privacy" 
-                      isActive={location.pathname === '/compliance/gdpr'} 
-                    />
-                  )}
-                  {isModuleVisible('qualita') && (
-                    <NavItem 
-                      to="/compliance/qualita" 
-                      icon={Award} 
-                      label="ISO 9001 Qualità" 
-                      isActive={location.pathname === '/compliance/qualita'} 
-                    />
-                  )}
-                  {isModuleVisible('ambiente') && (
-                    <NavItem 
-                      to="/compliance/ambiente" 
-                      icon={Leaf} 
-                      label="ISO 14001 Ambiente" 
-                      isActive={location.pathname === '/compliance/ambiente'} 
-                    />
-                  )}
-                  {isModuleVisible('bi') && (
-                    <NavItem 
-                      to="/compliance/bi" 
-                      icon={BarChart3} 
-                      label="Business Intelligence" 
-                      isActive={location.pathname === '/compliance/bi'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Reparto Commerciale Section - Collapsible */}
           {(isModuleVisible('commerciale') || isModuleVisible('computo') || isModuleVisible('listino')) && (
             <div>
@@ -619,6 +579,60 @@ export function Layout() {
               )}
             </div>
           )}
+
+          {/* Conformità Section - Collapsible (Last Module) */}
+          {(isModuleVisible('gdpr') || isModuleVisible('qualita') || isModuleVisible('ambiente') || isModuleVisible('bi')) && (
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setComplianceExpanded(!complianceExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Conformità & Certificazioni</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !complianceExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
+              )}
+              
+              {(sidebarCollapsed || complianceExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('gdpr') && (
+                    <NavItem 
+                      to="/compliance/gdpr" 
+                      icon={Shield} 
+                      label="GDPR Privacy" 
+                      isActive={location.pathname === '/compliance/gdpr'} 
+                    />
+                  )}
+                  {isModuleVisible('qualita') && (
+                    <NavItem 
+                      to="/compliance/qualita" 
+                      icon={Award} 
+                      label="ISO 9001 Qualità" 
+                      isActive={location.pathname === '/compliance/qualita'} 
+                    />
+                  )}
+                  {isModuleVisible('ambiente') && (
+                    <NavItem 
+                      to="/compliance/ambiente" 
+                      icon={Leaf} 
+                      label="ISO 14001 Ambiente" 
+                      isActive={location.pathname === '/compliance/ambiente'} 
+                    />
+                  )}
+                  {isModuleVisible('bi') && (
+                    <NavItem 
+                      to="/compliance/bi" 
+                      icon={BarChart3} 
+                      label="Business Intelligence" 
+                      isActive={location.pathname === '/compliance/bi'} 
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Removed HSE Status Widget as per user request */}
@@ -670,7 +684,7 @@ export function Layout() {
           <aside className="fixed left-0 top-0 bottom-0 w-72 bg-sidebar border-r border-sidebar-border animate-slide-in-left overflow-y-auto">
             <div className="h-16 px-4 flex items-center justify-between border-b border-sidebar-border">
               <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                <EgestLogo size="md" />
+                <EgestLogo size="md" inSidebar />
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
                 <X className="w-5 h-5" />
@@ -907,20 +921,7 @@ export function Layout() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Search Button - Desktop */}
-            <Button 
-              variant="outline" 
-              className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search className="w-4 h-4" />
-              <span className="text-sm">Cerca</span>
-              <kbd className="ml-2 h-5 items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] hidden lg:inline-flex">
-                <Command className="w-3 h-3" />K
-              </kbd>
-            </Button>
-            
-            {/* Search Button - Mobile */}
+            {/* Search Button - Mobile only (desktop uses sidebar) */}
             <Button 
               variant="ghost" 
               size="icon"

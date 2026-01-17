@@ -4,9 +4,10 @@ interface EgestLogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   className?: string;
+  inSidebar?: boolean; // When true, uses white for "-e" to be visible on dark sidebar
 }
 
-export function EgestLogo({ size = 'md', showText = true, className }: EgestLogoProps) {
+export function EgestLogo({ size = 'md', showText = true, className, inSidebar = false }: EgestLogoProps) {
   const sizes = {
     sm: { text: 'text-lg', tagline: 'text-[8px]' },
     md: { text: 'text-2xl', tagline: 'text-[9px]' },
@@ -19,10 +20,10 @@ export function EgestLogo({ size = 'md', showText = true, className }: EgestLogo
     <div className={cn('flex flex-col', className)}>
       <span className={cn('font-bold leading-tight tracking-tight', text)}>
         <span className="text-primary">Gest</span>
-        <span className="text-foreground">-e</span>
+        <span className={inSidebar ? 'text-white' : 'text-foreground'}>-e</span>
       </span>
       {showText && (
-        <span className={cn('text-muted-foreground leading-none tracking-tight', tagline)}>
+        <span className={cn('leading-none tracking-tight', tagline, inSidebar ? 'text-white/70' : 'text-muted-foreground')}>
           gestione commesse e sicurezza
         </span>
       )}
