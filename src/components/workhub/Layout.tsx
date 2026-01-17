@@ -88,12 +88,12 @@ export function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [cantieriExpanded, setCantieriExpanded] = useState(true);
-  const [hseExpanded, setHseExpanded] = useState(true);
-  const [complianceExpanded, setComplianceExpanded] = useState(true);
-  const [commercialeExpanded, setCommercialeExpanded] = useState(true);
-  const [amministrazioneExpanded, setAmministrazioneExpanded] = useState(true);
-  const [logisticaExpanded, setLogisticaExpanded] = useState(true);
+  const [cantieriExpanded, setCantieriExpanded] = useState(false);
+  const [hseExpanded, setHseExpanded] = useState(false);
+  const [complianceExpanded, setComplianceExpanded] = useState(false);
+  const [commercialeExpanded, setCommercialeExpanded] = useState(false);
+  const [amministrazioneExpanded, setAmministrazioneExpanded] = useState(false);
+  const [logisticaExpanded, setLogisticaExpanded] = useState(false);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
