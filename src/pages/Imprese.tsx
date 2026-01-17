@@ -202,7 +202,7 @@ export default function Imprese() {
       render: (impresa) => (
         <span className={cn(
           'px-2 py-1 text-xs rounded-full',
-          impresa.tipo === 'distacco' ? 'bg-blue-500/20 text-blue-500' : 'bg-muted text-muted-foreground'
+          impresa.tipo === 'distacco' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
         )}>
           {TIPO_IMPRESA_LABELS[impresa.tipo]}
         </span>

@@ -548,7 +548,7 @@ export const MODALITA_PAGAMENTO: Record<string, string> = {
 
 export const STATO_FATTURA_COLORS: Record<string, string> = {
   bozza: 'bg-gray-500/20 text-gray-500',
-  generata: 'bg-blue-500/20 text-blue-500',
+  generata: 'bg-primary/20 text-primary',
   inviata: 'bg-amber-500/20 text-amber-500',
   consegnata: 'bg-cyan-500/20 text-cyan-500',
   accettata: 'bg-emerald-500/20 text-emerald-500',

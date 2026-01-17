@@ -102,7 +102,7 @@ const defaultColumns: TableColumn[] = [
 // Status color mappings
 const statusColors: Record<TaskStatus, string> = {
   da_iniziare: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-  in_corso: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  in_corso: 'bg-primary/20 text-primary border-primary/30',
   in_attesa: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   bloccato: 'bg-red-500/20 text-red-400 border-red-500/30',
   fatto: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -612,7 +612,7 @@ export function AdvancedTaskTable({ tasks, showCantiere = true }: AdvancedTaskTa
             }}
             className={cn(
               'flex items-center gap-1 text-xs hover:text-primary transition-colors',
-              fileCount > 0 ? 'text-blue-400' : 'text-muted-foreground'
+              fileCount > 0 ? 'text-primary' : 'text-muted-foreground'
             )}
           >
             <Paperclip className="w-3.5 h-3.5" />

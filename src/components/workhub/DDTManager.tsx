@@ -283,7 +283,7 @@ export default function DDTManager() {
   const getStatoBadge = (stato: string) => {
     switch (stato) {
       case 'consegnato': return 'bg-emerald-500/15 text-emerald-500';
-      case 'emesso': return 'bg-blue-500/15 text-blue-500';
+      case 'emesso': return 'bg-primary/15 text-primary';
       case 'annullato': return 'bg-red-500/15 text-red-500';
       default: return 'bg-muted text-muted-foreground';
     }

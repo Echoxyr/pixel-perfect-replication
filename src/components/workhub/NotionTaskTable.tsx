@@ -67,7 +67,7 @@ interface NotionTaskTableProps {
 // Status color mappings for pills
 const statusColors: Record<TaskStatus, string> = {
   da_iniziare: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-  in_corso: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  in_corso: 'bg-primary/20 text-primary border-primary/30',
   in_attesa: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   bloccato: 'bg-red-500/20 text-red-400 border-red-500/30',
   fatto: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -88,7 +88,7 @@ const taskColors = [
   { name: 'Arancione', value: 'border-l-orange-500' },
   { name: 'Giallo', value: 'border-l-yellow-500' },
   { name: 'Verde', value: 'border-l-emerald-500' },
-  { name: 'Blu', value: 'border-l-blue-500' },
+  { name: 'Blu', value: 'border-l-primary' },
   { name: 'Viola', value: 'border-l-purple-500' },
   { name: 'Rosa', value: 'border-l-pink-500' },
 ];

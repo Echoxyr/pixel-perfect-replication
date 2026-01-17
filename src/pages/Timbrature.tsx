@@ -574,9 +574,9 @@ export default function Timbrature() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Ore Totali</p>
-                <p className="text-2xl font-bold text-blue-500">{stats.oreTotali.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-primary">{stats.oreTotali.toFixed(1)}</p>
               </div>
-              <Timer className="w-8 h-8 text-blue-500/20" />
+              <Timer className="w-8 h-8 text-primary/20" />
             </div>
           </CardContent>
         </Card>

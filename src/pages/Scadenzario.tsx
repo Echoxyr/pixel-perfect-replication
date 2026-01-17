@@ -94,7 +94,7 @@ const ENTITA_TIPI = [
 
 const PRIORITA = [
   { value: 'bassa', label: 'Bassa', color: 'bg-slate-500/15 text-slate-500' },
-  { value: 'media', label: 'Media', color: 'bg-blue-500/15 text-blue-500' },
+  { value: 'media', label: 'Media', color: 'bg-primary/15 text-primary' },
   { value: 'alta', label: 'Alta', color: 'bg-amber-500/15 text-amber-500' },
   { value: 'critica', label: 'Critica', color: 'bg-red-500/15 text-red-500' },
 ];
@@ -202,7 +202,7 @@ export default function Scadenzario() {
   const getStatoBadge = (stato: string) => {
     switch (stato) {
       case 'completata': return 'bg-emerald-500/15 text-emerald-500';
-      case 'attiva': return 'bg-blue-500/15 text-blue-500';
+      case 'attiva': return 'bg-primary/15 text-primary';
       case 'in_scadenza': return 'bg-amber-500/15 text-amber-500';
       case 'scaduta': return 'bg-red-500/15 text-red-500';
       case 'archiviata': return 'bg-slate-500/15 text-slate-500';

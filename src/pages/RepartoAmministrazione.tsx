@@ -392,7 +392,7 @@ export default function RepartoAmministrazione() {
 
   const getTipoRichiestaColor = (tipo: string) => {
     switch (tipo) {
-      case 'ferie': return 'bg-blue-500/15 text-blue-500';
+      case 'ferie': return 'bg-primary/15 text-primary';
       case 'permesso': return 'bg-purple-500/15 text-purple-500';
       case 'malattia': return 'bg-red-500/15 text-red-500';
       case 'straordinario': return 'bg-amber-500/15 text-amber-500';

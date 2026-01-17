@@ -29,7 +29,7 @@ const statusConfig: Record<StatusPillType, Record<string, { label: string; class
     in_scadenza: { label: 'In scadenza', className: 'bg-amber-500/20 text-amber-500' },
     scaduto: { label: 'Scaduto', className: 'bg-red-500/20 text-red-500' },
     da_richiedere: { label: 'Da richiedere', className: 'bg-gray-500/20 text-gray-500' },
-    in_revisione: { label: 'In revisione', className: 'bg-blue-500/20 text-blue-500' },
+    in_revisione: { label: 'In revisione', className: 'bg-primary/20 text-primary' },
   },
   cantiere: {
     attivo: { label: 'Attivo', className: 'bg-emerald-500/20 text-emerald-500' },

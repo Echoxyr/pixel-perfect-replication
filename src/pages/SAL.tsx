@@ -1018,7 +1018,7 @@ export default function SALPage() {
                             'px-2 py-0.5 text-xs font-medium rounded-full',
                             s.stato === 'approvato' ? 'bg-emerald-500/20 text-emerald-500' :
                             s.stato === 'pagato' ? 'bg-green-600/20 text-green-500' :
-                            s.stato === 'presentato' ? 'bg-blue-500/20 text-blue-500' :
+                            s.stato === 'presentato' ? 'bg-primary/20 text-primary' :
                             s.stato === 'contestato' ? 'bg-red-500/20 text-red-500' :
                             'bg-gray-500/20 text-gray-500'
                           )}>
