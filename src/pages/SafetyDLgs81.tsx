@@ -54,6 +54,7 @@ import {
 } from 'lucide-react';
 import SafetyFormsModule from '@/components/workhub/SafetyFormsModule';
 import { DocumentEditorDialog } from '@/components/workhub/DocumentEditorDialog';
+import SafetyEquipmentInventory from '@/components/workhub/SafetyEquipmentInventory';
 
 // Corsi obbligatori RSPP
 const CORSI_RSPP = [
@@ -730,6 +731,10 @@ export default function SafetyDLgs81() {
             <ClipboardList className="w-4 h-4" />
             Moduli Compilabili
           </TabsTrigger>
+          <TabsTrigger value="attrezzature" className="gap-1">
+            <Shield className="w-4 h-4" />
+            Attrezzature Obbligatorie
+          </TabsTrigger>
         </TabsList>
 
         {/* POS Tab */}
@@ -976,6 +981,11 @@ export default function SafetyDLgs81() {
         {/* Moduli Compilabili Tab */}
         <TabsContent value="moduli" className="mt-6">
           <SafetyFormsModule />
+        </TabsContent>
+
+        {/* Attrezzature Obbligatorie Tab */}
+        <TabsContent value="attrezzature" className="mt-6">
+          <SafetyEquipmentInventory />
         </TabsContent>
       </Tabs>
 

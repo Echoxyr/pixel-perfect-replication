@@ -291,11 +291,11 @@ export function Layout() {
                   isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
                 />
               )}
-              {isModuleVisible('sal') && (
+          {isModuleVisible('sal') && (
                 <NavItem 
                   to="/sal" 
                   icon={TrendingUp} 
-                  label="SAL" 
+                  label="Consuntivo" 
                   isActive={location.pathname === '/sal'} 
                 />
               )}
@@ -321,7 +321,7 @@ export function Layout() {
                 <NavItem 
                   to="/cantieri" 
                   icon={Construction} 
-                  label="Tutti i Cantieri" 
+                  label="Cantieri" 
                   badge={cantieri.length}
                   isActive={location.pathname === '/cantieri'} 
                 />
@@ -656,38 +656,7 @@ export function Layout() {
           )}
         </nav>
 
-        {/* HSE Status Widget */}
-        {!sidebarCollapsed && (
-          <div className="p-3 border-t border-sidebar-border">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/20">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-white">Stato Sicurezza</span>
-                <div className={cn(
-                  'w-2.5 h-2.5 rounded-full',
-                  hseStats.impreseCritical > 0 || hseStats.lavoratoriCritical > 0 
-                    ? 'bg-red-500 animate-pulse' 
-                    : hseStats.impreseWarning > 0 || hseStats.lavoratoriWarning > 0 
-                      ? 'bg-amber-500' 
-                      : 'bg-emerald-500'
-                )} />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-2 rounded-lg bg-emerald-500/10">
-                  <p className="text-lg font-bold text-emerald-500">{hseStats.impreseOk + hseStats.lavoratoriOk}</p>
-                  <p className="text-[10px] text-muted-foreground">OK</p>
-                </div>
-                <div className="text-center p-2 rounded-lg bg-amber-500/10">
-                  <p className="text-lg font-bold text-amber-500">{hseStats.impreseWarning + hseStats.lavoratoriWarning}</p>
-                  <p className="text-[10px] text-muted-foreground">Alert</p>
-                </div>
-                <div className="text-center p-2 rounded-lg bg-red-500/10">
-                  <p className="text-lg font-bold text-red-500">{hseStats.impreseCritical + hseStats.lavoratoriCritical}</p>
-                  <p className="text-[10px] text-muted-foreground">Critico</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Removed HSE Status Widget as per user request */}
 
         {/* Footer */}
         <div className="p-3 border-t border-sidebar-border space-y-1">
@@ -749,7 +718,7 @@ export function Layout() {
                   { to: '/utente', icon: UserCircle, label: 'Utente' },
                   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
                   { to: '/progetti', icon: FolderKanban, label: 'Progetti & Task', badge: openTasks },
-                  { to: '/sal', icon: TrendingUp, label: 'SAL' },
+                  { to: '/sal', icon: TrendingUp, label: 'Consuntivo' },
                 ].map(item => (
                   <Link
                     key={item.to}
@@ -786,7 +755,7 @@ export function Layout() {
                   )}
                 >
                   <Construction className="w-5 h-5" />
-                  <span className="font-medium">Tutti i Cantieri</span>
+                  <span className="font-medium">Cantieri</span>
                   <Badge variant="secondary" className="ml-auto">{cantieri.length}</Badge>
                 </Link>
               </div>
