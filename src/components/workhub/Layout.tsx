@@ -91,6 +91,9 @@ export function Layout() {
   const [cantieriExpanded, setCantieriExpanded] = useState(true);
   const [hseExpanded, setHseExpanded] = useState(true);
   const [complianceExpanded, setComplianceExpanded] = useState(true);
+  const [commercialeExpanded, setCommercialeExpanded] = useState(true);
+  const [amministrazioneExpanded, setAmministrazioneExpanded] = useState(true);
+  const [logisticaExpanded, setLogisticaExpanded] = useState(true);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
@@ -506,125 +509,149 @@ export function Layout() {
             </div>
           )}
 
-          {/* Reparto Commerciale Section */}
+          {/* Reparto Commerciale Section - Collapsible */}
           {(isModuleVisible('commerciale') || isModuleVisible('computo') || isModuleVisible('listino')) && (
             <div>
-              {!sidebarCollapsed && (
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                  Commerciale
-                </p>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setCommercialeExpanded(!commercialeExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Commerciale</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !commercialeExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
               
-              <div className="space-y-1">
-                {isModuleVisible('commerciale') && (
-                  <NavItem 
-                    to="/reparto-commerciale" 
-                    icon={Briefcase} 
-                    label="Reparto Commerciale" 
-                    isActive={location.pathname === '/reparto-commerciale'} 
-                  />
-                )}
-                {isModuleVisible('computo') && (
-                  <NavItem 
-                    to="/computo-metrico" 
-                    icon={Calculator} 
-                    label="Computo Metrico" 
-                    isActive={location.pathname === '/computo-metrico'} 
-                  />
-                )}
-                {isModuleVisible('listino') && (
-                  <NavItem 
-                    to="/listino-prezzi" 
-                    icon={Euro} 
-                    label="Listino Prezzi" 
-                    isActive={location.pathname === '/listino-prezzi'} 
-                  />
-                )}
-              </div>
+              {(sidebarCollapsed || commercialeExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('commerciale') && (
+                    <NavItem 
+                      to="/reparto-commerciale" 
+                      icon={Briefcase} 
+                      label="Reparto Commerciale" 
+                      isActive={location.pathname === '/reparto-commerciale'} 
+                    />
+                  )}
+                  {isModuleVisible('computo') && (
+                    <NavItem 
+                      to="/computo-metrico" 
+                      icon={Calculator} 
+                      label="Computo Metrico" 
+                      isActive={location.pathname === '/computo-metrico'} 
+                    />
+                  )}
+                  {isModuleVisible('listino') && (
+                    <NavItem 
+                      to="/listino-prezzi" 
+                      icon={Euro} 
+                      label="Listino Prezzi" 
+                      isActive={location.pathname === '/listino-prezzi'} 
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Reparto Amministrazione Section */}
+          {/* Reparto Amministrazione Section - Collapsible */}
           {(isModuleVisible('amministrazione') || isModuleVisible('timbrature') || isModuleVisible('scadenzario') || isModuleVisible('rapportini') || isModuleVisible('contatti')) && (
             <div>
-              {!sidebarCollapsed && (
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                  Amministrazione
-                </p>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setAmministrazioneExpanded(!amministrazioneExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Amministrazione</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !amministrazioneExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
               
-              <div className="space-y-1">
-                {isModuleVisible('amministrazione') && (
-                  <NavItem 
-                    to="/reparto-amministrazione" 
-                    icon={FileText} 
-                    label="Reparto Amministrazione" 
-                    isActive={location.pathname === '/reparto-amministrazione'} 
-                  />
-                )}
-                {isModuleVisible('timbrature') && (
-                  <NavItem 
-                    to="/timbrature" 
-                    icon={Clock} 
-                    label="Timbrature" 
-                    isActive={location.pathname === '/timbrature'} 
-                  />
-                )}
-                {isModuleVisible('scadenzario') && (
-                  <NavItem 
-                    to="/scadenzario" 
-                    icon={Calendar} 
-                    label="Scadenzario" 
-                    isActive={location.pathname === '/scadenzario'} 
-                  />
-                )}
-                {isModuleVisible('rapportini') && (
-                  <NavItem 
-                    to="/rapportini" 
-                    icon={ClipboardList} 
-                    label="Rapportini" 
-                    isActive={location.pathname === '/rapportini'} 
-                  />
-                )}
-                {isModuleVisible('contatti') && (
-                  <NavItem 
-                    to="/contatti" 
-                    icon={User} 
-                    label="Contatti" 
-                    isActive={location.pathname === '/contatti'} 
-                  />
-                )}
-              </div>
+              {(sidebarCollapsed || amministrazioneExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('amministrazione') && (
+                    <NavItem 
+                      to="/reparto-amministrazione" 
+                      icon={FileText} 
+                      label="Reparto Amministrazione" 
+                      isActive={location.pathname === '/reparto-amministrazione'} 
+                    />
+                  )}
+                  {isModuleVisible('timbrature') && (
+                    <NavItem 
+                      to="/timbrature" 
+                      icon={Clock} 
+                      label="Timbrature" 
+                      isActive={location.pathname === '/timbrature'} 
+                    />
+                  )}
+                  {isModuleVisible('scadenzario') && (
+                    <NavItem 
+                      to="/scadenzario" 
+                      icon={Calendar} 
+                      label="Scadenzario" 
+                      isActive={location.pathname === '/scadenzario'} 
+                    />
+                  )}
+                  {isModuleVisible('rapportini') && (
+                    <NavItem 
+                      to="/rapportini" 
+                      icon={ClipboardList} 
+                      label="Rapportini" 
+                      isActive={location.pathname === '/rapportini'} 
+                    />
+                  )}
+                  {isModuleVisible('contatti') && (
+                    <NavItem 
+                      to="/contatti" 
+                      icon={User} 
+                      label="Contatti" 
+                      isActive={location.pathname === '/contatti'} 
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Logistica Section */}
+          {/* Logistica Section - Collapsible */}
           {(isModuleVisible('risorse') || isModuleVisible('magazzino')) && (
             <div>
-              {!sidebarCollapsed && (
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2">
-                  Logistica
-                </p>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setLogisticaExpanded(!logisticaExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Logistica</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !logisticaExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
               
-              <div className="space-y-1">
-                {isModuleVisible('risorse') && (
-                  <NavItem 
-                    to="/risorse" 
-                    icon={Truck} 
-                    label="Risorse & Mezzi" 
-                    isActive={location.pathname === '/risorse'} 
-                  />
-                )}
-                {isModuleVisible('magazzino') && (
-                  <NavItem 
-                    to="/magazzino" 
-                    icon={Boxes} 
-                    label="Magazzino" 
-                    isActive={location.pathname === '/magazzino'} 
-                  />
-                )}
-              </div>
+              {(sidebarCollapsed || logisticaExpanded) && (
+                <div className="space-y-1">
+                  {isModuleVisible('risorse') && (
+                    <NavItem 
+                      to="/risorse" 
+                      icon={Truck} 
+                      label="Risorse & Mezzi" 
+                      isActive={location.pathname === '/risorse'} 
+                    />
+                  )}
+                  {isModuleVisible('magazzino') && (
+                    <NavItem 
+                      to="/magazzino" 
+                      icon={Boxes} 
+                      label="Magazzino" 
+                      isActive={location.pathname === '/magazzino'} 
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
         </nav>
