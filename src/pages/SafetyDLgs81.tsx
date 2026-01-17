@@ -53,6 +53,7 @@ import {
   Users
 } from 'lucide-react';
 import SafetyFormsModule from '@/components/workhub/SafetyFormsModule';
+import { DocumentEditorDialog } from '@/components/workhub/DocumentEditorDialog';
 
 // Corsi obbligatori RSPP
 const CORSI_RSPP = [
@@ -182,6 +183,20 @@ export default function SafetyDLgs81() {
 
   const [showNewPOSDialog, setShowNewPOSDialog] = useState(false);
   const [showNewInfortunioDialog, setShowNewInfortunioDialog] = useState(false);
+  const [showPOSEditorDialog, setShowPOSEditorDialog] = useState(false);
+  const [editingPOS, setEditingPOS] = useState<POSDigitale | null>(null);
+  const [editingPOSContent, setEditingPOSContent] = useState('');
+  const [newPOSData, setNewPOSData] = useState({ cantiereId: '', impresaId: '', versione: '1.0' });
+
+  // Contenuti POS salvati localmente (estensione del tipo base)
+  const [posContents, setPosContents] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('safety_pos_contents');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('safety_pos_contents', JSON.stringify(posContents));
+  }, [posContents]);
 
   const rsppList = figureSicurezza.filter(f => f.tipo === 'rspp');
   const rlsList = figureSicurezza.filter(f => f.tipo === 'rls');
@@ -729,11 +744,22 @@ export default function SafetyDLgs81() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingPOS(pos);
+                        setEditingPOSContent(posContents[pos.id] || '');
+                        setShowPOSEditorDialog(true);
+                      }}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Modifica
+                    </Button>
                     <Button variant="outline" size="sm" className="gap-1">
                       <Download className="w-4 h-4" />
                       PDF
                     </Button>
-                    <Button variant="outline" size="sm">Gestisci</Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border text-sm">
@@ -1272,8 +1298,8 @@ export default function SafetyDLgs81() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Cantiere</Label>
-              <Select>
+              <Label>Cantiere *</Label>
+              <Select value={newPOSData.cantiereId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, cantiereId: v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona cantiere" />
                 </SelectTrigger>
@@ -1285,8 +1311,8 @@ export default function SafetyDLgs81() {
               </Select>
             </div>
             <div>
-              <Label>Impresa</Label>
-              <Select>
+              <Label>Impresa *</Label>
+              <Select value={newPOSData.impresaId} onValueChange={(v) => setNewPOSData(prev => ({ ...prev, impresaId: v }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleziona impresa" />
                 </SelectTrigger>
@@ -1299,18 +1325,84 @@ export default function SafetyDLgs81() {
             </div>
             <div>
               <Label>Versione</Label>
-              <Input placeholder="1.0" />
+              <Input 
+                value={newPOSData.versione} 
+                onChange={(e) => setNewPOSData(prev => ({ ...prev, versione: e.target.value }))}
+                placeholder="1.0" 
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewPOSDialog(false)}>Annulla</Button>
             <Button onClick={() => {
-              toast({ title: 'POS creato', description: 'Completa la compilazione' });
+              if (!newPOSData.cantiereId || !newPOSData.impresaId) {
+                toast({ title: 'Errore', description: 'Seleziona cantiere e impresa', variant: 'destructive' });
+                return;
+              }
+              // Crea nuovo POS e apri l'editor
+              const newPOS: POSDigitale = {
+                id: generateId(),
+                cantiereId: newPOSData.cantiereId,
+                impresaId: newPOSData.impresaId,
+                versione: newPOSData.versione || '1.0',
+                dataEmissione: new Date().toISOString().split('T')[0],
+                stato: 'bozza',
+                rischioGenerico: [],
+                rischioSpecifico: [],
+                misurePrevenzione: [],
+                dpiRichiesti: [],
+                allegatiUrl: [],
+              };
+              
+              const defaultContent = `<h2>Piano Operativo di Sicurezza</h2>
+<p><strong>Cantiere:</strong> ${getCantiereName(newPOSData.cantiereId)}</p>
+<p><strong>Impresa:</strong> ${getImpresaName(newPOSData.impresaId)}</p>
+<p><strong>Versione:</strong> ${newPOSData.versione || '1.0'}</p>
+<h3>1. Dati Generali dell'Impresa</h3>
+<p>...</p>
+<h3>2. Descrizione delle Attività</h3>
+<p>...</p>
+<h3>3. Rischi Identificati</h3>
+<p>...</p>
+<h3>4. Misure di Prevenzione e Protezione</h3>
+<p>...</p>
+<h3>5. DPI Richiesti</h3>
+<p>...</p>
+<h3>6. Procedure di Emergenza</h3>
+<p>...</p>`;
+              
+              setPosContents(prev => ({ ...prev, [newPOS.id]: defaultContent }));
+              setPosDigitali(prev => [...prev, newPOS]);
+              setEditingPOS(newPOS);
+              setEditingPOSContent(defaultContent);
               setShowNewPOSDialog(false);
-            }}>Crea POS</Button>
+              setShowPOSEditorDialog(true);
+              setNewPOSData({ cantiereId: '', impresaId: '', versione: '1.0' });
+            }}>Crea e Modifica</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* POS Editor Dialog */}
+      <DocumentEditorDialog
+        open={showPOSEditorDialog}
+        onOpenChange={(open) => {
+          setShowPOSEditorDialog(open);
+          if (!open) {
+            setEditingPOS(null);
+            setEditingPOSContent('');
+          }
+        }}
+        title={editingPOS ? `POS v${editingPOS.versione} - ${getCantiereName(editingPOS.cantiereId)}` : 'Editor POS'}
+        initialContent={editingPOSContent}
+        documentName={editingPOS ? `POS_${editingPOS.versione}_${getCantiereName(editingPOS.cantiereId).replace(/[^a-zA-Z0-9]/g, '_')}` : ''}
+        onSave={(data) => {
+          if (editingPOS) {
+            setPosContents(prev => ({ ...prev, [editingPOS.id]: data.content }));
+            toast({ title: 'POS salvato', description: 'Le modifiche sono state salvate' });
+          }
+        }}
+      />
     </div>
   );
 }
