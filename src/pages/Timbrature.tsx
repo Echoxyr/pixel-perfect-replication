@@ -650,10 +650,10 @@ export default function Timbrature() {
               </div>
               <Select value={filterCantiere} onValueChange={setFilterCantiere}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Tutti i cantieri" />
+                  <SelectValue placeholder="Tutte le commesse" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tutti i cantieri</SelectItem>
+                  <SelectItem value="all">Tutte le commesse</SelectItem>
                   {cantieri.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
                   ))}

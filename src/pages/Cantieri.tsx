@@ -322,12 +322,12 @@ export default function Cantieri() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Tutti i Cantieri</h1>
-          <p className="text-muted-foreground">Gestione commesse e cantieri</p>
+          <h1 className="text-2xl font-bold">Tutte le Commesse</h1>
+          <p className="text-muted-foreground">Gestione commesse</p>
         </div>
         <Button onClick={() => setShowNewDialog(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Nuovo Cantiere
+          Nuova Commessa
         </Button>
       </div>
 

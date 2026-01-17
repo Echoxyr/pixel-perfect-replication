@@ -231,21 +231,7 @@ export function Layout() {
           </Link>
         </div>
 
-        {/* Search - Only when expanded */}
-        {!sidebarCollapsed && (
-          <div className="p-3">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-            >
-              <Search className="w-4 h-4" />
-              <span className="flex-1 text-left">Cerca...</span>
-              <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-border bg-background px-1.5 font-mono text-[10px] text-muted-foreground">
-                <Command className="w-3 h-3" />K
-              </kbd>
-            </button>
-          </div>
-        )}
+        {/* Search removed - using header search only */}
 
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto scrollbar-thin space-y-6">
