@@ -71,15 +71,32 @@ const CATEGORIE_DOCUMENTI = [
 ];
 
 const TIPI_DOCUMENTI = [
-  // Azienda
+  // Azienda - Documenti societari
   { value: 'durc', label: 'DURC', categoria: 'azienda' },
   { value: 'visura', label: 'Visura Camerale', categoria: 'azienda' },
   { value: 'polizza_rct', label: 'Polizza RCT/RCO', categoria: 'azienda' },
   { value: 'certificazione_soa', label: 'Certificazione SOA', categoria: 'azienda' },
-  { value: 'iso_9001', label: 'ISO 9001', categoria: 'azienda' },
-  { value: 'iso_14001', label: 'ISO 14001', categoria: 'azienda' },
-  { value: 'iso_45001', label: 'ISO 45001', categoria: 'azienda' },
+  { value: 'iso_9001', label: 'ISO 9001 Qualità', categoria: 'azienda' },
+  { value: 'iso_14001', label: 'ISO 14001 Ambiente', categoria: 'azienda' },
+  { value: 'iso_45001', label: 'ISO 45001 Sicurezza', categoria: 'azienda' },
   { value: 'statuto', label: 'Statuto Societario', categoria: 'azienda' },
+  { value: 'atto_costitutivo', label: 'Atto Costitutivo', categoria: 'azienda' },
+  { value: 'procura', label: 'Procura', categoria: 'azienda' },
+  { value: 'certificato_antimafia', label: 'Certificato Antimafia', categoria: 'azienda' },
+  { value: 'casellario_giudiziario', label: 'Casellario Giudiziario', categoria: 'azienda' },
+  { value: 'carichi_pendenti', label: 'Carichi Pendenti', categoria: 'azienda' },
+  { value: 'cciaa_iscrizione', label: 'Iscrizione CCIAA', categoria: 'azienda' },
+  { value: 'inps_regolarita', label: 'Regolarità INPS', categoria: 'azienda' },
+  { value: 'inail_regolarita', label: 'Regolarità INAIL', categoria: 'azienda' },
+  { value: 'cassa_edile', label: 'Regolarità Cassa Edile', categoria: 'azienda' },
+  { value: 'patente_punti', label: 'Patente a Punti Edilizia', categoria: 'azienda' },
+  { value: 'white_list', label: 'Iscrizione White List', categoria: 'azienda' },
+  { value: 'rating_legalita', label: 'Rating di Legalità', categoria: 'azienda' },
+  { value: 'attestazione_capacita', label: 'Attestazione Capacità Tecnica', categoria: 'azienda' },
+  { value: 'referenze_bancarie', label: 'Referenze Bancarie', categoria: 'azienda' },
+  { value: 'fideiussione', label: 'Fideiussione', categoria: 'azienda' },
+  { value: 'polizza_decennale', label: 'Polizza Postuma Decennale', categoria: 'azienda' },
+  { value: 'polizza_cao_cai', label: 'Polizza CAO/CAI', categoria: 'azienda' },
   // Dipendente
   { value: 'contratto', label: 'Contratto di lavoro', categoria: 'dipendente' },
   { value: 'cedolino', label: 'Cedolino paga', categoria: 'dipendente' },
@@ -87,6 +104,10 @@ const TIPI_DOCUMENTI = [
   { value: 'attestato_formazione', label: 'Attestato formazione', categoria: 'dipendente' },
   { value: 'patente', label: 'Patente di guida', categoria: 'dipendente' },
   { value: 'cqc', label: 'CQC', categoria: 'dipendente' },
+  { value: 'unilav', label: 'UNILAV', categoria: 'dipendente' },
+  { value: 'documento_identita', label: 'Documento identità', categoria: 'dipendente' },
+  { value: 'codice_fiscale', label: 'Codice Fiscale', categoria: 'dipendente' },
+  { value: 'permesso_soggiorno', label: 'Permesso di Soggiorno', categoria: 'dipendente' },
   // Sicurezza
   { value: 'dvr', label: 'DVR', categoria: 'sicurezza' },
   { value: 'pos', label: 'POS', categoria: 'sicurezza' },
@@ -94,11 +115,24 @@ const TIPI_DOCUMENTI = [
   { value: 'duvri', label: 'DUVRI', categoria: 'sicurezza' },
   { value: 'nomina_rspp', label: 'Nomina RSPP', categoria: 'sicurezza' },
   { value: 'nomina_rls', label: 'Nomina RLS', categoria: 'sicurezza' },
+  { value: 'nomina_preposto', label: 'Nomina Preposto', categoria: 'sicurezza' },
+  { value: 'nomina_addetto_emergenze', label: 'Nomina Addetto Emergenze', categoria: 'sicurezza' },
+  { value: 'nomina_addetto_ps', label: 'Nomina Addetto Primo Soccorso', categoria: 'sicurezza' },
+  { value: 'nomina_medico_competente', label: 'Nomina Medico Competente', categoria: 'sicurezza' },
+  { value: 'organigramma_sicurezza', label: 'Organigramma Sicurezza', categoria: 'sicurezza' },
+  { value: 'piano_emergenza', label: 'Piano di Emergenza', categoria: 'sicurezza' },
+  { value: 'verbale_riunione_periodica', label: 'Verbale Riunione Periodica', categoria: 'sicurezza' },
+  { value: 'registro_infortuni', label: 'Registro Infortuni', categoria: 'sicurezza' },
+  { value: 'notifica_preliminare', label: 'Notifica Preliminare', categoria: 'sicurezza' },
   // Fiscale
   { value: 'bilancio', label: 'Bilancio', categoria: 'fiscale' },
   { value: 'dichiarazione_iva', label: 'Dichiarazione IVA', categoria: 'fiscale' },
   { value: 'f24', label: 'F24', categoria: 'fiscale' },
   { value: 'modello_unico', label: 'Modello Unico', categoria: 'fiscale' },
+  { value: 'certificazione_unica', label: 'Certificazione Unica (CU)', categoria: 'fiscale' },
+  { value: 'dichiarazione_770', label: 'Dichiarazione 770', categoria: 'fiscale' },
+  { value: 'libro_giornale', label: 'Libro Giornale', categoria: 'fiscale' },
+  { value: 'registro_iva', label: 'Registro IVA', categoria: 'fiscale' },
 ];
 // Helper to calculate stato from date (used during data fetching)
 const getStatoFromDate = (dataScadenza: string | null): DocumentoAzienda['stato'] => {
