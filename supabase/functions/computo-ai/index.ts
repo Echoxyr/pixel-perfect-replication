@@ -1,9 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation constants
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB
+const MAX_QUERY_LENGTH = 10000;
+const VALID_ACTIONS = ['analyze_excel', 'find_code', 'group_items', 'suggest_items'];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,10 +17,76 @@ serve(async (req) => {
   }
 
   try {
+    // ============================================
+    // SECURITY: Authenticate the user
+    // ============================================
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ error: "Non autorizzato. Effettua il login." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create Supabase client with user's auth
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify the user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error("Auth error:", authError?.message || "No user found");
+      return new Response(
+        JSON.stringify({ error: "Sessione non valida. Effettua nuovamente il login." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Authenticated user: ${user.id}`);
+
+    // ============================================
+    // SECURITY: Validate input
+    // ============================================
     const { action, data, fileContent } = await req.json();
+
+    // Validate action
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      console.error(`Invalid action: ${action}`);
+      return new Response(
+        JSON.stringify({ error: `Azione non valida. Azioni supportate: ${VALID_ACTIONS.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate file content size
+    if (fileContent && typeof fileContent === 'string' && fileContent.length > MAX_FILE_SIZE) {
+      console.error(`File too large: ${fileContent.length} bytes`);
+      return new Response(
+        JSON.stringify({ error: "File troppo grande. Dimensione massima: 1MB" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate query/data size
+    if (data && typeof data === 'string' && data.length > MAX_QUERY_LENGTH) {
+      console.error(`Query too long: ${data.length} characters`);
+      return new Response(
+        JSON.stringify({ error: "Query troppo lunga. Massimo 10000 caratteri." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============================================
+    // Process the AI request
+    // ============================================
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
@@ -99,13 +171,9 @@ Rispondi SOLO con un JSON valido:
 }`;
         userPrompt = `Voci esistenti:\n${JSON.stringify(data)}\n\nSuggerisci voci mancanti.`;
         break;
-
-      default:
-        // Generic query
-        systemPrompt = `Sei un assistente esperto in computi metrici, prezziari regionali e contabilità lavori.
-Rispondi in modo conciso e pratico. Se possibile, fornisci codici prezzario specifici.`;
-        userPrompt = data;
     }
+
+    console.log(`Processing action: ${action} for user: ${user.id}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -125,12 +193,14 @@ Rispondi in modo conciso e pratico. Se possibile, fornisci codici prezzario spec
 
     if (!response.ok) {
       if (response.status === 429) {
+        console.error("Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Limite richieste superato, riprova tra poco." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
+        console.error("AI credits exhausted");
         return new Response(
           JSON.stringify({ error: "Crediti AI esauriti." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -158,6 +228,8 @@ Rispondi in modo conciso e pratico. Se possibile, fornisci codici prezzario spec
     } catch {
       // Keep as string if not valid JSON
     }
+
+    console.log(`Successfully processed action: ${action} for user: ${user.id}`);
 
     return new Response(
       JSON.stringify({ success: true, result: parsedContent }),
