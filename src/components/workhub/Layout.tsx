@@ -185,7 +185,7 @@ export function Layout() {
             <Icon className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
             {!sidebarCollapsed && (
               <>
-                <span className="font-medium text-sm text-white">{label}</span>
+                <span className="font-medium text-xs text-white">{label}</span>
                 {badge !== undefined && badge > 0 && (
                   <span className={cn(
                     'ml-auto text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] text-center',
@@ -252,7 +252,7 @@ export function Layout() {
           {/* User Section - First */}
           <div>
             {!sidebarCollapsed && (
-              <p className="text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2">
+              <p className="text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2">
                 Utente
               </p>
             )}
@@ -272,7 +272,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setPrincipaleExpanded(!principaleExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Principale</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !principaleExpanded && '-rotate-90')} />
@@ -319,7 +319,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setCommesseExpanded(!commesseExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Commesse</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !commesseExpanded && '-rotate-90')} />
@@ -348,7 +348,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setHseExpanded(!hseExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Sicurezza & HSE</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !hseExpanded && '-rotate-90')} />
@@ -440,7 +440,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setCommercialeExpanded(!commercialeExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Commerciale</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !commercialeExpanded && '-rotate-90')} />
@@ -486,7 +486,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setAmministrazioneExpanded(!amministrazioneExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Amministrazione</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !amministrazioneExpanded && '-rotate-90')} />
@@ -548,7 +548,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setLogisticaExpanded(!logisticaExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Logistica</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !logisticaExpanded && '-rotate-90')} />
@@ -586,7 +586,7 @@ export function Layout() {
               {!sidebarCollapsed ? (
                 <button
                   onClick={() => setComplianceExpanded(!complianceExpanded)}
-                  className="w-full flex items-center justify-between text-[9px] font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between text-xs font-semibold text-white/60 uppercase tracking-widest px-3 mb-2 hover:text-white transition-colors"
                 >
                   <span>Conformità & Certificazioni</span>
                   <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !complianceExpanded && '-rotate-90')} />
