@@ -894,10 +894,10 @@ export default function SALPage() {
       <div className="flex gap-3 flex-wrap">
         <Select value={selectedCantiereId} onValueChange={setSelectedCantiereId}>
           <SelectTrigger className="w-64">
-            <SelectValue placeholder="Seleziona cantiere" />
+            <SelectValue placeholder="Seleziona commessa" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i cantieri</SelectItem>
+            <SelectItem value="all">Tutte le commesse</SelectItem>
             {activeCantieri.map(c => (
               <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
             ))}

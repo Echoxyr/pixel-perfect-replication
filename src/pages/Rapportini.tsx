@@ -309,13 +309,13 @@ export default function Rapportini() {
           <div className="flex flex-wrap gap-4 mb-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Cerca cantiere, redattore..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input placeholder="Cerca commessa, redattore..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-auto" />
             <Select value={filterCantiere} onValueChange={setFilterCantiere}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Cantiere" /></SelectTrigger>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Commessa" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutti i cantieri</SelectItem>
+                <SelectItem value="all">Tutte le commesse</SelectItem>
                 {cantieri.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
               </SelectContent>
             </Select>

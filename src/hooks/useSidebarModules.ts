@@ -14,8 +14,8 @@ export const SIDEBAR_MODULES: SidebarModule[] = [
   { id: 'progetti', label: 'Progetti & Task', section: 'principale', defaultVisible: true },
   { id: 'sal', label: 'SAL', section: 'principale', defaultVisible: true },
   
-  // Cantieri
-  { id: 'cantieri', label: 'Tutti i Cantieri', section: 'cantieri', defaultVisible: true },
+  // Commesse
+  { id: 'cantieri', label: 'Elenco Commesse', section: 'commesse', defaultVisible: true },
   
   // HSE
   { id: 'hse', label: 'Dashboard HSE', section: 'hse', defaultVisible: true },
@@ -52,7 +52,7 @@ export const SIDEBAR_MODULES: SidebarModule[] = [
 
 export const SECTIONS = [
   { id: 'principale', label: 'Principale' },
-  { id: 'cantieri', label: 'Cantieri' },
+  { id: 'commesse', label: 'Commesse' },
   { id: 'hse', label: 'Sicurezza & HSE' },
   { id: 'compliance', label: 'Conformità' },
   { id: 'commerciale', label: 'Commerciale' },

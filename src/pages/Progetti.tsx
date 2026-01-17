@@ -264,13 +264,13 @@ export default function Progetti() {
             </SelectContent>
           </Select>
 
-          {/* Cantiere Filter */}
+          {/* Commessa Filter */}
           <Select value={filterCantiere} onValueChange={setFilterCantiere}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Cantiere" />
+              <SelectValue placeholder="Commessa" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tutti i cantieri</SelectItem>
+              <SelectItem value="all">Tutte le commesse</SelectItem>
               {cantieri.map(c => (
                 <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
               ))}

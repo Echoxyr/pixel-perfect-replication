@@ -258,10 +258,10 @@ export default function HSEDashboard() {
         </div>
         <Select value={filterCantiere} onValueChange={setFilterCantiere}>
           <SelectTrigger className="w-52">
-            <SelectValue placeholder="Cantiere" />
+            <SelectValue placeholder="Commessa" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i cantieri</SelectItem>
+            <SelectItem value="all">Tutte le commesse</SelectItem>
             {cantieri.filter(c => c.stato === 'attivo').map(c => (
               <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
             ))}

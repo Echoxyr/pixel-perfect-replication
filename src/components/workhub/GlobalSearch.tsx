@@ -13,7 +13,6 @@ import {
   CommandSeparator,
 } from '@/components/ui/command';
 import {
-  Construction,
   Building2,
   HardHat,
   FileText,
@@ -23,7 +22,8 @@ import {
   Search,
   Calculator,
   Users,
-  Settings
+  Settings,
+  Briefcase
 } from 'lucide-react';
 
 interface GlobalSearchProps {
@@ -123,7 +123,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   // Scorciatoie rapide
   const quickActions = [
     { label: 'Dashboard', icon: FolderKanban, path: '/dashboard' },
-    { label: 'Cantieri', icon: Construction, path: '/cantieri' },
+    { label: 'Commesse', icon: Briefcase, path: '/cantieri' },
     { label: 'Imprese', icon: Building2, path: '/imprese' },
     { label: 'Lavoratori', icon: HardHat, path: '/lavoratori' },
     { label: 'Progetti & Task', icon: FolderKanban, path: '/progetti' },
@@ -136,7 +136,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput 
-        placeholder="Cerca cantieri, imprese, fatture, lavoratori..." 
+        placeholder="Cerca commesse, imprese, fatture, lavoratori..." 
         value={search}
         onValueChange={setSearch}
       />
@@ -160,13 +160,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
         ) : (
           <>
             {results?.cantieri && results.cantieri.length > 0 && (
-              <CommandGroup heading="Cantieri">
+              <CommandGroup heading="Commesse">
                 {results.cantieri.map((c) => (
                   <CommandItem
                     key={c.id}
                     onSelect={() => handleSelect(() => navigate(`/cantieri/${c.id}`))}
                   >
-                    <Construction className="mr-2 h-4 w-4" />
+                    <Briefcase className="mr-2 h-4 w-4" />
                     <span>{c.codiceCommessa}</span>
                     <span className="ml-2 text-muted-foreground">{c.nome}</span>
                   </CommandItem>
