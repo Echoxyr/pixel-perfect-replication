@@ -259,56 +259,7 @@ export default function ComputoMetrico() {
   const [categorie, setCategorie] = useState<CategoriaComputo[]>(categorieDefault);
   const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
   
-  const [vociComputo, setVociComputo] = useState<VoceComputo[]>([
-    {
-      id: '1',
-      codice: 'A.1.001',
-      codicePreziario: 'E.01.001.001',
-      descrizione: 'Scavo di sbancamento in terreno di qualsiasi natura',
-      unitaMisura: 'm³',
-      prezzoUnitario: 8.50,
-      quantita: 150,
-      importo: 1275.00,
-      categoriaId: 'cat1a',
-      note: ''
-    },
-    {
-      id: '2',
-      codice: 'A.2.001',
-      codicePreziario: 'E.02.001.001',
-      descrizione: 'Calcestruzzo classe C25/30',
-      unitaMisura: 'm³',
-      prezzoUnitario: 125.00,
-      quantita: 45,
-      importo: 5625.00,
-      categoriaId: 'cat1b',
-      note: ''
-    },
-    {
-      id: '3',
-      codice: 'B.1.001',
-      codicePreziario: 'M.02.001.001',
-      descrizione: 'Radiatore in alluminio 10 elementi',
-      unitaMisura: 'cad',
-      prezzoUnitario: 185.00,
-      quantita: 12,
-      importo: 2220.00,
-      categoriaId: 'cat2a',
-      note: ''
-    },
-    {
-      id: '4',
-      codice: 'C.1.001',
-      codicePreziario: 'EL.02.001.001',
-      descrizione: 'Punto luce completo',
-      unitaMisura: 'cad',
-      prezzoUnitario: 85.00,
-      quantita: 24,
-      importo: 2040.00,
-      categoriaId: 'cat3a',
-      note: ''
-    }
-  ]);
+  const [vociComputo, setVociComputo] = useState<VoceComputo[]>([]);
 
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);

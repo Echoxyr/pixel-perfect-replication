@@ -88,6 +88,7 @@ export function Layout() {
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [principaleExpanded, setPrincipaleExpanded] = useState(false);
+  const [commesseExpanded, setCommesseExpanded] = useState(false);
   const [hseExpanded, setHseExpanded] = useState(false);
   const [complianceExpanded, setComplianceExpanded] = useState(false);
   const [commercialeExpanded, setCommercialeExpanded] = useState(false);
@@ -312,16 +313,32 @@ export function Layout() {
             </div>
           )}
 
-          {/* Cantieri - Solo modulo diretto, nessun header di sezione */}
+          {/* Commesse Section - Collapsible */}
           {isModuleVisible('cantieri') && (
-            <div className="space-y-1">
-              <NavItem 
-                to="/cantieri" 
-                icon={Building2} 
-                label="Cantieri" 
-                badge={cantieri.length}
-                isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
-              />
+            <div>
+              {!sidebarCollapsed ? (
+                <button
+                  onClick={() => setCommesseExpanded(!commesseExpanded)}
+                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
+                >
+                  <span>Commesse</span>
+                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !commesseExpanded && '-rotate-90')} />
+                </button>
+              ) : (
+                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
+              )}
+              
+              {(sidebarCollapsed || commesseExpanded) && (
+                <div className="space-y-1">
+                  <NavItem 
+                    to="/cantieri" 
+                    icon={Building2} 
+                    label="Elenco Commesse" 
+                    badge={cantieri.length}
+                    isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -705,6 +722,7 @@ export function Layout() {
               <div className="h-px bg-sidebar-border" />
               
               <div className="space-y-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Commesse</p>
                 <Link
                   to="/cantieri"
                   onClick={() => setMobileMenuOpen(false)}
@@ -716,7 +734,7 @@ export function Layout() {
                   )}
                 >
                   <Building2 className="w-5 h-5" />
-                  <span className="font-medium">Cantieri</span>
+                  <span className="font-medium">Elenco Commesse</span>
                   <Badge variant="secondary" className="ml-auto">{cantieri.length}</Badge>
                 </Link>
               </div>
