@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock } from 'lucide-react';
 
-// Cambia questa password con quella che preferisci
-const SITE_PASSWORD = 'Geste2025';
+// Password semplice per fase prototipo - verifica solo lato client
+// La sicurezza reale è gestita tramite RLS su Supabase
+const SITE_PASSWORD = 'Geste2026';
 
 interface PasswordGateProps {
   children: React.ReactNode;
@@ -44,7 +45,7 @@ export function PasswordGate({ children }: PasswordGateProps) {
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
             <Lock className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Accesso Riservato</h1>
+          <h1 className="text-2xl font-bold">E-Gest Prototipo</h1>
           <p className="text-muted-foreground text-sm">Inserisci la password per accedere</p>
         </div>
         

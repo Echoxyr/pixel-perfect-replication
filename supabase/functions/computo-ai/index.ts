@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,41 +17,10 @@ serve(async (req) => {
 
   try {
     // ============================================
-    // SECURITY: Authenticate the user
-    // ============================================
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error("No authorization header provided");
-      return new Response(
-        JSON.stringify({ error: "Non autorizzato. Effettua il login." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Create Supabase client with user's auth
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    // Verify the user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      console.error("Auth error:", authError?.message || "No user found");
-      return new Response(
-        JSON.stringify({ error: "Sessione non valida. Effettua nuovamente il login." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Authenticated user: ${user.id}`);
-
-    // ============================================
-    // SECURITY: Validate input
+    // Input Validation
     // ============================================
     const { action, data, fileContent } = await req.json();
-
+    
     // Validate action
     if (!action || !VALID_ACTIONS.includes(action)) {
       console.error(`Invalid action: ${action}`);
@@ -173,7 +141,7 @@ Rispondi SOLO con un JSON valido:
         break;
     }
 
-    console.log(`Processing action: ${action} for user: ${user.id}`);
+    console.log(`Processing action: ${action}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -229,7 +197,7 @@ Rispondi SOLO con un JSON valido:
       // Keep as string if not valid JSON
     }
 
-    console.log(`Successfully processed action: ${action} for user: ${user.id}`);
+    console.log(`Successfully processed action: ${action}`);
 
     return new Response(
       JSON.stringify({ success: true, result: parsedContent }),
