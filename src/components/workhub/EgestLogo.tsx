@@ -19,8 +19,8 @@ export function EgestLogo({ size = 'md', showText = true, className, inSidebar =
   return (
     <div className={cn('flex flex-col', className)}>
       <span className={cn('font-bold leading-tight tracking-tight', text)}>
-        <span className={inSidebar ? 'text-primary' : 'text-primary'}>Gest</span>
-        <span className={inSidebar ? 'text-primary' : 'text-foreground'}>-e</span>
+        <span className={inSidebar ? 'text-white' : 'text-foreground'}>Gest</span>
+        <span className="text-primary">-e</span>
       </span>
       {showText && (
         <span className={cn('leading-none tracking-tight', tagline, inSidebar ? 'text-white/70' : 'text-muted-foreground')}>
