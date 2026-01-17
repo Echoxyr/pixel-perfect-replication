@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,7 +52,12 @@ import {
   FileCheck,
   AlertOctagon,
   CheckCircle2,
-  FileBadge
+  FileBadge,
+  Upload,
+  Calendar,
+  AlertTriangle,
+  FileWarning,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,23 +65,45 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { exportToExcel } from '@/utils/exportUtils';
 import { Link } from 'react-router-dom';
+import { differenceInDays, format, addDays } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 // Types
 interface Fornitore {
   id: string;
   ragione_sociale: string;
   partita_iva: string | null;
+  codice_fiscale: string | null;
   indirizzo: string | null;
   citta: string | null;
   cap: string | null;
+  provincia: string | null;
   telefono: string | null;
+  cellulare: string | null;
   email: string | null;
   pec: string | null;
+  iban: string | null;
   categoria: string | null;
   sconto_base: number | null;
   condizioni_pagamento: string | null;
   note: string | null;
   stato: string;
+  rating: number | null;
+}
+
+interface DocumentoFornitore {
+  id: string;
+  fornitore_id: string;
+  tipo_documento: string;
+  numero_documento: string | null;
+  data_emissione: string | null;
+  data_scadenza: string | null;
+  ente_emittente: string | null;
+  file_url: string | null;
+  note: string | null;
+  stato: string;
+  obbligatorio: boolean;
+  created_at: string;
 }
 
 interface PreventivoFornitore {
@@ -130,6 +157,80 @@ interface ListinoFornitore {
   attivo: boolean | null;
 }
 
+// Tipi documenti obbligatori per fornitori
+const TIPI_DOCUMENTO_FORNITORE = [
+  { 
+    tipo: 'DURC', 
+    nome: 'DURC - Documento Unico Regolarità Contributiva', 
+    obbligatorio: true,
+    validitaGiorni: 120,
+    descrizione: 'Certificato rilasciato da INPS/INAIL che attesta la regolarità contributiva'
+  },
+  { 
+    tipo: 'VISURA_CAMERALE', 
+    nome: 'Visura Camerale', 
+    obbligatorio: true,
+    validitaGiorni: 180,
+    descrizione: 'Documento ufficiale della Camera di Commercio (max 6 mesi)'
+  },
+  { 
+    tipo: 'POLIZZA_RCT_RCO', 
+    nome: 'Polizza Assicurativa RCT/RCO', 
+    obbligatorio: true,
+    validitaGiorni: 365,
+    descrizione: 'Responsabilità Civile verso Terzi e Operai'
+  },
+  { 
+    tipo: 'DICH_ANTIMAFIA', 
+    nome: 'Dichiarazione Antimafia', 
+    obbligatorio: true,
+    validitaGiorni: 180,
+    descrizione: 'Dichiarazione sostitutiva art. 89 D.Lgs. 159/2011'
+  },
+  { 
+    tipo: 'CERT_ISO_9001', 
+    nome: 'Certificazione ISO 9001 (Qualità)', 
+    obbligatorio: false,
+    validitaGiorni: 365,
+    descrizione: 'Sistema di gestione qualità'
+  },
+  { 
+    tipo: 'CERT_ISO_14001', 
+    nome: 'Certificazione ISO 14001 (Ambiente)', 
+    obbligatorio: false,
+    validitaGiorni: 365,
+    descrizione: 'Sistema di gestione ambientale'
+  },
+  { 
+    tipo: 'CERT_ISO_45001', 
+    nome: 'Certificazione ISO 45001 (Sicurezza)', 
+    obbligatorio: false,
+    validitaGiorni: 365,
+    descrizione: 'Sistema di gestione salute e sicurezza sul lavoro'
+  },
+  { 
+    tipo: 'ATTESTAZIONE_SOA', 
+    nome: 'Attestazione SOA', 
+    obbligatorio: false,
+    validitaGiorni: 365,
+    descrizione: 'Qualificazione per lavori pubblici'
+  },
+  { 
+    tipo: 'DVR', 
+    nome: 'DVR - Documento Valutazione Rischi', 
+    obbligatorio: true,
+    validitaGiorni: 365,
+    descrizione: 'Documento di valutazione dei rischi aziendali'
+  },
+  { 
+    tipo: 'IDONEITA_SANITARIA', 
+    nome: 'Idoneità Sanitaria Dipendenti', 
+    obbligatorio: false,
+    validitaGiorni: 365,
+    descrizione: 'Certificati di idoneità alla mansione'
+  }
+];
+
 export default function UfficioCommerciale() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('contratti');
@@ -137,25 +238,71 @@ export default function UfficioCommerciale() {
   
   // Dialog states
   const [showNewFornitore, setShowNewFornitore] = useState(false);
+  const [showEditFornitore, setShowEditFornitore] = useState(false);
   const [showNewPreventivo, setShowNewPreventivo] = useState(false);
   const [showNewOrdine, setShowNewOrdine] = useState(false);
   const [showNewContratto, setShowNewContratto] = useState(false);
   const [showNewListino, setShowNewListino] = useState(false);
+  const [showNewDocumento, setShowNewDocumento] = useState(false);
+  const [showDocumentiFornitore, setShowDocumentiFornitore] = useState(false);
+  
+  // Selected items
+  const [selectedFornitore, setSelectedFornitore] = useState<Fornitore | null>(null);
+  const [selectedFornitoreId, setSelectedFornitoreId] = useState<string | null>(null);
 
   // Form states
   const [newFornitore, setNewFornitore] = useState({
     ragione_sociale: '',
     partita_iva: '',
+    codice_fiscale: '',
     indirizzo: '',
     citta: '',
     cap: '',
+    provincia: '',
     telefono: '',
+    cellulare: '',
     email: '',
     pec: '',
+    iban: '',
     categoria: '',
     sconto_base: 0,
     condizioni_pagamento: '30 gg DFFM',
-    stato: 'attivo'
+    note: '',
+    stato: 'attivo',
+    rating: 3
+  });
+
+  const [editFornitore, setEditFornitore] = useState<typeof newFornitore & { id: string }>({
+    id: '',
+    ragione_sociale: '',
+    partita_iva: '',
+    codice_fiscale: '',
+    indirizzo: '',
+    citta: '',
+    cap: '',
+    provincia: '',
+    telefono: '',
+    cellulare: '',
+    email: '',
+    pec: '',
+    iban: '',
+    categoria: '',
+    sconto_base: 0,
+    condizioni_pagamento: '30 gg DFFM',
+    note: '',
+    stato: 'attivo',
+    rating: 3
+  });
+
+  const [newDocumento, setNewDocumento] = useState({
+    fornitore_id: '',
+    tipo_documento: '',
+    numero_documento: '',
+    data_emissione: new Date().toISOString().split('T')[0],
+    data_scadenza: '',
+    ente_emittente: '',
+    note: '',
+    obbligatorio: false
   });
 
   const [newPreventivo, setNewPreventivo] = useState({
@@ -208,6 +355,15 @@ export default function UfficioCommerciale() {
     }
   });
 
+  const { data: documentiFornitoriAll = [] } = useQuery({
+    queryKey: ['documenti_fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('documenti_fornitori').select('*').order('data_scadenza');
+      if (error) throw error;
+      return data as DocumentoFornitore[];
+    }
+  });
+
   const { data: preventivi = [] } = useQuery({
     queryKey: ['preventivi_fornitori'],
     queryFn: async () => {
@@ -252,19 +408,60 @@ export default function UfficioCommerciale() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fornitori'] });
-      toast.success('Fornitore creato');
+      toast.success('Fornitore creato con successo');
       setShowNewFornitore(false);
-      setNewFornitore({ ragione_sociale: '', partita_iva: '', indirizzo: '', citta: '', cap: '', telefono: '', email: '', pec: '', categoria: '', sconto_base: 0, condizioni_pagamento: '30 gg DFFM', stato: 'attivo' });
+      setNewFornitore({ ragione_sociale: '', partita_iva: '', codice_fiscale: '', indirizzo: '', citta: '', cap: '', provincia: '', telefono: '', cellulare: '', email: '', pec: '', iban: '', categoria: '', sconto_base: 0, condizioni_pagamento: '30 gg DFFM', note: '', stato: 'attivo', rating: 3 });
     },
-    onError: () => toast.error('Errore nella creazione')
+    onError: () => toast.error('Errore nella creazione del fornitore')
+  });
+
+  const updateFornitoreMutation = useMutation({
+    mutationFn: async (data: typeof editFornitore) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase.from('fornitori').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fornitori'] });
+      toast.success('Fornitore aggiornato con successo');
+      setShowEditFornitore(false);
+    },
+    onError: () => toast.error('Errore nell\'aggiornamento del fornitore')
+  });
+
+  const createDocumentoMutation = useMutation({
+    mutationFn: async (data: typeof newDocumento) => {
+      const tipoDoc = TIPI_DOCUMENTO_FORNITORE.find(t => t.tipo === data.tipo_documento);
+      const { error } = await supabase.from('documenti_fornitori').insert({
+        ...data,
+        obbligatorio: tipoDoc?.obbligatorio || false,
+        stato: 'valido'
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documenti_fornitori'] });
+      toast.success('Documento aggiunto');
+      setShowNewDocumento(false);
+      setNewDocumento({ fornitore_id: '', tipo_documento: '', numero_documento: '', data_emissione: new Date().toISOString().split('T')[0], data_scadenza: '', ente_emittente: '', note: '', obbligatorio: false });
+    },
+    onError: () => toast.error('Errore nell\'aggiunta del documento')
+  });
+
+  const deleteDocumentoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('documenti_fornitori').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documenti_fornitori'] });
+      toast.success('Documento eliminato');
+    }
   });
 
   const createPreventivoMutation = useMutation({
     mutationFn: async (data: typeof newPreventivo) => {
-      const { error } = await supabase.from('preventivi_fornitori').insert({
-        ...data,
-        stato: 'richiesto'
-      });
+      const { error } = await supabase.from('preventivi_fornitori').insert({ ...data, stato: 'richiesto' });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -277,10 +474,7 @@ export default function UfficioCommerciale() {
 
   const createOrdineMutation = useMutation({
     mutationFn: async (data: typeof newOrdine) => {
-      const { error } = await supabase.from('ordini_fornitori').insert({
-        ...data,
-        stato: 'bozza'
-      });
+      const { error } = await supabase.from('ordini_fornitori').insert({ ...data, stato: 'bozza' });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -293,10 +487,7 @@ export default function UfficioCommerciale() {
 
   const createContrattoMutation = useMutation({
     mutationFn: async (data: typeof newContratto) => {
-      const { error } = await supabase.from('contratti').insert({
-        ...data,
-        stato: 'attivo'
-      });
+      const { error } = await supabase.from('contratti').insert({ ...data, stato: 'attivo' });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -309,10 +500,7 @@ export default function UfficioCommerciale() {
 
   const createListinoMutation = useMutation({
     mutationFn: async (data: typeof newListino) => {
-      const { error } = await supabase.from('listini_fornitori').insert({
-        ...data,
-        attivo: true
-      });
+      const { error } = await supabase.from('listini_fornitori').insert({ ...data, attivo: true });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -348,9 +536,7 @@ export default function UfficioCommerciale() {
   const updateOrdineStatoMutation = useMutation({
     mutationFn: async ({ id, stato }: { id: string; stato: string }) => {
       const update: Record<string, unknown> = { stato };
-      if (stato === 'consegnato') {
-        update.data_consegna_effettiva = new Date().toISOString().split('T')[0];
-      }
+      if (stato === 'consegnato') update.data_consegna_effettiva = new Date().toISOString().split('T')[0];
       const { error } = await supabase.from('ordini_fornitori').update(update).eq('id', id);
       if (error) throw error;
     },
@@ -374,12 +560,12 @@ export default function UfficioCommerciale() {
   // Helpers
   const getStatoColor = (stato: string) => {
     switch (stato) {
-      case 'attivo': case 'approvato': case 'confermato': case 'consegnato': case 'ricevuto':
+      case 'attivo': case 'approvato': case 'confermato': case 'consegnato': case 'ricevuto': case 'valido':
         return 'bg-emerald-500/15 text-emerald-500';
-      case 'in_consegna': case 'inviato':
-        return 'bg-sky-500/15 text-sky-500';
-      case 'richiesto': case 'bozza':
+      case 'in_consegna': case 'inviato': case 'in_scadenza':
         return 'bg-amber-500/15 text-amber-500';
+      case 'richiesto': case 'bozza': case 'da_verificare':
+        return 'bg-sky-500/15 text-sky-500';
       case 'scaduto': case 'rifiutato': case 'annullato': case 'cessato': case 'sospeso':
         return 'bg-red-500/15 text-red-500';
       default:
@@ -389,11 +575,11 @@ export default function UfficioCommerciale() {
 
   const getStatoIcon = (stato: string) => {
     switch (stato) {
-      case 'attivo': case 'approvato': case 'confermato': case 'consegnato':
+      case 'attivo': case 'approvato': case 'confermato': case 'consegnato': case 'valido':
         return <CheckCircle className="w-4 h-4" />;
-      case 'in_consegna': case 'inviato':
-        return <Truck className="w-4 h-4" />;
-      case 'richiesto': case 'bozza': case 'ricevuto':
+      case 'in_consegna': case 'inviato': case 'in_scadenza':
+        return <Clock className="w-4 h-4" />;
+      case 'richiesto': case 'bozza': case 'ricevuto': case 'da_verificare':
         return <Clock className="w-4 h-4" />;
       case 'scaduto': case 'rifiutato': case 'annullato':
         return <XCircle className="w-4 h-4" />;
@@ -405,13 +591,94 @@ export default function UfficioCommerciale() {
   const formatCurrency = (value: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('it-IT');
 
+  // Calcola stato documento basato su scadenza
+  const getDocumentoStatus = (doc: DocumentoFornitore) => {
+    if (!doc.data_scadenza) return { stato: 'da_verificare', label: 'Da Verificare', color: 'bg-sky-500/15 text-sky-500' };
+    const oggi = new Date();
+    const scadenza = new Date(doc.data_scadenza);
+    const giorniAllaScadenza = differenceInDays(scadenza, oggi);
+    
+    if (giorniAllaScadenza < 0) return { stato: 'scaduto', label: 'Scaduto', color: 'bg-red-500/15 text-red-500' };
+    if (giorniAllaScadenza <= 30) return { stato: 'in_scadenza', label: `Scade tra ${giorniAllaScadenza}gg`, color: 'bg-amber-500/15 text-amber-500' };
+    return { stato: 'valido', label: 'Valido', color: 'bg-emerald-500/15 text-emerald-500' };
+  };
+
+  // Calcola compliance fornitore
+  const getFornitoreCompliance = (fornitoreId: string) => {
+    const documentiFornitore = documentiFornitoriAll.filter(d => d.fornitore_id === fornitoreId);
+    const documentiObbligatori = TIPI_DOCUMENTO_FORNITORE.filter(t => t.obbligatorio);
+    
+    const stato = {
+      totaleObbligatori: documentiObbligatori.length,
+      presenti: 0,
+      validi: 0,
+      inScadenza: 0,
+      scaduti: 0,
+      mancanti: [] as string[]
+    };
+
+    documentiObbligatori.forEach(tipoDoc => {
+      const doc = documentiFornitore.find(d => d.tipo_documento === tipoDoc.tipo);
+      if (!doc) {
+        stato.mancanti.push(tipoDoc.nome);
+      } else {
+        stato.presenti++;
+        const status = getDocumentoStatus(doc);
+        if (status.stato === 'valido') stato.validi++;
+        else if (status.stato === 'in_scadenza') stato.inScadenza++;
+        else if (status.stato === 'scaduto') stato.scaduti++;
+      }
+    });
+
+    // Determina stato pagamenti
+    let statoPagamenti: 'pagabile' | 'in_attesa' | 'bloccato' = 'pagabile';
+    if (stato.scaduti > 0 || stato.mancanti.length > 2) statoPagamenti = 'bloccato';
+    else if (stato.mancanti.length > 0 || stato.inScadenza > 0) statoPagamenti = 'in_attesa';
+
+    return { ...stato, statoPagamenti };
+  };
+
+  // Apri modifica fornitore
+  const handleEditFornitore = (fornitore: Fornitore) => {
+    setEditFornitore({
+      id: fornitore.id,
+      ragione_sociale: fornitore.ragione_sociale,
+      partita_iva: fornitore.partita_iva || '',
+      codice_fiscale: fornitore.codice_fiscale || '',
+      indirizzo: fornitore.indirizzo || '',
+      citta: fornitore.citta || '',
+      cap: fornitore.cap || '',
+      provincia: fornitore.provincia || '',
+      telefono: fornitore.telefono || '',
+      cellulare: fornitore.cellulare || '',
+      email: fornitore.email || '',
+      pec: fornitore.pec || '',
+      iban: fornitore.iban || '',
+      categoria: fornitore.categoria || '',
+      sconto_base: fornitore.sconto_base || 0,
+      condizioni_pagamento: fornitore.condizioni_pagamento || '30 gg DFFM',
+      note: fornitore.note || '',
+      stato: fornitore.stato,
+      rating: fornitore.rating || 3
+    });
+    setShowEditFornitore(true);
+  };
+
+  // Apri documenti fornitore
+  const handleViewDocumenti = (fornitoreId: string) => {
+    setSelectedFornitoreId(fornitoreId);
+    setShowDocumentiFornitore(true);
+  };
+
   // Stats
   const stats = {
     contrattiAttivi: contratti.filter(c => c.stato === 'attivo').length,
     valoreTotaleContratti: contratti.filter(c => c.stato === 'attivo').reduce((sum, c) => sum + c.importo, 0),
     preventiviInAttesa: preventivi.filter(p => p.stato === 'richiesto' || p.stato === 'ricevuto').length,
     ordiniInCorso: ordini.filter(o => o.stato !== 'consegnato' && o.stato !== 'annullato').length,
-    fornitoriAttivi: fornitori.filter(f => f.stato === 'attivo').length
+    fornitoriAttivi: fornitori.filter(f => f.stato === 'attivo').length,
+    documentiScaduti: documentiFornitoriAll.filter(d => getDocumentoStatus(d).stato === 'scaduto').length,
+    documentiInScadenza: documentiFornitoriAll.filter(d => getDocumentoStatus(d).stato === 'in_scadenza').length
   };
 
   // Filter data
@@ -432,6 +699,14 @@ export default function UfficioCommerciale() {
     toast.success('Export completato');
   };
 
+  const documentiFornitoreSelezionato = selectedFornitoreId 
+    ? documentiFornitoriAll.filter(d => d.fornitore_id === selectedFornitoreId)
+    : [];
+
+  const fornitoreSelezionato = selectedFornitoreId 
+    ? fornitori.find(f => f.id === selectedFornitoreId)
+    : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -443,12 +718,7 @@ export default function UfficioCommerciale() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Cerca..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
-            />
+            <Input placeholder="Cerca..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-64" />
           </div>
         </div>
       </div>
@@ -516,12 +786,37 @@ export default function UfficioCommerciale() {
         </Card>
       </div>
 
+      {/* Alert Documenti */}
+      {(stats.documentiScaduti > 0 || stats.documentiInScadenza > 0) && (
+        <Card className="border-amber-500/50 bg-amber-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <div className="flex-1">
+                <p className="font-medium">Attenzione ai documenti fornitori</p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.documentiScaduti > 0 && <span className="text-red-500 font-medium">{stats.documentiScaduti} documenti scaduti</span>}
+                  {stats.documentiScaduti > 0 && stats.documentiInScadenza > 0 && ' • '}
+                  {stats.documentiInScadenza > 0 && <span className="text-amber-500 font-medium">{stats.documentiInScadenza} in scadenza</span>}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('documenti-fornitori')}>
+                Verifica
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
           <TabsTrigger value="contratti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
           <TabsTrigger value="fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
-          <TabsTrigger value="documenti-fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileBadge className="w-4 h-4" />Documenti Fornitori</TabsTrigger>
+          <TabsTrigger value="documenti-fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
+            <FileBadge className="w-4 h-4" />Documenti Fornitori
+            {(stats.documentiScaduti > 0) && <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-red-500 text-white">{stats.documentiScaduti}</span>}
+          </TabsTrigger>
           <TabsTrigger value="preventivi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
           <TabsTrigger value="ordini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
           <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
@@ -534,13 +829,9 @@ export default function UfficioCommerciale() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Contratti</CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" className="gap-2" onClick={() => handleExport(contratti, 'contratti')}>
-                  <Download className="w-4 h-4" />Esporta
-                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => handleExport(contratti, 'contratti')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewContratto} onOpenChange={setShowNewContratto}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Contratto</Button>
-                  </DialogTrigger>
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Contratto</Button></DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader><DialogTitle>Nuovo Contratto</DialogTitle></DialogHeader>
                     <div className="grid grid-cols-2 gap-4 pt-4">
@@ -613,51 +904,98 @@ export default function UfficioCommerciale() {
         {/* Documenti Fornitori - Compliance Tab */}
         <TabsContent value="documenti-fornitori" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileBadge className="w-5 h-5" />
-                Regolarità Documentale Fornitori
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Verifica veloce della documentazione obbligatoria per pagamenti e compliance</p>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2"><Shield className="w-5 h-5" />Regolarità Documentale Fornitori</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Gestione completa della documentazione obbligatoria per pagamenti e compliance</p>
+              </div>
+              <Dialog open={showNewDocumento} onOpenChange={setShowNewDocumento}>
+                <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Aggiungi Documento</Button></DialogTrigger>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader><DialogTitle>Aggiungi Documento Fornitore</DialogTitle></DialogHeader>
+                  <div className="grid gap-4 pt-4">
+                    <div>
+                      <Label>Fornitore *</Label>
+                      <Select value={newDocumento.fornitore_id} onValueChange={(v) => setNewDocumento(p => ({ ...p, fornitore_id: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
+                        <SelectContent>
+                          {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Tipo Documento *</Label>
+                      <Select value={newDocumento.tipo_documento} onValueChange={(v) => {
+                        const tipoDoc = TIPI_DOCUMENTO_FORNITORE.find(t => t.tipo === v);
+                        const scadenza = tipoDoc ? format(addDays(new Date(), tipoDoc.validitaGiorni), 'yyyy-MM-dd') : '';
+                        setNewDocumento(p => ({ ...p, tipo_documento: v, data_scadenza: scadenza, obbligatorio: tipoDoc?.obbligatorio || false }));
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona tipo" /></SelectTrigger>
+                        <SelectContent>
+                          {TIPI_DOCUMENTO_FORNITORE.map(t => (
+                            <SelectItem key={t.tipo} value={t.tipo}>
+                              <div className="flex items-center gap-2">
+                                {t.obbligatorio && <span className="text-red-500">*</span>}
+                                {t.nome}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>Numero Documento</Label><Input value={newDocumento.numero_documento} onChange={(e) => setNewDocumento(p => ({ ...p, numero_documento: e.target.value }))} placeholder="es. DURC-2024-001" /></div>
+                      <div><Label>Ente Emittente</Label><Input value={newDocumento.ente_emittente} onChange={(e) => setNewDocumento(p => ({ ...p, ente_emittente: e.target.value }))} placeholder="es. INPS, CCIAA" /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>Data Emissione</Label><Input type="date" value={newDocumento.data_emissione} onChange={(e) => setNewDocumento(p => ({ ...p, data_emissione: e.target.value }))} /></div>
+                      <div><Label>Data Scadenza</Label><Input type="date" value={newDocumento.data_scadenza} onChange={(e) => setNewDocumento(p => ({ ...p, data_scadenza: e.target.value }))} /></div>
+                    </div>
+                    <div><Label>Note</Label><Textarea value={newDocumento.note} onChange={(e) => setNewDocumento(p => ({ ...p, note: e.target.value }))} /></div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowNewDocumento(false)}>Annulla</Button>
+                    <Button onClick={() => createDocumentoMutation.mutate(newDocumento)} disabled={!newDocumento.fornitore_id || !newDocumento.tipo_documento}>Salva Documento</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
-              {/* Documenti obbligatori per fornitore */}
-              <div className="space-y-4">
-                {fornitori.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Nessun fornitore registrato. Aggiungi fornitori per monitorare la documentazione.</p>
-                  </div>
-                ) : (
+              {fornitori.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nessun fornitore registrato. Aggiungi fornitori per monitorare la documentazione.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Fornitore</TableHead>
                         <TableHead className="text-center">DURC</TableHead>
-                        <TableHead className="text-center">Visura Camerale</TableHead>
-                        <TableHead className="text-center">Cert. ISO</TableHead>
-                        <TableHead className="text-center">Polizza RCT/RCO</TableHead>
-                        <TableHead className="text-center">Dich. Antimafia</TableHead>
-                        <TableHead className="text-center">Fatture Regolari</TableHead>
+                        <TableHead className="text-center">Visura</TableHead>
+                        <TableHead className="text-center">Polizza RCT</TableHead>
+                        <TableHead className="text-center">Antimafia</TableHead>
+                        <TableHead className="text-center">DVR</TableHead>
+                        <TableHead className="text-center">ISO</TableHead>
+                        <TableHead>Compliance</TableHead>
                         <TableHead>Stato Pagamenti</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {fornitori.map(f => {
-                        // Simulazione stato documenti (in produzione verrebbe da DB)
-                        const docs = {
-                          durc: Math.random() > 0.3,
-                          visura: Math.random() > 0.2,
-                          iso: Math.random() > 0.5,
-                          polizza: Math.random() > 0.4,
-                          antimafia: Math.random() > 0.3,
-                          fatture: Math.random() > 0.2
+                        const compliance = getFornitoreCompliance(f.id);
+                        const documentiF = documentiFornitoriAll.filter(d => d.fornitore_id === f.id);
+                        
+                        const getDocIcon = (tipo: string) => {
+                          const doc = documentiF.find(d => d.tipo_documento === tipo);
+                          if (!doc) return <XCircle className="w-5 h-5 text-muted-foreground/50 mx-auto" />;
+                          const status = getDocumentoStatus(doc);
+                          if (status.stato === 'valido') return <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" />;
+                          if (status.stato === 'in_scadenza') return <Clock className="w-5 h-5 text-amber-500 mx-auto" />;
+                          return <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />;
                         };
-                        const completeCount = Object.values(docs).filter(Boolean).length;
-                        const totalDocs = 6;
-                        const isComplete = completeCount === totalDocs;
-                        const hasWarning = completeCount >= 4 && completeCount < totalDocs;
-                        const hasCritical = completeCount < 4;
 
                         return (
                           <TableRow key={f.id}>
@@ -665,54 +1003,57 @@ export default function UfficioCommerciale() {
                               <div className="font-medium">{f.ragione_sociale}</div>
                               <div className="text-xs text-muted-foreground">{f.partita_iva || 'P.IVA mancante'}</div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              {docs.durc ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {docs.visura ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {docs.iso ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <Clock className="w-5 h-5 text-amber-500 mx-auto" />}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {docs.polizza ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {docs.antimafia ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <AlertOctagon className="w-5 h-5 text-red-500 mx-auto" />}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {docs.fatture ? <CheckCircle2 className="w-5 h-5 text-emerald-500 mx-auto" /> : <Clock className="w-5 h-5 text-amber-500 mx-auto" />}
+                            <TableCell className="text-center">{getDocIcon('DURC')}</TableCell>
+                            <TableCell className="text-center">{getDocIcon('VISURA_CAMERALE')}</TableCell>
+                            <TableCell className="text-center">{getDocIcon('POLIZZA_RCT_RCO')}</TableCell>
+                            <TableCell className="text-center">{getDocIcon('DICH_ANTIMAFIA')}</TableCell>
+                            <TableCell className="text-center">{getDocIcon('DVR')}</TableCell>
+                            <TableCell className="text-center">{getDocIcon('CERT_ISO_9001')}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-2 rounded-full bg-muted overflow-hidden">
+                                  <div 
+                                    className={cn("h-full transition-all", compliance.validi === compliance.totaleObbligatori ? "bg-emerald-500" : compliance.validi >= compliance.totaleObbligatori / 2 ? "bg-amber-500" : "bg-red-500")}
+                                    style={{ width: `${(compliance.presenti / compliance.totaleObbligatori) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground">{compliance.presenti}/{compliance.totaleObbligatori}</span>
+                              </div>
                             </TableCell>
                             <TableCell>
-                              <Badge className={cn(
-                                "gap-1",
-                                isComplete ? "bg-emerald-500/15 text-emerald-500" :
-                                hasWarning ? "bg-amber-500/15 text-amber-500" :
-                                "bg-red-500/15 text-red-500"
-                              )}>
-                                {isComplete ? <CheckCircle className="w-3 h-3" /> : hasCritical ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                                {isComplete ? 'Pagabile' : hasWarning ? 'In Attesa Doc.' : 'Blocco Pagamento'}
+                              <Badge className={cn("gap-1", compliance.statoPagamenti === 'pagabile' ? "bg-emerald-500/15 text-emerald-500" : compliance.statoPagamenti === 'in_attesa' ? "bg-amber-500/15 text-amber-500" : "bg-red-500/15 text-red-500")}>
+                                {compliance.statoPagamenti === 'pagabile' ? <CheckCircle className="w-3 h-3" /> : compliance.statoPagamenti === 'in_attesa' ? <Clock className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                {compliance.statoPagamenti === 'pagabile' ? 'Pagabile' : compliance.statoPagamenti === 'in_attesa' ? 'In Attesa' : 'Bloccato'}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocumenti(f.id)}>
+                                <Eye className="w-4 h-4 mr-1" />Dettagli
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
                       })}
                     </TableBody>
                   </Table>
-                )}
 
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Legenda Documenti Obbligatori</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    <div><strong>DURC:</strong> Documento Unico Regolarità Contributiva (validità 120gg)</div>
-                    <div><strong>Visura:</strong> Visura Camerale aggiornata (max 6 mesi)</div>
-                    <div><strong>Cert. ISO:</strong> Certificazioni qualità (opzionale ma consigliato)</div>
-                    <div><strong>Polizza RCT/RCO:</strong> Responsabilità Civile Terzi/Operai</div>
-                    <div><strong>Antimafia:</strong> Dichiarazione sostitutiva antimafia</div>
-                    <div><strong>Fatture:</strong> Fatture conformi e regolarmente emesse</div>
+                  {/* Legenda */}
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <h4 className="font-medium mb-3">Documenti Obbligatori per Fornitori</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                      {TIPI_DOCUMENTO_FORNITORE.filter(t => t.obbligatorio).map(t => (
+                        <div key={t.tipo} className="flex items-start gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                          <div>
+                            <span className="font-medium">{t.tipo.replace(/_/g, ' ')}</span>
+                            <p className="text-xs text-muted-foreground">{t.descrizione} (validità {t.validitaGiorni}gg)</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -725,23 +1066,36 @@ export default function UfficioCommerciale() {
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => handleExport(fornitori, 'fornitori')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewFornitore} onOpenChange={setShowNewFornitore}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Fornitore</Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Fornitore</Button></DialogTrigger>
+                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>Nuovo Fornitore</DialogTitle></DialogHeader>
                     <div className="grid grid-cols-2 gap-4 pt-4">
                       <div className="col-span-2"><Label>Ragione Sociale *</Label><Input value={newFornitore.ragione_sociale} onChange={(e) => setNewFornitore(p => ({ ...p, ragione_sociale: e.target.value }))} /></div>
                       <div><Label>Partita IVA</Label><Input value={newFornitore.partita_iva} onChange={(e) => setNewFornitore(p => ({ ...p, partita_iva: e.target.value }))} /></div>
+                      <div><Label>Codice Fiscale</Label><Input value={newFornitore.codice_fiscale} onChange={(e) => setNewFornitore(p => ({ ...p, codice_fiscale: e.target.value }))} /></div>
                       <div><Label>Categoria</Label><Input value={newFornitore.categoria} onChange={(e) => setNewFornitore(p => ({ ...p, categoria: e.target.value }))} placeholder="es. Materiali edili" /></div>
+                      <div><Label>Stato</Label>
+                        <Select value={newFornitore.stato} onValueChange={(v) => setNewFornitore(p => ({ ...p, stato: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="attivo">Attivo</SelectItem>
+                            <SelectItem value="sospeso">Sospeso</SelectItem>
+                            <SelectItem value="cessato">Cessato</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="col-span-2"><Label>Indirizzo</Label><Input value={newFornitore.indirizzo} onChange={(e) => setNewFornitore(p => ({ ...p, indirizzo: e.target.value }))} /></div>
                       <div><Label>Città</Label><Input value={newFornitore.citta} onChange={(e) => setNewFornitore(p => ({ ...p, citta: e.target.value }))} /></div>
                       <div><Label>CAP</Label><Input value={newFornitore.cap} onChange={(e) => setNewFornitore(p => ({ ...p, cap: e.target.value }))} /></div>
+                      <div><Label>Provincia</Label><Input value={newFornitore.provincia} onChange={(e) => setNewFornitore(p => ({ ...p, provincia: e.target.value }))} maxLength={2} /></div>
                       <div><Label>Telefono</Label><Input value={newFornitore.telefono} onChange={(e) => setNewFornitore(p => ({ ...p, telefono: e.target.value }))} /></div>
+                      <div><Label>Cellulare</Label><Input value={newFornitore.cellulare} onChange={(e) => setNewFornitore(p => ({ ...p, cellulare: e.target.value }))} /></div>
                       <div><Label>Email</Label><Input type="email" value={newFornitore.email} onChange={(e) => setNewFornitore(p => ({ ...p, email: e.target.value }))} /></div>
                       <div><Label>PEC</Label><Input value={newFornitore.pec} onChange={(e) => setNewFornitore(p => ({ ...p, pec: e.target.value }))} /></div>
+                      <div><Label>IBAN</Label><Input value={newFornitore.iban} onChange={(e) => setNewFornitore(p => ({ ...p, iban: e.target.value }))} /></div>
                       <div><Label>Sconto Base %</Label><Input type="number" value={newFornitore.sconto_base} onChange={(e) => setNewFornitore(p => ({ ...p, sconto_base: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Condizioni Pagamento</Label><Input value={newFornitore.condizioni_pagamento} onChange={(e) => setNewFornitore(p => ({ ...p, condizioni_pagamento: e.target.value }))} /></div>
+                      <div className="col-span-2"><Label>Note</Label><Textarea value={newFornitore.note} onChange={(e) => setNewFornitore(p => ({ ...p, note: e.target.value }))} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setShowNewFornitore(false)}>Annulla</Button>
@@ -761,28 +1115,38 @@ export default function UfficioCommerciale() {
                     <TableHead>Telefono</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Sconto</TableHead>
+                    <TableHead>Compliance</TableHead>
                     <TableHead>Stato</TableHead>
                     <TableHead className="text-right">Azioni</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredFornitori.map(f => (
-                    <TableRow key={f.id}>
-                      <TableCell className="font-medium">{f.ragione_sociale}</TableCell>
-                      <TableCell>{f.categoria || '-'}</TableCell>
-                      <TableCell>{f.citta || '-'}</TableCell>
-                      <TableCell>{f.telefono || '-'}</TableCell>
-                      <TableCell>{f.email || '-'}</TableCell>
-                      <TableCell>{f.sconto_base}%</TableCell>
-                      <TableCell><Badge className={getStatoColor(f.stato)}>{f.stato}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteFornitoreMutation.mutate(f.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredFornitori.map(f => {
+                    const compliance = getFornitoreCompliance(f.id);
+                    return (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium">{f.ragione_sociale}</TableCell>
+                        <TableCell>{f.categoria || '-'}</TableCell>
+                        <TableCell>{f.citta || '-'}</TableCell>
+                        <TableCell>{f.telefono || '-'}</TableCell>
+                        <TableCell>{f.email || '-'}</TableCell>
+                        <TableCell>{f.sconto_base}%</TableCell>
+                        <TableCell>
+                          <Badge className={cn("gap-1", compliance.statoPagamenti === 'pagabile' ? "bg-emerald-500/15 text-emerald-500" : compliance.statoPagamenti === 'in_attesa' ? "bg-amber-500/15 text-amber-500" : "bg-red-500/15 text-red-500")}>
+                            {compliance.presenti}/{compliance.totaleObbligatori} doc
+                          </Badge>
+                        </TableCell>
+                        <TableCell><Badge className={getStatoColor(f.stato)}>{f.stato}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewDocumenti(f.id)}><FileCheck className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditFornitore(f)}><Edit className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteFornitoreMutation.mutate(f.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                   {filteredFornitori.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun fornitore trovato</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nessun fornitore trovato</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -798,9 +1162,7 @@ export default function UfficioCommerciale() {
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => handleExport(preventivi, 'preventivi')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewPreventivo} onOpenChange={setShowNewPreventivo}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuova Richiesta</Button>
-                  </DialogTrigger>
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuova Richiesta</Button></DialogTrigger>
                   <DialogContent>
                     <DialogHeader><DialogTitle>Nuova Richiesta Preventivo</DialogTitle></DialogHeader>
                     <div className="grid gap-4 pt-4">
@@ -810,9 +1172,7 @@ export default function UfficioCommerciale() {
                           setNewPreventivo(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
                         }}>
                           <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
-                          <SelectContent>
-                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div><Label>Oggetto *</Label><Input value={newPreventivo.oggetto} onChange={(e) => setNewPreventivo(p => ({ ...p, oggetto: e.target.value }))} /></div>
@@ -853,9 +1213,7 @@ export default function UfficioCommerciale() {
                       <TableCell>{p.scadenza ? formatDate(p.scadenza) : '-'}</TableCell>
                       <TableCell><Badge className={getStatoColor(p.stato)}>{p.stato}</Badge></TableCell>
                       <TableCell className="text-right flex gap-1 justify-end">
-                        {p.stato === 'richiesto' && (
-                          <Button size="sm" variant="outline" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'ricevuto' })}>Ricevuto</Button>
-                        )}
+                        {p.stato === 'richiesto' && <Button size="sm" variant="outline" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'ricevuto' })}>Ricevuto</Button>}
                         {p.stato === 'ricevuto' && (
                           <>
                             <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'approvato' })}>Approva</Button>
@@ -865,9 +1223,7 @@ export default function UfficioCommerciale() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {preventivi.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun preventivo trovato</TableCell></TableRow>
-                  )}
+                  {preventivi.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun preventivo trovato</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -882,9 +1238,7 @@ export default function UfficioCommerciale() {
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => handleExport(ordini, 'ordini')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewOrdine} onOpenChange={setShowNewOrdine}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Ordine</Button>
-                  </DialogTrigger>
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Ordine</Button></DialogTrigger>
                   <DialogContent>
                     <DialogHeader><DialogTitle>Nuovo Ordine</DialogTitle></DialogHeader>
                     <div className="grid gap-4 pt-4">
@@ -894,9 +1248,7 @@ export default function UfficioCommerciale() {
                           setNewOrdine(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
                         }}>
                           <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
-                          <SelectContent>
-                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div><Label>Importo €</Label><Input type="number" value={newOrdine.importo} onChange={(e) => setNewOrdine(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
@@ -936,24 +1288,14 @@ export default function UfficioCommerciale() {
                       <TableCell>{o.data_consegna_effettiva ? formatDate(o.data_consegna_effettiva) : '-'}</TableCell>
                       <TableCell><Badge className={cn("gap-1", getStatoColor(o.stato))}>{getStatoIcon(o.stato)}{o.stato.replace('_', ' ')}</Badge></TableCell>
                       <TableCell className="text-right flex gap-1 justify-end">
-                        {o.stato === 'bozza' && (
-                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'inviato' })}><Send className="w-3 h-3 mr-1" />Invia</Button>
-                        )}
-                        {o.stato === 'inviato' && (
-                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'confermato' })}>Conferma</Button>
-                        )}
-                        {o.stato === 'confermato' && (
-                          <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'in_consegna' })}>In Consegna</Button>
-                        )}
-                        {o.stato === 'in_consegna' && (
-                          <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'consegnato' })}><CheckCircle className="w-3 h-3 mr-1" />Consegnato</Button>
-                        )}
+                        {o.stato === 'bozza' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'inviato' })}><Send className="w-3 h-3 mr-1" />Invia</Button>}
+                        {o.stato === 'inviato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'confermato' })}>Conferma</Button>}
+                        {o.stato === 'confermato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'in_consegna' })}>In Consegna</Button>}
+                        {o.stato === 'in_consegna' && <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'consegnato' })}><CheckCircle className="w-3 h-3 mr-1" />Consegnato</Button>}
                       </TableCell>
                     </TableRow>
                   ))}
-                  {ordini.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun ordine trovato</TableCell></TableRow>
-                  )}
+                  {ordini.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun ordine trovato</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -968,9 +1310,7 @@ export default function UfficioCommerciale() {
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => handleExport(listini, 'listini')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewListino} onOpenChange={setShowNewListino}>
-                  <DialogTrigger asChild>
-                    <Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Listino</Button>
-                  </DialogTrigger>
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Listino</Button></DialogTrigger>
                   <DialogContent>
                     <DialogHeader><DialogTitle>Nuovo Listino</DialogTitle></DialogHeader>
                     <div className="grid gap-4 pt-4">
@@ -980,9 +1320,7 @@ export default function UfficioCommerciale() {
                           setNewListino(p => ({ ...p, fornitore_id: v, fornitore_nome: f?.ragione_sociale || '' }));
                         }}>
                           <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
-                          <SelectContent>
-                            {fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}
-                          </SelectContent>
+                          <SelectContent>{fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
                       <div><Label>Nome Listino *</Label><Input value={newListino.nome} onChange={(e) => setNewListino(p => ({ ...p, nome: e.target.value }))} placeholder="es. Listino 2024" /></div>
@@ -1026,9 +1364,7 @@ export default function UfficioCommerciale() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {listini.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nessun listino trovato</TableCell></TableRow>
-                  )}
+                  {listini.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nessun listino trovato</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1040,23 +1376,153 @@ export default function UfficioCommerciale() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Computo Metrico</CardTitle>
-              <Link to="/computo-metrico">
-                <Button className="gap-2"><Calculator className="w-4 h-4" />Apri Modulo Completo</Button>
-              </Link>
+              <Link to="/computo-metrico"><Button className="gap-2"><Calculator className="w-4 h-4" />Apri Modulo Completo</Button></Link>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
                 <Calculator className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-medium mb-2">Gestione Computi Metrici</h3>
                 <p className="text-muted-foreground mb-4">Accedi al modulo completo per la gestione dei computi metrici estimativi</p>
-                <Link to="/computo-metrico">
-                  <Button>Vai al Computo Metrico</Button>
-                </Link>
+                <Link to="/computo-metrico"><Button>Vai al Computo Metrico</Button></Link>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Modifica Fornitore */}
+      <Dialog open={showEditFornitore} onOpenChange={setShowEditFornitore}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifica Fornitore</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="col-span-2"><Label>Ragione Sociale *</Label><Input value={editFornitore.ragione_sociale} onChange={(e) => setEditFornitore(p => ({ ...p, ragione_sociale: e.target.value }))} /></div>
+            <div><Label>Partita IVA</Label><Input value={editFornitore.partita_iva} onChange={(e) => setEditFornitore(p => ({ ...p, partita_iva: e.target.value }))} /></div>
+            <div><Label>Codice Fiscale</Label><Input value={editFornitore.codice_fiscale} onChange={(e) => setEditFornitore(p => ({ ...p, codice_fiscale: e.target.value }))} /></div>
+            <div><Label>Categoria</Label><Input value={editFornitore.categoria} onChange={(e) => setEditFornitore(p => ({ ...p, categoria: e.target.value }))} /></div>
+            <div><Label>Stato</Label>
+              <Select value={editFornitore.stato} onValueChange={(v) => setEditFornitore(p => ({ ...p, stato: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attivo">Attivo</SelectItem>
+                  <SelectItem value="sospeso">Sospeso</SelectItem>
+                  <SelectItem value="cessato">Cessato</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2"><Label>Indirizzo</Label><Input value={editFornitore.indirizzo} onChange={(e) => setEditFornitore(p => ({ ...p, indirizzo: e.target.value }))} /></div>
+            <div><Label>Città</Label><Input value={editFornitore.citta} onChange={(e) => setEditFornitore(p => ({ ...p, citta: e.target.value }))} /></div>
+            <div><Label>CAP</Label><Input value={editFornitore.cap} onChange={(e) => setEditFornitore(p => ({ ...p, cap: e.target.value }))} /></div>
+            <div><Label>Provincia</Label><Input value={editFornitore.provincia} onChange={(e) => setEditFornitore(p => ({ ...p, provincia: e.target.value }))} maxLength={2} /></div>
+            <div><Label>Telefono</Label><Input value={editFornitore.telefono} onChange={(e) => setEditFornitore(p => ({ ...p, telefono: e.target.value }))} /></div>
+            <div><Label>Cellulare</Label><Input value={editFornitore.cellulare} onChange={(e) => setEditFornitore(p => ({ ...p, cellulare: e.target.value }))} /></div>
+            <div><Label>Email</Label><Input type="email" value={editFornitore.email} onChange={(e) => setEditFornitore(p => ({ ...p, email: e.target.value }))} /></div>
+            <div><Label>PEC</Label><Input value={editFornitore.pec} onChange={(e) => setEditFornitore(p => ({ ...p, pec: e.target.value }))} /></div>
+            <div><Label>IBAN</Label><Input value={editFornitore.iban} onChange={(e) => setEditFornitore(p => ({ ...p, iban: e.target.value }))} /></div>
+            <div><Label>Sconto Base %</Label><Input type="number" value={editFornitore.sconto_base} onChange={(e) => setEditFornitore(p => ({ ...p, sconto_base: parseFloat(e.target.value) || 0 }))} /></div>
+            <div><Label>Condizioni Pagamento</Label><Input value={editFornitore.condizioni_pagamento} onChange={(e) => setEditFornitore(p => ({ ...p, condizioni_pagamento: e.target.value }))} /></div>
+            <div className="col-span-2"><Label>Note</Label><Textarea value={editFornitore.note} onChange={(e) => setEditFornitore(p => ({ ...p, note: e.target.value }))} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditFornitore(false)}>Annulla</Button>
+            <Button onClick={() => updateFornitoreMutation.mutate(editFornitore)} disabled={!editFornitore.ragione_sociale}>Salva Modifiche</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Documenti Fornitore */}
+      <Dialog open={showDocumentiFornitore} onOpenChange={setShowDocumentiFornitore}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="w-5 h-5" />
+              Documenti di {fornitoreSelezionato?.ragione_sociale}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 pt-4">
+            {/* Lista documenti presenti */}
+            {documentiFornitoreSelezionato.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo Documento</TableHead>
+                    <TableHead>Numero</TableHead>
+                    <TableHead>Emissione</TableHead>
+                    <TableHead>Scadenza</TableHead>
+                    <TableHead>Ente</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {documentiFornitoreSelezionato.map(doc => {
+                    const status = getDocumentoStatus(doc);
+                    const tipoDoc = TIPI_DOCUMENTO_FORNITORE.find(t => t.tipo === doc.tipo_documento);
+                    return (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {tipoDoc?.obbligatorio && <span className="text-red-500 text-xs">*</span>}
+                            <span className="font-medium">{doc.tipo_documento.replace(/_/g, ' ')}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{doc.numero_documento || '-'}</TableCell>
+                        <TableCell>{doc.data_emissione ? formatDate(doc.data_emissione) : '-'}</TableCell>
+                        <TableCell>{doc.data_scadenza ? formatDate(doc.data_scadenza) : '-'}</TableCell>
+                        <TableCell>{doc.ente_emittente || '-'}</TableCell>
+                        <TableCell><Badge className={status.color}>{status.label}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => deleteDocumentoMutation.mutate(doc.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileWarning className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nessun documento caricato per questo fornitore</p>
+              </div>
+            )}
+
+            {/* Documenti mancanti */}
+            {selectedFornitoreId && (() => {
+              const compliance = getFornitoreCompliance(selectedFornitoreId);
+              if (compliance.mancanti.length > 0) {
+                return (
+                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <h4 className="font-medium text-red-500 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Documenti Obbligatori Mancanti ({compliance.mancanti.length})
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {compliance.mancanti.map(doc => (
+                        <div key={doc} className="flex items-center gap-2 text-sm">
+                          <XCircle className="w-4 h-4 text-red-500" />
+                          <span>{doc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* Aggiungi documento */}
+            <div className="flex justify-end pt-4 border-t">
+              <Button onClick={() => {
+                setNewDocumento(p => ({ ...p, fornitore_id: selectedFornitoreId || '' }));
+                setShowDocumentiFornitore(false);
+                setShowNewDocumento(true);
+              }} className="gap-2">
+                <Plus className="w-4 h-4" />Aggiungi Documento
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

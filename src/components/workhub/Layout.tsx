@@ -314,18 +314,10 @@ export function Layout() {
             </div>
           )}
 
-          {/* Cantieri Section */}
+          {/* Cantieri Section - Solo il link diretto senza header di sezione */}
           {isModuleVisible('cantieri') && (
             <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setCantieriExpanded(!cantieriExpanded)}
-                  className="w-full flex items-center justify-between text-[10px] font-bold text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Cantieri</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/70 transition-transform', !cantieriExpanded && '-rotate-90')} />
-                </button>
-              ) : (
+              {sidebarCollapsed && (
                 <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
               )}
               
@@ -335,42 +327,8 @@ export function Layout() {
                   icon={Construction} 
                   label="Cantieri" 
                   badge={cantieri.length}
-                  isActive={location.pathname === '/cantieri'} 
+                  isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
                 />
-                
-                {!sidebarCollapsed && cantieriExpanded && (
-                  <div className="ml-4 pl-3 border-l border-sidebar-border space-y-0.5 mt-2">
-                    {activeCantieri.slice(0, 5).map((cantiere) => {
-                      const isActive = location.pathname === `/cantieri/${cantiere.id}`;
-                      return (
-                        <Link
-                          key={cantiere.id}
-                          to={`/cantieri/${cantiere.id}`}
-                          className={cn(
-                            'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
-                            isActive
-                              ? 'bg-primary/10 text-primary font-medium'
-                              : 'text-white/80 hover:text-white hover:bg-white/10'
-                          )}
-                        >
-                          <span className={cn(
-                            'w-1.5 h-1.5 rounded-full',
-                            cantiere.stato === 'attivo' ? 'bg-emerald-500' : 'bg-amber-500'
-                          )} />
-                          <span className="truncate">{cantiere.codiceCommessa}</span>
-                        </Link>
-                      );
-                    })}
-                    {activeCantieri.length > 5 && (
-                      <Link
-                        to="/cantieri"
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:underline"
-                      >
-                        +{activeCantieri.length - 5} altri
-                      </Link>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           )}
