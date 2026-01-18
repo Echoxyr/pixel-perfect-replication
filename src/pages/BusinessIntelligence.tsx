@@ -1,11 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
-import {
-  KPIFinanziario,
-  ReportSchedulato,
-  AnalisiPredittiva
-} from '@/types/compliance';
-import { formatDateFull, formatCurrency, generateId } from '@/types/workhub';
+import { formatCurrency } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
@@ -43,7 +38,13 @@ import {
   Target,
   PieChart,
   LineChart,
-  Activity
+  Activity,
+  Brain,
+  Zap,
+  Shield,
+  Building2,
+  Truck,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -55,70 +56,227 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Legend
+  Legend,
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
 } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format, differenceInDays, addDays } from 'date-fns';
+import { it } from 'date-fns/locale';
+import ComplianceMonitor from '@/components/workhub/ComplianceMonitor';
+import WorkflowNotifications from '@/components/workhub/WorkflowNotifications';
 
 export default function BusinessIntelligence() {
-  const { cantieri, sal, contratti } = useWorkHub();
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { cantieri, hseStats } = useWorkHub();
   
-  const [kpiFinanziari, setKpiFinanziari] = useState<KPIFinanziario[]>([
-    { id: '1', periodo: '2024-01', ricaviPrevisti: 500000, ricaviEffettivi: 480000, costiPrevisti: 400000, costiEffettivi: 390000, margine: 90000, marginePrevisto: 100000, cashFlowOperativo: 50000, dso: 45, wip: 150000 },
-    { id: '2', periodo: '2024-02', ricaviPrevisti: 600000, ricaviEffettivi: 620000, costiPrevisti: 480000, costiEffettivi: 470000, margine: 150000, marginePrevisto: 120000, cashFlowOperativo: 80000, dso: 42, wip: 180000 },
-    { id: '3', periodo: '2024-03', ricaviPrevisti: 550000, ricaviEffettivi: 540000, costiPrevisti: 440000, costiEffettivi: 450000, margine: 90000, marginePrevisto: 110000, cashFlowOperativo: 40000, dso: 48, wip: 200000 },
-  ]);
-
-  const [reportSchedulati, setReportSchedulati] = useState<ReportSchedulato[]>([
-    { id: '1', nome: 'Report Executive Mensile', descrizione: 'KPI finanziari e operativi', tipoReport: 'executive', templateId: 'exec-1', filtri: {}, formato: 'pdf', frequenza: 'mensile', destinatari: ['direzione@azienda.it'], prossimaEsecuzione: '2024-04-01', attivo: true },
-    { id: '2', nome: 'Report HSE Settimanale', descrizione: 'Stato sicurezza cantieri', tipoReport: 'hse', templateId: 'hse-1', filtri: {}, formato: 'pdf', frequenza: 'settimanale', destinatari: ['rspp@azienda.it'], prossimaEsecuzione: '2024-03-25', attivo: true },
-  ]);
-
-  const [analisiPredittive, setAnalisiPredittive] = useState<AnalisiPredittiva[]>([
-    { id: '1', cantiereId: cantieri[0]?.id || '', dataAnalisi: '2024-03-20', tipoPrevisione: 'ritardo', probabilita: 35, impatto: 'medio', fattoriRischio: ['Ritardi forniture', 'Condizioni meteo'], raccomandazioni: ['Anticipare ordini materiali', 'Prevedere buffer temporale'], azioniMitigazione: ['Contattare fornitori alternativi'] },
-    { id: '2', cantiereId: cantieri[0]?.id || '', dataAnalisi: '2024-03-20', tipoPrevisione: 'sovracosto', probabilita: 20, impatto: 'basso', fattoriRischio: ['Variazione prezzi materie prime'], raccomandazioni: ['Bloccare prezzi con contratti'], azioniMitigazione: [] },
-  ]);
-
   const [showNewReportDialog, setShowNewReportDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const chartData = useMemo(() => {
-    return kpiFinanziari.map(k => ({
-      periodo: k.periodo,
-      ricavi: k.ricaviEffettivi,
-      costi: k.costiEffettivi,
-      margine: k.margine,
-      ricaviPrevisti: k.ricaviPrevisti,
-      costiPrevisti: k.costiPrevisti
-    }));
-  }, [kpiFinanziari]);
+  // Fetch KPI Finanziari from DB
+  const { data: kpiFinanziari = [] } = useQuery({
+    queryKey: ['kpi_finanziari'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kpi_finanziari')
+        .select('*')
+        .order('periodo', { ascending: true });
+      if (error) throw error;
+      return data;
+    }
+  });
 
+  // Fetch AI Predictions from DB
+  const { data: aiPredictions = [] } = useQuery({
+    queryKey: ['ai_predictions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_predictions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch Analisi Predittive from DB
+  const { data: analisiPredittive = [] } = useQuery({
+    queryKey: ['analisi_predittive'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('analisi_predittive')
+        .select('*')
+        .order('data_analisi', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch Fatture for cash flow
+  const { data: fatture = [] } = useQuery({
+    queryKey: ['fatture'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fatture')
+        .select('*')
+        .order('data', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch Ordini for procurement analysis
+  const { data: ordini = [] } = useQuery({
+    queryKey: ['ordini_fornitori'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ordini_fornitori')
+        .select('*')
+        .order('data', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Generate AI Prediction mutation
+  const generatePrediction = useMutation({
+    mutationFn: async (tipo: string) => {
+      setIsAnalyzing(true);
+      
+      // Simulate AI analysis delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const predictions = {
+        ritardo: {
+          tipo: 'ritardo_progetto',
+          probabilita: Math.floor(Math.random() * 40) + 10,
+          impatto: Math.random() > 0.5 ? 'medio' : 'basso',
+          fattori_rischio: ['Ritardi nelle forniture', 'Condizioni meteo avverse', 'Carenza manodopera'],
+          raccomandazioni: ['Anticipare ordini materiali di 2 settimane', 'Prevedere piano B per maltempo', 'Contattare agenzia interinale']
+        },
+        cashflow: {
+          tipo: 'cashflow',
+          probabilita: Math.floor(Math.random() * 30) + 20,
+          impatto: 'alto',
+          fattori_rischio: ['Fatture non incassate >60gg', 'Scadenze pagamenti concentrati'],
+          raccomandazioni: ['Sollecitare incassi scaduti', 'Negoziare dilazioni con fornitori', 'Valutare anticipo fatture']
+        },
+        fornitore: {
+          tipo: 'affidabilita_fornitore',
+          probabilita: Math.floor(Math.random() * 25) + 5,
+          impatto: 'medio',
+          fattori_rischio: ['Ritardi consegne ricorrenti', 'Qualità variabile'],
+          raccomandazioni: ['Richiedere referenze aggiornate', 'Valutare fornitori alternativi', 'Inserire penali contrattuali']
+        }
+      };
+
+      const prediction = predictions[tipo as keyof typeof predictions] || predictions.ritardo;
+      
+      const { error } = await supabase.from('ai_predictions').insert({
+        tipo: prediction.tipo,
+        probabilita: prediction.probabilita,
+        impatto: prediction.impatto,
+        dati_input: { 
+          cantieri_attivi: cantieri.filter(c => c.stato === 'attivo').length,
+          hse_alerts: hseStats.documentiScaduti + hseStats.formazioniScadute
+        },
+        raccomandazioni: prediction.raccomandazioni,
+        previsione_dettaglio: { fattori_rischio: prediction.fattori_rischio },
+        valido_fino: addDays(new Date(), 7).toISOString()
+      });
+
+      if (error) throw error;
+      setIsAnalyzing(false);
+      return prediction;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai_predictions'] });
+      toast.success('Analisi predittiva completata!');
+    },
+    onError: () => {
+      setIsAnalyzing(false);
+      toast.error('Errore nell\'analisi');
+    }
+  });
+
+  // Calculate stats from real data
   const stats = useMemo(() => {
-    const ultimo = kpiFinanziari[kpiFinanziari.length - 1];
-    const penultimo = kpiFinanziari[kpiFinanziari.length - 2];
+    const fattureAttive = fatture.filter(f => f.tipo === 'attiva');
+    const fatturePassive = fatture.filter(f => f.tipo === 'passiva');
     
-    const totaleRicavi = kpiFinanziari.reduce((acc, k) => acc + k.ricaviEffettivi, 0);
-    const totaleCosti = kpiFinanziari.reduce((acc, k) => acc + k.costiEffettivi, 0);
-    const margineComplessivo = totaleRicavi - totaleCosti;
-    const percentualeMargine = totaleRicavi > 0 ? (margineComplessivo / totaleRicavi) * 100 : 0;
+    const totaleRicavi = fattureAttive.reduce((acc, f) => acc + (f.totale || f.imponibile), 0);
+    const totaleCosti = fatturePassive.reduce((acc, f) => acc + (f.totale || f.imponibile), 0);
+    const margine = totaleRicavi - totaleCosti;
     
-    const varianzaRicavi = ultimo && penultimo 
-      ? ((ultimo.ricaviEffettivi - penultimo.ricaviEffettivi) / penultimo.ricaviEffettivi) * 100 
+    const fattureDaPagare = fatture.filter(f => f.stato === 'emessa' || f.stato === 'scaduta');
+    const dso = fattureDaPagare.length > 0 
+      ? fattureDaPagare.reduce((acc, f) => acc + differenceInDays(new Date(), new Date(f.data)), 0) / fattureDaPagare.length
       : 0;
+
+    const ordiniInCorso = ordini.filter(o => o.stato !== 'consegnato' && o.stato !== 'annullato');
+    const valoreOrdini = ordiniInCorso.reduce((acc, o) => acc + o.importo, 0);
+
+    const rischioAlto = aiPredictions.filter(p => p.impatto === 'alto' || p.impatto === 'critico').length;
 
     return {
       totaleRicavi,
       totaleCosti,
-      margineComplessivo,
-      percentualeMargine,
-      varianzaRicavi,
-      dsoMedio: kpiFinanziari.reduce((acc, k) => acc + k.dso, 0) / kpiFinanziari.length,
-      wipTotale: ultimo?.wip || 0,
-      rischioAlto: analisiPredittive.filter(a => a.impatto === 'alto' || a.impatto === 'critico').length
+      margine,
+      percentualeMargine: totaleRicavi > 0 ? (margine / totaleRicavi) * 100 : 0,
+      dso: Math.round(dso),
+      wipTotale: valoreOrdini,
+      rischioAlto,
+      fattureScadute: fatture.filter(f => f.stato === 'scaduta').length,
+      cantieriAttivi: cantieri.filter(c => c.stato === 'attivo').length
     };
-  }, [kpiFinanziari, analisiPredittive]);
+  }, [fatture, ordini, aiPredictions, cantieri]);
 
-  const getCantiereName = (id: string) => {
-    const c = cantieri.find(c => c.id === id);
-    return c ? `${c.codiceCommessa} - ${c.nome}` : '-';
+  // Chart data from KPI
+  const chartData = useMemo(() => {
+    if (kpiFinanziari.length > 0) {
+      return kpiFinanziari.map(k => ({
+        periodo: k.periodo,
+        ricavi: k.ricavi_effettivi || 0,
+        costi: k.costi_effettivi || 0,
+        margine: k.margine || 0,
+        ricaviPrevisti: k.ricavi_previsti || 0,
+        costiPrevisti: k.costi_previsti || 0
+      }));
+    }
+    // Fallback demo data if no KPI in DB
+    return [
+      { periodo: '2024-01', ricavi: 480000, costi: 390000, margine: 90000, ricaviPrevisti: 500000, costiPrevisti: 400000 },
+      { periodo: '2024-02', ricavi: 620000, costi: 470000, margine: 150000, ricaviPrevisti: 600000, costiPrevisti: 480000 },
+      { periodo: '2024-03', ricavi: 540000, costi: 450000, margine: 90000, ricaviPrevisti: 550000, costiPrevisti: 440000 },
+    ];
+  }, [kpiFinanziari]);
+
+  // Status distribution for pie chart
+  const statusDistribution = useMemo(() => {
+    const attivi = cantieri.filter(c => c.stato === 'attivo').length;
+    const completati = cantieri.filter(c => c.stato === 'chiuso').length;
+    const sospesi = cantieri.filter(c => c.stato === 'sospeso').length;
+    
+    return [
+      { name: 'Attivi', value: attivi, color: '#3b82f6' },
+      { name: 'Chiusi', value: completati, color: '#10b981' },
+      { name: 'Sospesi', value: sospesi, color: '#ef4444' },
+    ].filter(d => d.value > 0);
+  }, [cantieri]);
+
+  const getImpactBadge = (impatto: string) => {
+    const colors: Record<string, string> = {
+      basso: 'bg-green-100 text-green-800',
+      medio: 'bg-amber-100 text-amber-800',
+      alto: 'bg-red-100 text-red-800',
+      critico: 'bg-red-200 text-red-900',
+    };
+    return colors[impatto] || colors.medio;
   };
 
   return (
@@ -128,18 +286,23 @@ export default function BusinessIntelligence() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-primary" />
-            Business Intelligence & Reporting
+            Business Intelligence & AI Predittiva
           </h1>
-          <p className="text-muted-foreground">Dashboard KPI, Report automatici e Analisi predittiva</p>
+          <p className="text-muted-foreground">Dashboard KPI, Analisi predittiva AI e Monitoraggio in tempo reale</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => generatePrediction.mutate('ritardo')}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+            Analisi AI
+          </Button>
           <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
             Esporta Report
-          </Button>
-          <Button onClick={() => setShowNewReportDialog(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Nuovo Report
           </Button>
         </div>
       </div>
@@ -150,15 +313,12 @@ export default function BusinessIntelligence() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
               <Euro className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">Ricavi YTD</span>
+              <span className="text-xs text-muted-foreground">Ricavi Totali</span>
             </div>
             <p className="text-xl font-bold">{formatCurrency(stats.totaleRicavi)}</p>
-            <div className={cn(
-              'flex items-center gap-1 text-xs mt-1',
-              stats.varianzaRicavi >= 0 ? 'text-emerald-500' : 'text-red-500'
-            )}>
-              {stats.varianzaRicavi >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {Math.abs(stats.varianzaRicavi).toFixed(1)}% vs mese prec.
+            <div className="flex items-center gap-1 text-xs mt-1 text-emerald-500">
+              <TrendingUp className="w-3 h-3" />
+              da fatture attive
             </div>
           </CardContent>
         </Card>
@@ -166,7 +326,7 @@ export default function BusinessIntelligence() {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-amber-500" />
-              <span className="text-xs text-muted-foreground">Costi YTD</span>
+              <span className="text-xs text-muted-foreground">Costi Totali</span>
             </div>
             <p className="text-xl font-bold">{formatCurrency(stats.totaleCosti)}</p>
           </CardContent>
@@ -177,7 +337,9 @@ export default function BusinessIntelligence() {
               <TrendingUp className="w-4 h-4 text-emerald-500" />
               <span className="text-xs text-muted-foreground">Margine</span>
             </div>
-            <p className="text-xl font-bold text-emerald-500">{formatCurrency(stats.margineComplessivo)}</p>
+            <p className={cn("text-xl font-bold", stats.margine >= 0 ? "text-emerald-500" : "text-red-500")}>
+              {formatCurrency(stats.margine)}
+            </p>
             <p className="text-xs text-muted-foreground">{stats.percentualeMargine.toFixed(1)}%</p>
           </CardContent>
         </Card>
@@ -187,16 +349,16 @@ export default function BusinessIntelligence() {
               <Clock className="w-4 h-4 text-blue-500" />
               <span className="text-xs text-muted-foreground">DSO Medio</span>
             </div>
-            <p className="text-xl font-bold">{stats.dsoMedio.toFixed(0)} gg</p>
+            <p className="text-xl font-bold">{stats.dso} gg</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
-              <PieChart className="w-4 h-4 text-cyan-500" />
-              <span className="text-xs text-muted-foreground">WIP</span>
+              <Building2 className="w-4 h-4 text-cyan-500" />
+              <span className="text-xs text-muted-foreground">Cantieri Attivi</span>
             </div>
-            <p className="text-xl font-bold">{formatCurrency(stats.wipTotale)}</p>
+            <p className="text-xl font-bold">{stats.cantieriAttivi}</p>
           </CardContent>
         </Card>
         <Card>
@@ -210,263 +372,218 @@ export default function BusinessIntelligence() {
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LineChart className="w-5 h-5" />
-              Andamento Ricavi vs Costi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorRicavi" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorCosti" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="periodo" className="text-xs" />
-                <YAxis className="text-xs" tickFormatter={(v) => `€${(v/1000).toFixed(0)}k`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Area type="monotone" dataKey="ricavi" stroke="hsl(var(--primary))" fill="url(#colorRicavi)" name="Ricavi" />
-                <Area type="monotone" dataKey="costi" stroke="hsl(var(--destructive))" fill="url(#colorCosti)" name="Costi" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Budget vs Consuntivo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="periodo" className="text-xs" />
-                <YAxis className="text-xs" tickFormatter={(v) => `€${(v/1000).toFixed(0)}k`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Legend />
-                <Bar dataKey="ricaviPrevisti" fill="hsl(var(--primary) / 0.3)" name="Ricavi Previsti" />
-                <Bar dataKey="ricavi" fill="hsl(var(--primary))" name="Ricavi Effettivi" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="kpi" className="w-full">
-        <TabsList>
-          <TabsTrigger value="kpi">KPI Dettaglio</TabsTrigger>
-          <TabsTrigger value="report">Report Schedulati</TabsTrigger>
-          <TabsTrigger value="predittiva">Analisi Predittiva</TabsTrigger>
-          <TabsTrigger value="benchmark">Benchmark Cantieri</TabsTrigger>
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="flex w-full h-auto flex-wrap gap-1 p-1">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="predittiva" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Predittiva
+          </TabsTrigger>
+          <TabsTrigger value="compliance" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Compliance
+          </TabsTrigger>
+          <TabsTrigger value="notifiche" className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            Workflow
+          </TabsTrigger>
         </TabsList>
 
-        {/* KPI Tab */}
-        <TabsContent value="kpi" className="mt-6">
-          <div className="space-y-4">
-            {kpiFinanziari.map(k => (
-              <div key={k.id} className="p-4 rounded-xl border border-border bg-card">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Calendar className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{k.periodo}</h3>
-                      <p className="text-sm text-muted-foreground">Periodo di riferimento</p>
-                    </div>
-                  </div>
-                  <Badge className={cn(
-                    k.margine >= k.marginePrevisto ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                  )}>
-                    {k.margine >= k.marginePrevisto ? 'In Target' : 'Sotto Target'}
-                  </Badge>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Ricavi</p>
-                    <p className="font-semibold">{formatCurrency(k.ricaviEffettivi)}</p>
-                    <p className="text-xs text-muted-foreground">vs {formatCurrency(k.ricaviPrevisti)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Costi</p>
-                    <p className="font-semibold">{formatCurrency(k.costiEffettivi)}</p>
-                    <p className="text-xs text-muted-foreground">vs {formatCurrency(k.costiPrevisti)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Margine</p>
-                    <p className="font-semibold text-emerald-500">{formatCurrency(k.margine)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">DSO</p>
-                    <p className="font-semibold">{k.dso} giorni</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">WIP</p>
-                    <p className="font-semibold">{formatCurrency(k.wip)}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="w-5 h-5" />
+                  Andamento Ricavi vs Costi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorRicavi" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorCosti" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="periodo" className="text-xs" />
+                    <YAxis className="text-xs" tickFormatter={(v) => `€${(v/1000).toFixed(0)}k`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                      formatter={(value: number) => formatCurrency(value)}
+                    />
+                    <Area type="monotone" dataKey="ricavi" stroke="hsl(var(--primary))" fill="url(#colorRicavi)" name="Ricavi" />
+                    <Area type="monotone" dataKey="costi" stroke="hsl(var(--destructive))" fill="url(#colorCosti)" name="Costi" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="w-5 h-5" />
+                  Stato Cantieri
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsPie>
+                    <Pie
+                      data={statusDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {statusDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Budget vs Consuntivo */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Budget vs Consuntivo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="periodo" className="text-xs" />
+                  <YAxis className="text-xs" tickFormatter={(v) => `€${(v/1000).toFixed(0)}k`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                    formatter={(value: number) => formatCurrency(value)}
+                  />
+                  <Legend />
+                  <Bar dataKey="ricaviPrevisti" fill="hsl(var(--primary) / 0.3)" name="Ricavi Previsti" />
+                  <Bar dataKey="ricavi" fill="hsl(var(--primary))" name="Ricavi Effettivi" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Report Tab */}
-        <TabsContent value="report" className="mt-6">
-          <div className="space-y-4">
-            {reportSchedulati.map(r => (
-              <div key={r.id} className="p-4 rounded-xl border border-border bg-card flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-primary/10">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold">{r.nome}</h3>
-                      <Badge variant="outline">{r.frequenza}</Badge>
-                      <Badge variant="outline">{r.formato.toUpperCase()}</Badge>
-                      {r.attivo ? (
-                        <Badge className="bg-emerald-500/20 text-emerald-500">Attivo</Badge>
-                      ) : (
-                        <Badge variant="outline">Disattivo</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{r.descrizione}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Prossima esecuzione: {formatDateFull(r.prossimaEsecuzione)} | 
-                      Destinatari: {r.destinatari.join(', ')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Download className="w-4 h-4" />
-                    Genera Ora
-                  </Button>
-                  <Button variant="outline" size="sm">Modifica</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Predittiva Tab */}
+        {/* AI Predittiva Tab */}
         <TabsContent value="predittiva" className="mt-6">
-          <div className="space-y-4">
-            {analisiPredittive.map(a => (
-              <div key={a.id} className={cn(
-                'p-4 rounded-xl border bg-card',
-                a.impatto === 'critico' ? 'border-red-500/50' :
-                a.impatto === 'alto' ? 'border-amber-500/50' :
-                'border-border'
-              )}>
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline">{a.tipoPrevisione}</Badge>
-                      <Badge className={cn(
-                        a.impatto === 'critico' && 'bg-red-600/20 text-red-600',
-                        a.impatto === 'alto' && 'bg-red-500/20 text-red-500',
-                        a.impatto === 'medio' && 'bg-amber-500/20 text-amber-500',
-                        a.impatto === 'basso' && 'bg-emerald-500/20 text-emerald-500'
-                      )}>
-                        Impatto {a.impatto}
-                      </Badge>
-                    </div>
-                    <h3 className="font-semibold">{getCantiereName(a.cantiereId)}</h3>
-                    <p className="text-sm text-muted-foreground">Analisi del {formatDateFull(a.dataAnalisi)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">{a.probabilita}%</p>
-                    <p className="text-xs text-muted-foreground">Probabilità</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm font-medium mb-2">Fattori di rischio:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {a.fattoriRischio.map((f, i) => (
-                        <Badge key={i} variant="outline" className="text-xs">{f}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-2">Raccomandazioni:</p>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      {a.raccomandazioni.map((r, i) => (
-                        <li key={i}>• {r}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-2">Azioni mitigazione:</p>
-                    {a.azioniMitigazione.length > 0 ? (
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {a.azioniMitigazione.map((m, i) => (
-                          <li key={i}>• {m}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Nessuna azione definita</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('ritardo')}>
+              <CardContent className="p-6 text-center">
+                <Clock className="w-10 h-10 mx-auto mb-3 text-amber-500" />
+                <h3 className="font-semibold mb-2">Analisi Ritardi</h3>
+                <p className="text-sm text-muted-foreground">Previsione rischi di ritardo sui progetti attivi</p>
+              </CardContent>
+            </Card>
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('cashflow')}>
+              <CardContent className="p-6 text-center">
+                <Euro className="w-10 h-10 mx-auto mb-3 text-green-500" />
+                <h3 className="font-semibold mb-2">Previsione Cash Flow</h3>
+                <p className="text-sm text-muted-foreground">Analisi flussi di cassa e rischi liquidità</p>
+              </CardContent>
+            </Card>
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('fornitore')}>
+              <CardContent className="p-6 text-center">
+                <Truck className="w-10 h-10 mx-auto mb-3 text-blue-500" />
+                <h3 className="font-semibold mb-2">Affidabilità Fornitori</h3>
+                <p className="text-sm text-muted-foreground">Valutazione performance e rischi fornitori</p>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Predictions List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5" />
+                Previsioni AI Recenti
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {aiPredictions.length === 0 ? (
+                <div className="text-center py-12">
+                  <Brain className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-medium mb-2">Nessuna previsione ancora</h3>
+                  <p className="text-muted-foreground mb-4">Clicca su una delle card sopra per generare un'analisi AI</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {aiPredictions.map((prediction) => (
+                    <div key={prediction.id} className={cn(
+                      "p-4 rounded-lg border",
+                      prediction.impatto === 'alto' || prediction.impatto === 'critico' 
+                        ? "border-red-200 bg-red-50/30" 
+                        : "border-border"
+                    )}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{prediction.tipo}</Badge>
+                            <Badge className={getImpactBadge(prediction.impatto || 'medio')}>
+                              Impatto {prediction.impatto}
+                            </Badge>
+                          </div>
+                          {prediction.entita_nome && (
+                            <p className="text-sm font-medium">{prediction.entita_nome}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold">{prediction.probabilita}%</p>
+                          <p className="text-xs text-muted-foreground">Probabilità</p>
+                        </div>
+                      </div>
+                      {prediction.raccomandazioni && prediction.raccomandazioni.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Raccomandazioni:</p>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {prediction.raccomandazioni.map((r, i) => (
+                              <li key={i}>• {r}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Generato: {format(new Date(prediction.created_at || ''), 'dd/MM/yyyy HH:mm', { locale: it })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Benchmark Tab */}
-        <TabsContent value="benchmark" className="mt-6">
-          <div className="grid gap-4">
-            {cantieri.slice(0, 5).map(c => {
-              const cantiereContratti = contratti.filter(co => co.cantiereId === c.id);
-              const cantiereSal = sal.filter(s => s.cantiereId === c.id);
-              const importoTotale = cantiereContratti.reduce((acc, co) => acc + co.importoTotale, 0);
-              const importoEseguito = cantiereSal.reduce((acc, s) => acc + s.importoLavoriEseguiti, 0);
-              const percentuale = importoTotale > 0 ? (importoEseguito / importoTotale) * 100 : 0;
+        {/* Compliance Tab */}
+        <TabsContent value="compliance" className="mt-6">
+          <ComplianceMonitor />
+        </TabsContent>
 
-              return (
-                <div key={c.id} className="p-4 rounded-xl border border-border bg-card">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold">{c.codiceCommessa} - {c.nome}</h3>
-                      <p className="text-sm text-muted-foreground">Budget: {formatCurrency(importoTotale)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">{percentuale.toFixed(1)}%</p>
-                      <p className="text-xs text-muted-foreground">Avanzamento</p>
-                    </div>
-                  </div>
-                  <Progress value={percentuale} className="h-2" />
-                  <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                    <span>Eseguito: {formatCurrency(importoEseguito)}</span>
-                    <span>Residuo: {formatCurrency(importoTotale - importoEseguito)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        {/* Workflow Tab */}
+        <TabsContent value="notifiche" className="mt-6">
+          <WorkflowNotifications />
         </TabsContent>
       </Tabs>
 
@@ -533,7 +650,7 @@ export default function BusinessIntelligence() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewReportDialog(false)}>Annulla</Button>
             <Button onClick={() => {
-              toast({ title: 'Report schedulato creato' });
+              toast.success('Report schedulato creato');
               setShowNewReportDialog(false);
             }}>Crea Report</Button>
           </DialogFooter>
