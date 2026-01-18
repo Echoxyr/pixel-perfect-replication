@@ -448,7 +448,7 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-6 min-w-0", className)}>
       {/* Flow Overview */}
       <Card>
         <CardHeader>
@@ -459,38 +459,42 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
         </CardHeader>
         <CardContent>
           {/* Flow Steps Visualization */}
-          <div className="flex items-center justify-between mb-8 px-4">
-            {FLOW_STEPS.map((step, index) => (
-              <div key={step.key} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div className={cn("w-14 h-14 rounded-full flex items-center justify-center text-white", step.color)}>
-                    <step.icon className="w-7 h-7" />
+          <div className="mb-6 md:mb-8">
+            <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+              <div className="flex w-max items-center gap-3 md:w-full md:justify-between md:gap-0 py-2">
+                {FLOW_STEPS.map((step, index) => (
+                  <div key={step.key} className="flex items-center flex-shrink-0">
+                    <div className="flex flex-col items-center">
+                      <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-white", step.color)}>
+                        <step.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </div>
+                      <span className="mt-2 text-xs sm:text-sm font-medium text-wrap-responsive">{step.label}</span>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground">
+                        {step.key === 'preventivo' && `${preventivi.length}`}
+                        {step.key === 'ordine' && `${ordini.length}`}
+                        {step.key === 'ddt' && `${ddts.length}`}
+                        {step.key === 'fattura' && `${fatture.length}`}
+                      </span>
+                    </div>
+                    {index < FLOW_STEPS.length - 1 && (
+                      <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 mx-2 sm:mx-4 text-muted-foreground flex-shrink-0" />
+                    )}
                   </div>
-                  <span className="mt-2 text-sm font-medium">{step.label}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {step.key === 'preventivo' && `${preventivi.length}`}
-                    {step.key === 'ordine' && `${ordini.length}`}
-                    {step.key === 'ddt' && `${ddts.length}`}
-                    {step.key === 'fattura' && `${fatture.length}`}
-                  </span>
-                </div>
-                {index < FLOW_STEPS.length - 1 && (
-                  <ArrowRight className="w-8 h-8 mx-4 text-muted-foreground" />
-                )}
+                ))}
               </div>
-            ))}
+            </div>
           </div>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border-dashed">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium">Preventivo → Ordine</span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-wrap-responsive">Preventivo → Ordine</span>
                   </div>
-                  <Badge variant="outline">{convertiblePreventivi.length} disponibili</Badge>
+                  <Badge variant="outline" className="w-fit flex-shrink-0">{convertiblePreventivi.length} disponibili</Badge>
                 </div>
                 <Button 
                   className="w-full gap-2" 
@@ -506,12 +510,12 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
 
             <Card className="border-dashed">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5 text-amber-500" />
-                    <span className="font-medium">Ordine → DDT</span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ShoppingCart className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-wrap-responsive">Ordine → DDT</span>
                   </div>
-                  <Badge variant="outline">{convertibleOrdini.length} disponibili</Badge>
+                  <Badge variant="outline" className="w-fit flex-shrink-0">{convertibleOrdini.length} disponibili</Badge>
                 </div>
                 <Button 
                   className="w-full gap-2" 
@@ -527,12 +531,12 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
 
             <Card className="border-dashed">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-purple-500" />
-                    <span className="font-medium">DDT → Fattura</span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Truck className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base text-wrap-responsive">DDT → Fattura</span>
                   </div>
-                  <Badge variant="outline">{convertibleDDT.length} disponibili</Badge>
+                  <Badge variant="outline" className="w-fit flex-shrink-0">{convertibleDDT.length} disponibili</Badge>
                 </div>
                 <Button 
                   className="w-full gap-2" 
@@ -551,7 +555,7 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
 
       {/* Recent Conversions */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
           <CardTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
             Ultime Conversioni
@@ -565,19 +569,19 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
           ) : (
             <div className="space-y-3">
               {conversionLogs.slice(0, 10).map((log) => (
-                <div key={log.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="capitalize">{log.documento_origine_tipo}</Badge>
-                      <ArrowRight className="w-4 h-4" />
-                      <Badge variant="outline" className="capitalize">{log.documento_destinazione_tipo}</Badge>
+                  <div key={log.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-muted/50 rounded-lg min-w-0">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                        <Badge variant="outline" className="capitalize">{log.documento_origine_tipo}</Badge>
+                        <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                        <Badge variant="outline" className="capitalize">{log.documento_destinazione_tipo}</Badge>
+                      </div>
+                      {log.note && <span className="text-sm text-muted-foreground text-wrap-responsive">- {log.note}</span>}
                     </div>
-                    {log.note && <span className="text-sm text-muted-foreground">- {log.note}</span>}
+                    <span className="text-xs text-muted-foreground sm:text-right">
+                      {format(new Date(log.created_at), "dd MMM yyyy HH:mm", { locale: it })}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(log.created_at), "dd MMM yyyy HH:mm", { locale: it })}
-                  </span>
-                </div>
               ))}
             </div>
           )}

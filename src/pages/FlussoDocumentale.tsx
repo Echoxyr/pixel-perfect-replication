@@ -25,7 +25,7 @@ export default function FlussoDocumentale() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="tabs-scrollable-header -mx-4 px-4 sm:mx-0 sm:px-0">
           <TabsList className="inline-flex w-max h-auto gap-1 p-1">
             <TabsTrigger value="flusso" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
               <Link2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -42,15 +42,15 @@ export default function FlussoDocumentale() {
           </TabsList>
         </div>
 
-        <TabsContent value="flusso" className="mt-6">
+        <TabsContent value="flusso" className="mt-6 tab-content-fixed">
           <DocumentFlowManager />
         </TabsContent>
 
-        <TabsContent value="compliance" className="mt-6">
+        <TabsContent value="compliance" className="mt-6 tab-content-fixed">
           <ComplianceMonitor />
         </TabsContent>
 
-        <TabsContent value="notifiche" className="mt-6">
+        <TabsContent value="notifiche" className="mt-6 tab-content-fixed">
           <WorkflowNotifications />
         </TabsContent>
       </Tabs>
