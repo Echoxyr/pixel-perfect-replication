@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import {
   FileUp,
   Bell,
@@ -31,11 +33,14 @@ import {
   X,
   ArrowRight,
   Briefcase,
+  File,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 export type EntityType = 
   | 'cantiere' 
@@ -83,22 +88,18 @@ const getActionsForEntity = (entityType: EntityType): ActionOption[] => {
     { id: 'notify', label: 'Invia Notifica', description: 'Notifica i responsabili coinvolti', icon: Bell, color: 'text-amber-500' },
   ];
 
+  // Azioni specifiche per entità - solo collegamenti, no creazione documenti
   const specificActions: Record<EntityType, ActionOption[]> = {
     cantiere: [
       { id: 'link_impresa', label: 'Collega Impresa', description: 'Associa imprese esecutrici al cantiere', icon: Building2, color: 'text-purple-500' },
       { id: 'link_lavoratore', label: 'Assegna Lavoratori', description: 'Aggiungi lavoratori al cantiere', icon: Users, color: 'text-green-500' },
-      { id: 'create_contratto', label: 'Crea Contratto', description: 'Nuovo contratto per questo cantiere', icon: FileText, color: 'text-primary' },
-      { id: 'create_preventivo', label: 'Richiedi Preventivo', description: 'Nuova richiesta preventivo fornitore', icon: FileText, color: 'text-blue-500' },
     ],
     fornitore: [
       { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega il fornitore a una commessa', icon: Building2, color: 'text-purple-500' },
-      { id: 'create_preventivo', label: 'Richiedi Preventivo', description: 'Nuova richiesta preventivo', icon: FileText, color: 'text-blue-500' },
-      { id: 'create_ordine', label: 'Crea Ordine', description: 'Nuovo ordine di acquisto', icon: FolderKanban, color: 'text-amber-500' },
     ],
     impresa: [
       { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega l\'impresa a un cantiere', icon: Building2, color: 'text-purple-500' },
       { id: 'link_lavoratore', label: 'Collega Lavoratori', description: 'Associa dipendenti all\'impresa', icon: Users, color: 'text-green-500' },
-      { id: 'create_contratto', label: 'Crea Contratto', description: 'Nuovo contratto di subappalto', icon: FileText, color: 'text-primary' },
     ],
     lavoratore: [
       { id: 'link_cantiere', label: 'Assegna a Cantiere', description: 'Collega il lavoratore a un cantiere', icon: Building2, color: 'text-purple-500' },
@@ -122,7 +123,6 @@ const getActionsForEntity = (entityType: EntityType): ActionOption[] => {
     ],
     contratto: [
       { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega il contratto a una commessa', icon: Building2, color: 'text-purple-500' },
-      { id: 'create_fattura', label: 'Genera Fattura', description: 'Crea fattura dal contratto', icon: Receipt, color: 'text-emerald-500' },
     ],
   };
 
@@ -142,6 +142,13 @@ export function PostCreationActions({
   const [linkTargetId, setLinkTargetId] = useState('');
   const [notifyMessage, setNotifyMessage] = useState('');
   const [completedActions, setCompletedActions] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { uploadFile, uploading, progress } = useFileUpload({
+    bucket: 'documenti',
+    folder: `${entityType}/${entityId}`,
+  });
 
   const actions = getActionsForEntity(entityType);
   const EntityIcon = ENTITY_ICONS[entityType];
@@ -299,6 +306,36 @@ export function PostCreationActions({
     setLinkTargetId('');
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const result = await uploadFile(files[i]);
+      if (result) {
+        setUploadedFiles(prev => [...prev, { name: result.name, url: result.url }]);
+        
+        // Salva il documento nel database
+        await supabase.from('documenti').insert({
+          entita_tipo: entityType,
+          entita_id: entityId,
+          tipo: 'allegato',
+          titolo: result.name,
+          file_url: result.url,
+          categoria: 'allegato',
+          stato: 'valido',
+        });
+      }
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setCompletedActions(prev => prev.includes('upload') ? prev : [...prev, 'upload']);
+    toast.success('File caricati con successo');
+    queryClient.invalidateQueries({ queryKey: ['documenti'] });
+  };
+
   const handleConfirmAction = () => {
     switch (selectedAction) {
       case 'link_cantiere':
@@ -312,6 +349,9 @@ export function PostCreationActions({
         break;
       case 'notify':
         sendNotificationMutation.mutate();
+        break;
+      case 'upload':
+        // Il caricamento avviene tramite il pulsante dedicato
         break;
       default:
         toast.info('Azione in sviluppo');
@@ -405,6 +445,55 @@ export function PostCreationActions({
             />
           </div>
         );
+      case 'upload':
+        return (
+          <div className="space-y-4">
+            <Label>Carica documenti, PDF o immagini</Label>
+            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="file-upload"
+              />
+              <label htmlFor="file-upload" className="cursor-pointer">
+                <FileUp className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Clicca per selezionare file o trascinali qui
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PDF, Word, Excel, Immagini (max 10MB)
+                </p>
+              </label>
+            </div>
+            {uploading && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Caricamento in corso...
+                </div>
+                <Progress value={progress} />
+              </div>
+            )}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">File caricati:</Label>
+                <div className="space-y-1">
+                  {uploadedFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm p-2 bg-muted rounded">
+                      <File className="w-4 h-4 text-blue-500" />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
       default:
         return null;
     }
@@ -415,6 +504,7 @@ export function PostCreationActions({
     setCompletedActions([]);
     setLinkTargetId('');
     setNotifyMessage('');
+    setUploadedFiles([]);
     onClose();
   };
 
@@ -488,14 +578,21 @@ export function PostCreationActions({
                 </Button>
               </div>
               {renderActionForm()}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setSelectedAction(null)}>Annulla</Button>
-                <Button onClick={handleConfirmAction} disabled={
-                  (selectedAction.startsWith('link_') && !linkTargetId)
-                }>
-                  Conferma
-                </Button>
-              </div>
+              {selectedAction !== 'upload' && (
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setSelectedAction(null)}>Annulla</Button>
+                  <Button onClick={handleConfirmAction} disabled={
+                    (selectedAction.startsWith('link_') && !linkTargetId)
+                  }>
+                    Conferma
+                  </Button>
+                </div>
+              )}
+              {selectedAction === 'upload' && uploadedFiles.length > 0 && (
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setSelectedAction(null)}>Fatto</Button>
+                </div>
+              )}
             </div>
           )}
         </div>

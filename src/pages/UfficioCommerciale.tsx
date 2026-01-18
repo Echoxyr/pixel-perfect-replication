@@ -73,6 +73,7 @@ import DocumentFlowManager from '@/components/workhub/DocumentFlowManager';
 import ComplianceMonitor from '@/components/workhub/ComplianceMonitor';
 import { PostCreationActions, EntityType } from '@/components/workhub/PostCreationActions';
 import { EntityLinks, DocumentFlowChain } from '@/components/workhub/EntityLinks';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 // Types
 interface Fornitore {
@@ -323,8 +324,11 @@ export default function UfficioCommerciale() {
     oggetto: '',
     importo: 0,
     scadenza: '',
-    note: ''
+    note: '',
+    allegati: [] as string[]
   });
+
+  const [preventivoFile, setPreventivoFile] = useState<File | null>(null);
 
   const [newOrdine, setNewOrdine] = useState({
     numero: `ORD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
@@ -334,8 +338,11 @@ export default function UfficioCommerciale() {
     cantiere_nome: '',
     importo: 0,
     data_consegna_prevista: '',
-    note: ''
+    note: '',
+    allegati: [] as string[]
   });
+
+  const [ordineFile, setOrdineFile] = useState<File | null>(null);
 
   const [newContratto, setNewContratto] = useState({
     numero: `CTR-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
@@ -349,8 +356,11 @@ export default function UfficioCommerciale() {
     data_inizio: new Date().toISOString().split('T')[0],
     data_fine: '',
     rinnovo_automatico: false,
-    descrizione: ''
+    descrizione: '',
+    allegati: [] as string[]
   });
+
+  const [contrattoFile, setContrattoFile] = useState<File | null>(null);
 
   const [newListino, setNewListino] = useState({
     fornitore_id: '',
@@ -488,26 +498,68 @@ export default function UfficioCommerciale() {
     }
   });
 
+  const { uploadFile: uploadPreventivoFile, uploading: uploadingPreventivo } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'preventivi',
+  });
+
+  const { uploadFile: uploadOrdineFile, uploading: uploadingOrdine } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'ordini',
+  });
+
+  const { uploadFile: uploadContrattoFile, uploading: uploadingContratto } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'contratti',
+  });
+
   const createPreventivoMutation = useMutation({
-    mutationFn: async (data: typeof newPreventivo) => {
-      const { data: result, error } = await supabase.from('preventivi_fornitori').insert({ ...data, stato: 'richiesto' }).select().single();
+    mutationFn: async (data: { formData: typeof newPreventivo; file: File | null }) => {
+      let allegati: string[] = [];
+      
+      // Upload file if present
+      if (data.file) {
+        const uploadResult = await uploadPreventivoFile(data.file);
+        if (uploadResult) {
+          allegati = [uploadResult.url];
+        }
+      }
+      
+      const { data: result, error } = await supabase.from('preventivi_fornitori').insert({ 
+        ...data.formData, 
+        allegati,
+        stato: 'richiesto' 
+      }).select().single();
       if (error) throw error;
       return result;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['preventivi_fornitori'] });
-      toast.success('Preventivo richiesto');
+      toast.success('Preventivo creato');
       setShowNewPreventivo(false);
-      // Trigger post-creation actions
-      setCreatedEntity({ type: 'preventivo', id: data.id, name: variables.numero });
+      setPreventivoFile(null);
+      setCreatedEntity({ type: 'preventivo', id: data.id, name: variables.formData.numero });
       setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
   });
 
   const createOrdineMutation = useMutation({
-    mutationFn: async (data: typeof newOrdine) => {
-      const { data: result, error } = await supabase.from('ordini_fornitori').insert({ ...data, stato: 'bozza' }).select().single();
+    mutationFn: async (data: { formData: typeof newOrdine; file: File | null }) => {
+      let allegati: string[] = [];
+      
+      if (data.file) {
+        const uploadResult = await uploadOrdineFile(data.file);
+        if (uploadResult) {
+          allegati = [uploadResult.url];
+        }
+      }
+      
+      const { data: result, error } = await supabase.from('ordini_fornitori').insert({ 
+        ...data.formData, 
+        allegati,
+        stato: 'bozza' 
+      }).select().single();
       if (error) throw error;
       return result;
     },
@@ -515,16 +567,29 @@ export default function UfficioCommerciale() {
       queryClient.invalidateQueries({ queryKey: ['ordini_fornitori'] });
       toast.success('Ordine creato');
       setShowNewOrdine(false);
-      // Trigger post-creation actions
-      setCreatedEntity({ type: 'ordine', id: data.id, name: variables.numero });
+      setOrdineFile(null);
+      setCreatedEntity({ type: 'ordine', id: data.id, name: variables.formData.numero });
       setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
   });
 
   const createContrattoMutation = useMutation({
-    mutationFn: async (data: typeof newContratto) => {
-      const { data: result, error } = await supabase.from('contratti').insert({ ...data, stato: 'attivo' }).select().single();
+    mutationFn: async (data: { formData: typeof newContratto; file: File | null }) => {
+      let allegati: string[] = [];
+      
+      if (data.file) {
+        const uploadResult = await uploadContrattoFile(data.file);
+        if (uploadResult) {
+          allegati = [uploadResult.url];
+        }
+      }
+      
+      const { data: result, error } = await supabase.from('contratti').insert({ 
+        ...data.formData, 
+        allegati,
+        stato: 'attivo' 
+      }).select().single();
       if (error) throw error;
       return result;
     },
@@ -532,8 +597,8 @@ export default function UfficioCommerciale() {
       queryClient.invalidateQueries({ queryKey: ['contratti'] });
       toast.success('Contratto creato');
       setShowNewContratto(false);
-      // Trigger post-creation actions
-      setCreatedEntity({ type: 'contratto', id: data.id, name: variables.titolo });
+      setContrattoFile(null);
+      setCreatedEntity({ type: 'contratto', id: data.id, name: variables.formData.titolo });
       setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
@@ -911,11 +976,33 @@ export default function UfficioCommerciale() {
                       <div><Label>Importo €</Label><Input type="number" value={newContratto.importo} onChange={(e) => setNewContratto(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Data Inizio</Label><Input type="date" value={newContratto.data_inizio} onChange={(e) => setNewContratto(p => ({ ...p, data_inizio: e.target.value }))} /></div>
                       <div><Label>Data Fine</Label><Input type="date" value={newContratto.data_fine} onChange={(e) => setNewContratto(p => ({ ...p, data_fine: e.target.value }))} /></div>
+                      <div className="col-span-2">
+                        <Label>Carica Contratto (PDF/Doc)</Label>
+                        <div className="mt-1">
+                          <Input 
+                            type="file" 
+                            accept=".pdf,.doc,.docx"
+                            onChange={(e) => setContrattoFile(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                          />
+                          {contrattoFile && (
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Upload className="w-3 h-3" />
+                              {contrattoFile.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                       <div className="col-span-2"><Label>Descrizione</Label><Textarea value={newContratto.descrizione} onChange={(e) => setNewContratto(p => ({ ...p, descrizione: e.target.value }))} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setShowNewContratto(false)}>Annulla</Button>
-                      <Button onClick={() => createContrattoMutation.mutate(newContratto)} disabled={!newContratto.titolo || !newContratto.contraente}>Salva</Button>
+                      <Button 
+                        onClick={() => createContrattoMutation.mutate({ formData: newContratto, file: contrattoFile })} 
+                        disabled={!newContratto.titolo || !newContratto.contraente || uploadingContratto}
+                      >
+                        {uploadingContratto ? 'Caricamento...' : 'Salva'}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -1245,11 +1332,33 @@ export default function UfficioCommerciale() {
                       <div><Label>Oggetto *</Label><Input value={newPreventivo.oggetto} onChange={(e) => setNewPreventivo(p => ({ ...p, oggetto: e.target.value }))} /></div>
                       <div><Label>Importo Stimato €</Label><Input type="number" value={newPreventivo.importo} onChange={(e) => setNewPreventivo(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Scadenza</Label><Input type="date" value={newPreventivo.scadenza} onChange={(e) => setNewPreventivo(p => ({ ...p, scadenza: e.target.value }))} /></div>
+                      <div>
+                        <Label>Carica Preventivo (PDF/Doc)</Label>
+                        <div className="mt-1">
+                          <Input 
+                            type="file" 
+                            accept=".pdf,.doc,.docx,.xls,.xlsx"
+                            onChange={(e) => setPreventivoFile(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                          />
+                          {preventivoFile && (
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Upload className="w-3 h-3" />
+                              {preventivoFile.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                       <div><Label>Note</Label><Textarea value={newPreventivo.note || ''} onChange={(e) => setNewPreventivo(p => ({ ...p, note: e.target.value }))} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setShowNewPreventivo(false)}>Annulla</Button>
-                      <Button onClick={() => createPreventivoMutation.mutate(newPreventivo)} disabled={!newPreventivo.fornitore_nome || !newPreventivo.oggetto}>Invia Richiesta</Button>
+                      <Button 
+                        onClick={() => createPreventivoMutation.mutate({ formData: newPreventivo, file: preventivoFile })} 
+                        disabled={!newPreventivo.fornitore_nome || !newPreventivo.oggetto || uploadingPreventivo}
+                      >
+                        {uploadingPreventivo ? 'Caricamento...' : 'Salva Preventivo'}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
@@ -1331,11 +1440,33 @@ export default function UfficioCommerciale() {
                       </div>
                       <div><Label>Importo €</Label><Input type="number" value={newOrdine.importo} onChange={(e) => setNewOrdine(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Data Consegna Prevista</Label><Input type="date" value={newOrdine.data_consegna_prevista} onChange={(e) => setNewOrdine(p => ({ ...p, data_consegna_prevista: e.target.value }))} /></div>
+                      <div>
+                        <Label>Carica Ordine (PDF/Doc)</Label>
+                        <div className="mt-1">
+                          <Input 
+                            type="file" 
+                            accept=".pdf,.doc,.docx,.xls,.xlsx"
+                            onChange={(e) => setOrdineFile(e.target.files?.[0] || null)}
+                            className="cursor-pointer"
+                          />
+                          {ordineFile && (
+                            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Upload className="w-3 h-3" />
+                              {ordineFile.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                       <div><Label>Note</Label><Textarea value={newOrdine.note || ''} onChange={(e) => setNewOrdine(p => ({ ...p, note: e.target.value }))} /></div>
                     </div>
                     <DialogFooter>
                       <Button variant="outline" onClick={() => setShowNewOrdine(false)}>Annulla</Button>
-                      <Button onClick={() => createOrdineMutation.mutate(newOrdine)} disabled={!newOrdine.fornitore_nome}>Crea Ordine</Button>
+                      <Button 
+                        onClick={() => createOrdineMutation.mutate({ formData: newOrdine, file: ordineFile })} 
+                        disabled={!newOrdine.fornitore_nome || uploadingOrdine}
+                      >
+                        {uploadingOrdine ? 'Caricamento...' : 'Crea Ordine'}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
