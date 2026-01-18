@@ -334,12 +334,12 @@ export function WorkHubSidebar({
             <div className="space-y-1 mt-1">
               {isModuleVisible("hse") && (
                 <NavItem
-                  to="/hse-dashboard"
+                  to="/hse"
                   icon={ShieldCheck}
                   label="Dashboard HSE"
                   badge={totalAlerts}
                   badgeColor="danger"
-                  active={isActive("/hse-dashboard")}
+                  active={isActive("/hse")}
                   tutorialId="nav-hse"
                 />
               )}
