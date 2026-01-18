@@ -423,94 +423,100 @@ export default function Lavoratori() {
   }, [lavoratori]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Lavoratori</h1>
-          <p className="text-muted-foreground">Gestione formazione, visite mediche e DPI</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Lavoratori</h1>
+          <p className="text-sm text-muted-foreground">Gestione formazione, visite mediche e DPI</p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2" data-tutorial="btn-nuovo-lavoratore">
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2 w-full sm:w-auto" data-tutorial="btn-nuovo-lavoratore">
           <Plus className="w-4 h-4" />
           Nuovo Lavoratore
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-tutorial="lavoratori-stats">
-        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="lavoratori-totale">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" data-tutorial="lavoratori-stats">
+        <div className="p-3 sm:p-4 rounded-xl border border-border bg-card" data-tutorial="lavoratori-totale">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Totale Lavoratori</p>
-            <HardHat className="w-5 h-5 text-muted-foreground" />
+            <p className="text-xs sm:text-sm text-muted-foreground">Totale</p>
+            <HardHat className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </div>
-          <p className="text-2xl font-bold mt-1">{lavoratori.length}</p>
+          <p className="text-xl sm:text-2xl font-bold mt-1">{lavoratori.length}</p>
         </div>
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="lavoratori-conformi">
+        <div className="p-3 sm:p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="lavoratori-conformi">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-emerald-500">Conformi</p>
+            <p className="text-xs sm:text-sm text-emerald-500">Conformi</p>
             <TrafficLight status="green" />
           </div>
-          <p className="text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
         </div>
-        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="lavoratori-attenzione">
+        <div className="p-3 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="lavoratori-attenzione">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-amber-500">Attenzione</p>
+            <p className="text-xs sm:text-sm text-amber-500">Attenzione</p>
             <TrafficLight status="yellow" />
           </div>
-          <p className="text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
+          <p className="text-xl sm:text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
         </div>
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="lavoratori-non-conformi">
+        <div className="p-3 sm:p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="lavoratori-non-conformi">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-red-500">Non conformi</p>
+            <p className="text-xs sm:text-sm text-red-500">Non conformi</p>
             <TrafficLight status="red" />
           </div>
-          <p className="text-2xl font-bold text-red-500 mt-1">{stats.critical}</p>
+          <p className="text-xl sm:text-2xl font-bold text-red-500 mt-1">{stats.critical}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 min-w-0">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca lavoratore..."
+            placeholder="Cerca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full"
           />
         </div>
-        <Select value={filterImpresa} onValueChange={setFilterImpresa}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Impresa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte le imprese</SelectItem>
-            {imprese.map(i => (
-              <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Stato" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti</SelectItem>
-            <SelectItem value="ok">✅ Conformi</SelectItem>
-            <SelectItem value="warning">⚠️ Attenzione</SelectItem>
-            <SelectItem value="critical">🔴 Non conformi</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Select value={filterImpresa} onValueChange={setFilterImpresa}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Impresa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte</SelectItem>
+              {imprese.map(i => (
+                <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Stato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="ok">✅ OK</SelectItem>
+              <SelectItem value="warning">⚠️ Attenzione</SelectItem>
+              <SelectItem value="critical">🔴 Critici</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
-      <DataTable
-        data={filteredLavoratori}
-        columns={columns}
-        keyExtractor={(l) => l.id}
-        onRowClick={(lavoratore) => setSelectedLavoratore(lavoratore)}
-        emptyMessage="Nessun lavoratore trovato"
-      />
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="min-w-[700px]">
+          <DataTable
+            data={filteredLavoratori}
+            columns={columns}
+            keyExtractor={(l) => l.id}
+            onRowClick={(lavoratore) => setSelectedLavoratore(lavoratore)}
+            emptyMessage="Nessun lavoratore trovato"
+          />
+        </div>
+      </div>
 
       {/* New Lavoratore Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>

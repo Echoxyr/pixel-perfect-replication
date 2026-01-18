@@ -318,16 +318,16 @@ export default function Cantieri() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Tutte le Commesse</h1>
-          <p className="text-muted-foreground">Gestione commesse</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Tutte le Commesse</h1>
+          <p className="text-sm text-muted-foreground">Gestione commesse</p>
         </div>
         <Button 
           onClick={() => setShowNewDialog(true)} 
-          className="gap-2"
+          className="gap-2 w-full sm:w-auto"
           data-tutorial="btn-nuovo-cantiere"
         >
           <Plus className="w-4 h-4" />
@@ -351,48 +351,54 @@ export default function Cantieri() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 min-w-0">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per nome, codice, cliente..."
+            placeholder="Cerca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full"
           />
         </div>
-        <Select value={filterStato} onValueChange={setFilterStato}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Stato" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="attivo">Attivi</SelectItem>
-            <SelectItem value="sospeso">Sospesi</SelectItem>
-            <SelectItem value="chiuso">Chiusi</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterCommittente} onValueChange={setFilterCommittente}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Cliente" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti i clienti</SelectItem>
-            {committenti.map(c => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Select value={filterStato} onValueChange={setFilterStato}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Stato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="attivo">Attivi</SelectItem>
+              <SelectItem value="sospeso">Sospesi</SelectItem>
+              <SelectItem value="chiuso">Chiusi</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterCommittente} onValueChange={setFilterCommittente}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Cliente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              {committenti.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
-      <DataTable
-        data={filteredCantieri}
-        columns={columns}
-        keyExtractor={(c) => c.id}
-        onRowClick={(cantiere) => navigate(`/cantieri/${cantiere.id}`)}
-        emptyMessage="Nessun cantiere trovato"
-      />
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="min-w-[800px]">
+          <DataTable
+            data={filteredCantieri}
+            columns={columns}
+            keyExtractor={(c) => c.id}
+            onRowClick={(cantiere) => navigate(`/cantieri/${cantiere.id}`)}
+            emptyMessage="Nessun cantiere trovato"
+          />
+        </div>
+      </div>
 
       {/* New Cantiere Dialog - Wizard Style */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
