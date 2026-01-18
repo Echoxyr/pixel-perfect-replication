@@ -58,7 +58,8 @@ import {
   AlertTriangle,
   FileWarning,
   Shield,
-  Zap
+  Zap,
+  Link2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +71,8 @@ import { differenceInDays, format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
 import DocumentFlowManager from '@/components/workhub/DocumentFlowManager';
 import ComplianceMonitor from '@/components/workhub/ComplianceMonitor';
+import { PostCreationActions, EntityType } from '@/components/workhub/PostCreationActions';
+import { EntityLinks, DocumentFlowChain } from '@/components/workhub/EntityLinks';
 
 // Types
 interface Fornitore {
@@ -249,6 +252,10 @@ export default function UfficioCommerciale() {
   const [showNewDocumento, setShowNewDocumento] = useState(false);
   const [showDocumentiFornitore, setShowDocumentiFornitore] = useState(false);
   
+  // Post-creation dialog state
+  const [showPostCreation, setShowPostCreation] = useState(false);
+  const [createdEntity, setCreatedEntity] = useState<{ type: EntityType; id: string; name: string } | null>(null);
+  
   // Selected items
   const [selectedFornitore, setSelectedFornitore] = useState<Fornitore | null>(null);
   const [selectedFornitoreId, setSelectedFornitoreId] = useState<string | null>(null);
@@ -425,10 +432,13 @@ export default function UfficioCommerciale() {
       const { error } = await supabase.from('fornitori').insert(data);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fornitori'] });
       toast.success('Fornitore creato con successo');
       setShowNewFornitore(false);
+      // Trigger post-creation actions
+      setCreatedEntity({ type: 'fornitore', id: '', name: variables.ragione_sociale });
+      setShowPostCreation(true);
       setNewFornitore({ ragione_sociale: '', partita_iva: '', codice_fiscale: '', indirizzo: '', citta: '', cap: '', provincia: '', telefono: '', cellulare: '', email: '', pec: '', iban: '', categoria: '', sconto_base: 0, condizioni_pagamento: '30 gg DFFM', note: '', stato: 'attivo', rating: 3 });
     },
     onError: () => toast.error('Errore nella creazione del fornitore')
@@ -480,39 +490,51 @@ export default function UfficioCommerciale() {
 
   const createPreventivoMutation = useMutation({
     mutationFn: async (data: typeof newPreventivo) => {
-      const { error } = await supabase.from('preventivi_fornitori').insert({ ...data, stato: 'richiesto' });
+      const { data: result, error } = await supabase.from('preventivi_fornitori').insert({ ...data, stato: 'richiesto' }).select().single();
       if (error) throw error;
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['preventivi_fornitori'] });
       toast.success('Preventivo richiesto');
       setShowNewPreventivo(false);
+      // Trigger post-creation actions
+      setCreatedEntity({ type: 'preventivo', id: data.id, name: variables.numero });
+      setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
   });
 
   const createOrdineMutation = useMutation({
     mutationFn: async (data: typeof newOrdine) => {
-      const { error } = await supabase.from('ordini_fornitori').insert({ ...data, stato: 'bozza' });
+      const { data: result, error } = await supabase.from('ordini_fornitori').insert({ ...data, stato: 'bozza' }).select().single();
       if (error) throw error;
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['ordini_fornitori'] });
       toast.success('Ordine creato');
       setShowNewOrdine(false);
+      // Trigger post-creation actions
+      setCreatedEntity({ type: 'ordine', id: data.id, name: variables.numero });
+      setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
   });
 
   const createContrattoMutation = useMutation({
     mutationFn: async (data: typeof newContratto) => {
-      const { error } = await supabase.from('contratti').insert({ ...data, stato: 'attivo' });
+      const { data: result, error } = await supabase.from('contratti').insert({ ...data, stato: 'attivo' }).select().single();
       if (error) throw error;
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['contratti'] });
       toast.success('Contratto creato');
       setShowNewContratto(false);
+      // Trigger post-creation actions
+      setCreatedEntity({ type: 'contratto', id: data.id, name: variables.titolo });
+      setShowPostCreation(true);
     },
     onError: () => toast.error('Errore nella creazione')
   });
@@ -875,6 +897,17 @@ export default function UfficioCommerciale() {
                       </div>
                       <div className="col-span-2"><Label>Titolo *</Label><Input value={newContratto.titolo} onChange={(e) => setNewContratto(p => ({ ...p, titolo: e.target.value }))} /></div>
                       <div><Label>Contraente *</Label><Input value={newContratto.contraente} onChange={(e) => setNewContratto(p => ({ ...p, contraente: e.target.value }))} /></div>
+                      <div><Label>Commessa (opzionale)</Label>
+                        <Select value={newContratto.cantiere_id} onValueChange={(v) => {
+                          const c = cantieri.find(x => x.id === v);
+                          setNewContratto(p => ({ ...p, cantiere_id: v, cantiere_nome: c?.nome || '' }));
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Collega a commessa..." /></SelectTrigger>
+                          <SelectContent>
+                            {cantieri.map(c => <SelectItem key={c.id} value={c.id}>{c.codice_commessa} - {c.nome}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div><Label>Importo €</Label><Input type="number" value={newContratto.importo} onChange={(e) => setNewContratto(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Data Inizio</Label><Input type="date" value={newContratto.data_inizio} onChange={(e) => setNewContratto(p => ({ ...p, data_inizio: e.target.value }))} /></div>
                       <div><Label>Data Fine</Label><Input type="date" value={newContratto.data_fine} onChange={(e) => setNewContratto(p => ({ ...p, data_fine: e.target.value }))} /></div>
@@ -1201,6 +1234,14 @@ export default function UfficioCommerciale() {
                           <SelectContent>{fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
+                      <div><Label>Commessa (opzionale)</Label>
+                        <Select value={newPreventivo.cantiere_id} onValueChange={(v) => setNewPreventivo(p => ({ ...p, cantiere_id: v }))}>
+                          <SelectTrigger><SelectValue placeholder="Collega a commessa..." /></SelectTrigger>
+                          <SelectContent>
+                            {cantieri.map(c => <SelectItem key={c.id} value={c.id}>{c.codice_commessa} - {c.nome}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div><Label>Oggetto *</Label><Input value={newPreventivo.oggetto} onChange={(e) => setNewPreventivo(p => ({ ...p, oggetto: e.target.value }))} /></div>
                       <div><Label>Importo Stimato €</Label><Input type="number" value={newPreventivo.importo} onChange={(e) => setNewPreventivo(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Scadenza</Label><Input type="date" value={newPreventivo.scadenza} onChange={(e) => setNewPreventivo(p => ({ ...p, scadenza: e.target.value }))} /></div>
@@ -1275,6 +1316,17 @@ export default function UfficioCommerciale() {
                         }}>
                           <SelectTrigger><SelectValue placeholder="Seleziona fornitore" /></SelectTrigger>
                           <SelectContent>{fornitori.map(f => <SelectItem key={f.id} value={f.id}>{f.ragione_sociale}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Commessa (opzionale)</Label>
+                        <Select value={newOrdine.cantiere_id} onValueChange={(v) => {
+                          const c = cantieri.find(x => x.id === v);
+                          setNewOrdine(p => ({ ...p, cantiere_id: v, cantiere_nome: c?.nome || '' }));
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Collega a commessa..." /></SelectTrigger>
+                          <SelectContent>
+                            {cantieri.map(c => <SelectItem key={c.id} value={c.id}>{c.codice_commessa} - {c.nome}</SelectItem>)}
+                          </SelectContent>
                         </Select>
                       </div>
                       <div><Label>Importo €</Label><Input type="number" value={newOrdine.importo} onChange={(e) => setNewOrdine(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
@@ -1559,6 +1611,20 @@ export default function UfficioCommerciale() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Post Creation Actions Dialog */}
+      {createdEntity && (
+        <PostCreationActions
+          open={showPostCreation}
+          onClose={() => {
+            setShowPostCreation(false);
+            setCreatedEntity(null);
+          }}
+          entityType={createdEntity.type}
+          entityId={createdEntity.id}
+          entityName={createdEntity.name}
+        />
+      )}
     </div>
   );
 }
