@@ -424,10 +424,10 @@ export function WorkHubSidebar({
             <div className="space-y-1 mt-1">
               {isModuleVisible("commerciale") && (
                 <NavItem
-                  to="/ufficio-commerciale"
+                  to="/reparto-commerciale"
                   icon={Briefcase}
                   label="Ufficio Commerciale"
-                  active={isActive("/ufficio-commerciale")}
+                  active={isActive("/reparto-commerciale")}
                   tutorialId="nav-commerciale"
                 />
               )}
