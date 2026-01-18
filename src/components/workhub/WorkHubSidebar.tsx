@@ -273,6 +273,7 @@ export function WorkHubSidebar({
                 icon={LayoutDashboard}
                 label="Dashboard"
                 active={isActive("/dashboard")}
+                tutorialId="nav-dashboard"
               />
               {isModuleVisible("progetti") && (
                 <NavItem
@@ -281,6 +282,7 @@ export function WorkHubSidebar({
                   label="Progetti & Task"
                   badge={openTasks}
                   active={isActiveStartsWith("/progetti")}
+                  tutorialId="nav-progetti"
                 />
               )}
               {isModuleVisible("sal") && (
@@ -289,6 +291,7 @@ export function WorkHubSidebar({
                   icon={TrendingUp}
                   label="Consuntivo"
                   active={isActive("/sal")}
+                  tutorialId="nav-sal"
                 />
               )}
             </div>
@@ -354,6 +357,7 @@ export function WorkHubSidebar({
                   badge={impreseCritical}
                   badgeColor="danger"
                   active={isActive("/imprese")}
+                  tutorialId="nav-imprese"
                 />
               )}
               {isModuleVisible("lavoratori") && (
@@ -364,6 +368,7 @@ export function WorkHubSidebar({
                   badge={lavoratoriAlerts}
                   badgeColor="warning"
                   active={isActive("/lavoratori")}
+                  tutorialId="nav-lavoratori"
                 />
               )}
               {isModuleVisible("formazione") && (
@@ -390,6 +395,7 @@ export function WorkHubSidebar({
                   icon={Stethoscope}
                   label="Sorveglianza Sanitaria"
                   active={isActive("/sorveglianza-sanitaria")}
+                  tutorialId="nav-sorveglianza"
                 />
               )}
               {isModuleVisible("scadenzario") && (
@@ -398,6 +404,7 @@ export function WorkHubSidebar({
                   icon={ClipboardList}
                   label="Scadenzario"
                   active={isActive("/scadenzario")}
+                  tutorialId="nav-scadenzario"
                 />
               )}
             </div>
@@ -419,6 +426,7 @@ export function WorkHubSidebar({
                   icon={Briefcase}
                   label="Ufficio Commerciale"
                   active={isActive("/ufficio-commerciale")}
+                  tutorialId="nav-commerciale"
                 />
               )}
               {isModuleVisible("computo") && (
@@ -427,6 +435,7 @@ export function WorkHubSidebar({
                   icon={Calculator}
                   label="Computo Metrico"
                   active={isActive("/computo-metrico")}
+                  tutorialId="nav-computo"
                 />
               )}
               {isModuleVisible("listino") && (
@@ -456,6 +465,7 @@ export function WorkHubSidebar({
                   icon={FileText}
                   label="Reparto Amministrazione"
                   active={isActive("/reparto-amministrazione")}
+                  tutorialId="nav-amministrazione"
                 />
               )}
               {isModuleVisible("timbrature") && (
@@ -464,6 +474,7 @@ export function WorkHubSidebar({
                   icon={Clock}
                   label="Timbrature"
                   active={isActive("/timbrature")}
+                  tutorialId="nav-timbrature"
                 />
               )}
               {isModuleVisible("rapportini") && (
@@ -472,6 +483,7 @@ export function WorkHubSidebar({
                   icon={ClipboardList}
                   label="Rapportini"
                   active={isActive("/rapportini")}
+                  tutorialId="nav-rapportini"
                 />
               )}
             </div>
@@ -493,6 +505,7 @@ export function WorkHubSidebar({
                   icon={Truck}
                   label="Risorse"
                   active={isActive("/risorse")}
+                  tutorialId="nav-risorse"
                 />
               )}
               {isModuleVisible("magazzino") && (
@@ -501,6 +514,7 @@ export function WorkHubSidebar({
                   icon={Boxes}
                   label="Magazzino"
                   active={isActive("/magazzino")}
+                  tutorialId="nav-magazzino"
                 />
               )}
             </div>
