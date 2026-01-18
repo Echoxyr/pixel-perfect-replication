@@ -110,7 +110,7 @@ export function Layout() {
   };
 
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
+    <div className="h-screen w-full bg-background flex overflow-hidden min-w-0">
       {/* Sidebar - Desktop */}
       <aside className={cn(
         'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300 relative z-10 h-screen',
@@ -166,7 +166,7 @@ export function Layout() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
         {/* Header */}
         <header className="h-16 bg-card/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-40">
           <div className="flex items-center gap-4">
@@ -240,7 +240,7 @@ export function Layout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto overscroll-contain scrollbar-thin bg-content-glass backdrop-blur-sm">
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-thin bg-content-glass backdrop-blur-sm min-w-0 max-w-full">
           <Outlet />
         </main>
       </div>
