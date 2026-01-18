@@ -280,35 +280,35 @@ export default function BusinessIntelligence() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-primary" />
-            Business Intelligence & AI Predittiva
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+            <span className="truncate">Business Intelligence & AI</span>
           </h1>
-          <p className="text-muted-foreground">Dashboard KPI, Analisi predittiva AI e Monitoraggio in tempo reale</p>
+          <p className="text-sm text-muted-foreground line-clamp-2">Dashboard KPI, Analisi predittiva AI e Monitoraggio in tempo reale</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
             variant="outline" 
-            className="gap-2"
+            className="gap-2 text-xs sm:text-sm"
             onClick={() => generatePrediction.mutate('ritardo')}
             disabled={isAnalyzing}
           >
             {isAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-            Analisi AI
+            <span className="hidden xs:inline">Analisi</span> AI
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 text-xs sm:text-sm">
             <Download className="w-4 h-4" />
-            Esporta Report
+            <span className="hidden xs:inline">Esporta</span>
           </Button>
         </div>
       </div>
 
       {/* Executive KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 mb-2">
@@ -374,24 +374,26 @@ export default function BusinessIntelligence() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex w-full h-auto flex-wrap gap-1 p-1">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="predittiva" className="flex items-center gap-2">
-            <Brain className="w-4 h-4" />
-            AI Predittiva
-          </TabsTrigger>
-          <TabsTrigger value="compliance" className="flex items-center gap-2">
-            <Shield className="w-4 h-4" />
-            Compliance
-          </TabsTrigger>
-          <TabsTrigger value="notifiche" className="flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Workflow
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex w-max h-auto gap-1 p-1">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="predittiva" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
+              <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              AI
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
+              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Compliance
+            </TabsTrigger>
+            <TabsTrigger value="notifiche" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Workflow
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-6">

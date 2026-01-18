@@ -241,72 +241,74 @@ export default function HSEDashboard() {
   const overallStatus = filteredStats.totalCritical > 0 ? 'red' : filteredStats.totalWarning > 0 ? 'yellow' : 'green';
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard HSE</h1>
-          <p className="text-muted-foreground">Console centrale sicurezza, salute e ambiente</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Dashboard HSE</h1>
+          <p className="text-sm text-muted-foreground">Console centrale sicurezza, salute e ambiente</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 p-4 rounded-xl border border-border bg-card">
+      <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl border border-border bg-card min-w-0">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4 flex-shrink-0" />
           Filtri:
         </div>
-        <Select value={filterCantiere} onValueChange={setFilterCantiere}>
-          <SelectTrigger className="w-52">
-            <SelectValue placeholder="Commessa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte le commesse</SelectItem>
-            {cantieri.filter(c => c.stato === 'attivo').map(c => (
-              <SelectItem key={c.id} value={c.id}>{c.codiceCommessa} - {c.nome}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterImpresa} onValueChange={setFilterImpresa}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Impresa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte le imprese</SelectItem>
-            {imprese.map(i => (
-              <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterTipoDoc} onValueChange={setFilterTipoDoc}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tipo documento" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti i tipi</SelectItem>
-            <SelectItem value="documenti">Documenti aziendali</SelectItem>
-            <SelectItem value="formazioni">Formazioni</SelectItem>
-            <SelectItem value="visite">Visite mediche</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterGravita} onValueChange={setFilterGravita}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Gravità" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte</SelectItem>
-            <SelectItem value="critical">🔴 Critico/Scaduto</SelectItem>
-            <SelectItem value="warning">⚠️ In scadenza</SelectItem>
-            <SelectItem value="ok">✅ OK</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="relative flex-1 min-w-48">
+        <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+          <Select value={filterCantiere} onValueChange={setFilterCantiere}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Commessa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte</SelectItem>
+              {cantieri.filter(c => c.stato === 'attivo').map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterImpresa} onValueChange={setFilterImpresa}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Impresa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte</SelectItem>
+              {imprese.map(i => (
+                <SelectItem key={i.id} value={i.id}>{i.ragioneSociale}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterTipoDoc} onValueChange={setFilterTipoDoc}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="documenti">Documenti</SelectItem>
+              <SelectItem value="formazioni">Formazioni</SelectItem>
+              <SelectItem value="visite">Visite</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterGravita} onValueChange={setFilterGravita}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Gravità" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte</SelectItem>
+              <SelectItem value="critical">🔴 Critico</SelectItem>
+              <SelectItem value="warning">⚠️ Scadenza</SelectItem>
+              <SelectItem value="ok">✅ OK</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="relative w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Cerca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full sm:w-48"
           />
         </div>
       </div>

@@ -193,14 +193,14 @@ export default function Progetti() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Progetti & Task</h1>
-          <p className="text-muted-foreground">Gestione task e timeline lavori</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Progetti & Task</h1>
+          <p className="text-sm text-muted-foreground">Gestione task e timeline lavori</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Button 
             variant="outline" 
             onClick={() => {
@@ -223,75 +223,77 @@ export default function Progetti() {
                 toast({ title: 'Export completato', description: 'File Excel scaricato' });
               });
             }}
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-initial text-xs sm:text-sm"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            Export Excel
+            <span className="hidden xs:inline">Export</span>
           </Button>
-          <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2" data-tutorial="btn-nuovo-task">
+          <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2 flex-1 sm:flex-initial text-xs sm:text-sm" data-tutorial="btn-nuovo-task">
             <Plus className="w-4 h-4" />
-            Nuovo Task
+            <span className="hidden xs:inline">Nuovo</span> Task
           </Button>
         </div>
       </div>
 
       {/* Filters & View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-4 min-w-0">
+        <div className="flex flex-col sm:flex-row gap-3 min-w-0">
           {/* Search */}
-          <div className="relative">
+          <div className="relative w-full sm:flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca task..."
+              placeholder="Cerca..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-60"
+              className="pl-9 w-full"
             />
           </div>
 
-          {/* Status Filter */}
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Stato" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti gli stati</SelectItem>
-              <SelectItem value="da_iniziare">Da iniziare</SelectItem>
-              <SelectItem value="in_corso">In corso</SelectItem>
-              <SelectItem value="in_attesa">In attesa</SelectItem>
-              <SelectItem value="bloccato">Bloccato</SelectItem>
-              <SelectItem value="fatto">Completato</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+            {/* Status Filter */}
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full xs:w-28 sm:w-32">
+                <SelectValue placeholder="Stato" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                <SelectItem value="da_iniziare">Da iniziare</SelectItem>
+                <SelectItem value="in_corso">In corso</SelectItem>
+                <SelectItem value="in_attesa">In attesa</SelectItem>
+                <SelectItem value="bloccato">Bloccato</SelectItem>
+                <SelectItem value="fatto">Completato</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Commessa Filter */}
-          <Select value={filterCantiere} onValueChange={setFilterCantiere}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Commessa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutte le commesse</SelectItem>
-              {cantieri.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {/* Commessa Filter */}
+            <Select value={filterCantiere} onValueChange={setFilterCantiere}>
+              <SelectTrigger className="w-full xs:w-32 sm:w-36">
+                <SelectValue placeholder="Commessa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte</SelectItem>
+                {cantieri.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.codiceCommessa}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Priority Filter */}
-          <Select value={filterPriority} onValueChange={setFilterPriority}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Priorità" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutte</SelectItem>
-              <SelectItem value="urgente">Urgente</SelectItem>
-              <SelectItem value="critica">Critica</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-              <SelectItem value="bassa">Bassa</SelectItem>
-              <SelectItem value="nessuna">Nessuna</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Priority Filter */}
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="w-full xs:w-28 sm:w-32">
+                <SelectValue placeholder="Priorità" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte</SelectItem>
+                <SelectItem value="urgente">Urgente</SelectItem>
+                <SelectItem value="critica">Critica</SelectItem>
+                <SelectItem value="alta">Alta</SelectItem>
+                <SelectItem value="media">Media</SelectItem>
+                <SelectItem value="bassa">Bassa</SelectItem>
+                <SelectItem value="nessuna">Nessuna</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* View Toggle */}

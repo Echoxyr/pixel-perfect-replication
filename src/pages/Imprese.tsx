@@ -280,88 +280,89 @@ export default function Imprese() {
   }, [imprese]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Imprese Esterne</h1>
-          <p className="text-muted-foreground">Gestione subappalti e documenti</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold">Imprese Esterne</h1>
+          <p className="text-sm text-muted-foreground">Gestione subappalti e documenti</p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2" data-tutorial="btn-nuova-impresa">
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2 w-full sm:w-auto" data-tutorial="btn-nuova-impresa">
           <Plus className="w-4 h-4" />
           Nuova Impresa
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-tutorial="imprese-stats">
-        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="imprese-totale">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4" data-tutorial="imprese-stats">
+        <div className="p-3 sm:p-4 rounded-xl border border-border bg-card" data-tutorial="imprese-totale">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Totale Imprese</p>
-            <Building2 className="w-5 h-5 text-muted-foreground" />
+            <p className="text-xs sm:text-sm text-muted-foreground">Totale</p>
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
           </div>
-          <p className="text-2xl font-bold mt-1">{imprese.length}</p>
+          <p className="text-xl sm:text-2xl font-bold mt-1">{imprese.length}</p>
         </div>
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="imprese-ok">
+        <div className="p-3 sm:p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="imprese-ok">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-emerald-500">Documenti OK</p>
+            <p className="text-xs sm:text-sm text-emerald-500">OK</p>
             <TrafficLight status="green" />
           </div>
-          <p className="text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
         </div>
-        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="imprese-scadenza">
+        <div className="p-3 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="imprese-scadenza">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-amber-500">In Scadenza</p>
+            <p className="text-xs sm:text-sm text-amber-500">Scadenza</p>
             <TrafficLight status="yellow" />
           </div>
-          <p className="text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
+          <p className="text-xl sm:text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
         </div>
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="imprese-problemi">
+        <div className="p-3 sm:p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="imprese-problemi">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-red-500">Problemi</p>
+            <p className="text-xs sm:text-sm text-red-500">Problemi</p>
             <TrafficLight status="red" />
           </div>
-          <p className="text-2xl font-bold text-red-500 mt-1">{stats.critical}</p>
+          <p className="text-xl sm:text-2xl font-bold text-red-500 mt-1">{stats.critical}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 min-w-0">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca impresa..."
+            placeholder="Cerca..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full"
           />
         </div>
-        <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Tipologia" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutte le tipologie</SelectItem>
-            <SelectItem value="subappaltatore">Subappaltatore</SelectItem>
-            <SelectItem value="distacco">Distacco</SelectItem>
-            <SelectItem value="autonomo">Lav. Autonomo</SelectItem>
-            <SelectItem value="nolo_caldo">Nolo a caldo</SelectItem>
-            <SelectItem value="consorzio">Consorzio</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Stato doc." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="ok">✅ OK</SelectItem>
-            <SelectItem value="warning">⚠️ In scadenza</SelectItem>
-            <SelectItem value="critical">🔴 Problemi</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="subappaltatore">Subappaltatore</SelectItem>
+              <SelectItem value="distacco">Distacco</SelectItem>
+              <SelectItem value="autonomo">Autonomo</SelectItem>
+              <SelectItem value="nolo_caldo">Nolo caldo</SelectItem>
+              <SelectItem value="consorzio">Consorzio</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-32">
+              <SelectValue placeholder="Stato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutti</SelectItem>
+              <SelectItem value="ok">✅ OK</SelectItem>
+              <SelectItem value="warning">⚠️ Scadenza</SelectItem>
+              <SelectItem value="critical">🔴 Problemi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-
       {/* Table */}
       <div data-tutorial="imprese-table">
         <DataTable
