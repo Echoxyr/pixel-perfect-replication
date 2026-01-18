@@ -430,36 +430,36 @@ export default function Lavoratori() {
           <h1 className="text-2xl font-bold">Lavoratori</h1>
           <p className="text-muted-foreground">Gestione formazione, visite mediche e DPI</p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2">
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2" data-tutorial="btn-nuovo-lavoratore">
           <Plus className="w-4 h-4" />
           Nuovo Lavoratore
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-border bg-card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-tutorial="lavoratori-stats">
+        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="lavoratori-totale">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Totale Lavoratori</p>
             <HardHat className="w-5 h-5 text-muted-foreground" />
           </div>
           <p className="text-2xl font-bold mt-1">{lavoratori.length}</p>
         </div>
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="lavoratori-conformi">
           <div className="flex items-center justify-between">
             <p className="text-sm text-emerald-500">Conformi</p>
             <TrafficLight status="green" />
           </div>
           <p className="text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
         </div>
-        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="lavoratori-attenzione">
           <div className="flex items-center justify-between">
             <p className="text-sm text-amber-500">Attenzione</p>
             <TrafficLight status="yellow" />
           </div>
           <p className="text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
         </div>
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10">
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="lavoratori-non-conformi">
           <div className="flex items-center justify-between">
             <p className="text-sm text-red-500">Non conformi</p>
             <TrafficLight status="red" />

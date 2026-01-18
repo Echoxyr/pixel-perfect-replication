@@ -228,9 +228,9 @@ export function InteractiveTutorial({ tutorial, onClose }: InteractiveTutorialPr
 
   // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
-    const padding = 20;
+    const padding = 12;
     const isMobile = window.innerWidth < 640;
-    const tooltipWidth = isMobile ? Math.min(340, window.innerWidth - padding * 2) : 400;
+    const tooltipWidth = isMobile ? Math.min(300, window.innerWidth - padding * 2) : 380;
 
     if (currentStep.position === 'center' || !spotlightRect) {
       return {
@@ -242,18 +242,18 @@ export function InteractiveTutorial({ tutorial, onClose }: InteractiveTutorialPr
       };
     }
 
-    // On mobile, position at bottom
+    // On mobile, position at bottom with safe padding
     if (isMobile) {
       return {
         bottom: padding,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: tooltipWidth,
+        left: padding,
+        right: padding,
+        width: 'auto',
         maxWidth: `calc(100vw - ${padding * 2}px)`,
       };
     }
 
-    const tooltipHeight = 220;
+    const tooltipHeight = 200;
 
     switch (currentStep.position) {
       case 'top':
@@ -418,81 +418,81 @@ export function InteractiveTutorial({ tutorial, onClose }: InteractiveTutorialPr
           />
         </div>
 
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Header with step counter and controls */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                {currentStepIndex + 1} / {tutorial.steps.length}
+          <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <span className="text-[10px] sm:text-xs font-bold text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded-full">
+                {currentStepIndex + 1}/{tutorial.steps.length}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                 ~{stepReadingTime}s
               </span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
                 onClick={() => setIsPaused(p => !p)}
                 title={isPaused ? 'Riprendi' : 'Pausa'}
               >
-                {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
                 onClick={goToNextStep}
                 title="Salta step"
               >
-                <SkipForward className="h-4 w-4" />
+                <SkipForward className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
                 onClick={onClose}
                 title="Chiudi tutorial"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold mb-2 leading-tight text-foreground">
+          <h3 className="text-sm sm:text-lg font-bold mb-1.5 sm:mb-2 leading-tight text-foreground">
             {currentStep.title}
           </h3>
 
           {/* Description - scrollable if too long */}
-          <div className="max-h-[140px] overflow-y-auto mb-4 pr-1">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+          <div className="max-h-[80px] sm:max-h-[120px] overflow-y-auto mb-3 sm:mb-4 pr-1">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {currentStep.description}
             </p>
           </div>
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between gap-3">
+          {/* Navigation buttons - responsive layout */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
               onClick={goToPrevStep}
               disabled={currentStepIndex === 0}
-              className="h-9 px-3 shrink-0"
+              className="h-8 px-2 sm:px-3 shrink-0 text-xs sm:text-sm"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Indietro
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline ml-1">Indietro</span>
             </Button>
 
-            {/* Step dots - show only first 12 */}
-            <div className="flex gap-1 shrink-0 overflow-hidden">
-              {tutorial.steps.slice(0, 12).map((_, idx) => (
+            {/* Step dots - show only on larger screens or fewer dots on mobile */}
+            <div className="flex gap-0.5 sm:gap-1 shrink-0 overflow-hidden max-w-[100px] sm:max-w-none">
+              {tutorial.steps.slice(0, window.innerWidth < 640 ? 6 : 12).map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentStepIndex(idx)}
                   className={cn(
-                    "w-2 h-2 rounded-full transition-all shrink-0",
+                    "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all shrink-0",
                     idx === currentStepIndex
                       ? "bg-primary scale-125"
                       : idx < currentStepIndex
@@ -501,22 +501,25 @@ export function InteractiveTutorial({ tutorial, onClose }: InteractiveTutorialPr
                   )}
                 />
               ))}
-              {tutorial.steps.length > 12 && (
-                <span className="text-xs text-muted-foreground ml-1">+{tutorial.steps.length - 12}</span>
+              {tutorial.steps.length > (window.innerWidth < 640 ? 6 : 12) && (
+                <span className="text-[10px] sm:text-xs text-muted-foreground ml-0.5 sm:ml-1">
+                  +{tutorial.steps.length - (window.innerWidth < 640 ? 6 : 12)}
+                </span>
               )}
             </div>
 
             <Button
               size="sm"
               onClick={goToNextStep}
-              className="h-9 px-4 shrink-0"
+              className="h-8 px-2 sm:px-4 shrink-0 text-xs sm:text-sm"
             >
               {currentStepIndex === tutorial.steps.length - 1 ? (
-                '✓ Fine'
+                '✓'
               ) : (
                 <>
-                  Avanti
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  <span className="hidden sm:inline">Avanti</span>
+                  <span className="sm:hidden">→</span>
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 hidden sm:inline ml-1" />
                 </>
               )}
             </Button>

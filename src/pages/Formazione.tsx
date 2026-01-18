@@ -162,50 +162,50 @@ export default function Formazione() {
           </h1>
           <p className="text-muted-foreground">Corsi obbligatori D.Lgs 81/2008 e attestati</p>
         </div>
-        <Button onClick={() => setShowNewCorsoDialog(true)} className="gap-2">
+        <Button onClick={() => setShowNewCorsoDialog(true)} className="gap-2" data-tutorial="btn-nuovo-corso">
           <Plus className="w-4 h-4" />
           Nuovo Corso
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="p-4 rounded-xl border border-border bg-card">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" data-tutorial="formazione-stats">
+        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="formazione-totale">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">Totale Attestati</span>
           </div>
           <p className="text-2xl font-bold">{stats.total}</p>
         </div>
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="formazione-validi">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle className="w-4 h-4 text-emerald-500" />
             <span className="text-xs text-emerald-500">Validi</span>
           </div>
           <p className="text-2xl font-bold text-emerald-500">{stats.validi}</p>
         </div>
-        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="formazione-scadenza">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-amber-500" />
             <span className="text-xs text-amber-500">In Scadenza</span>
           </div>
           <p className="text-2xl font-bold text-amber-500">{stats.inScadenza}</p>
         </div>
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10">
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="formazione-scaduti">
           <div className="flex items-center gap-2 mb-2">
             <XCircle className="w-4 h-4 text-red-500" />
             <span className="text-xs text-red-500">Scaduti</span>
           </div>
           <p className="text-2xl font-bold text-red-500">{stats.scaduti}</p>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-card">
+        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="formazione-lavoratori">
           <div className="flex items-center gap-2 mb-2">
             <Users className="w-4 h-4 text-primary" />
             <span className="text-xs text-muted-foreground">Lavoratori Formati</span>
           </div>
           <p className="text-2xl font-bold">{stats.lavoratoriFormati}</p>
         </div>
-        <div className="p-4 rounded-xl border border-border bg-card">
+        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="formazione-conformita">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs text-muted-foreground">Tasso Conformità</span>
           </div>

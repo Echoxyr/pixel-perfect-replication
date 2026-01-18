@@ -287,36 +287,36 @@ export default function Imprese() {
           <h1 className="text-2xl font-bold">Imprese Esterne</h1>
           <p className="text-muted-foreground">Gestione subappalti e documenti</p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2">
+        <Button onClick={() => setShowNewDialog(true)} className="gap-2" data-tutorial="btn-nuova-impresa">
           <Plus className="w-4 h-4" />
           Nuova Impresa
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-border bg-card">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-tutorial="imprese-stats">
+        <div className="p-4 rounded-xl border border-border bg-card" data-tutorial="imprese-totale">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Totale Imprese</p>
             <Building2 className="w-5 h-5 text-muted-foreground" />
           </div>
           <p className="text-2xl font-bold mt-1">{imprese.length}</p>
         </div>
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10">
+        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10" data-tutorial="imprese-ok">
           <div className="flex items-center justify-between">
             <p className="text-sm text-emerald-500">Documenti OK</p>
             <TrafficLight status="green" />
           </div>
           <p className="text-2xl font-bold text-emerald-500 mt-1">{stats.ok}</p>
         </div>
-        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10" data-tutorial="imprese-scadenza">
           <div className="flex items-center justify-between">
             <p className="text-sm text-amber-500">In Scadenza</p>
             <TrafficLight status="yellow" />
           </div>
           <p className="text-2xl font-bold text-amber-500 mt-1">{stats.warning}</p>
         </div>
-        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10">
+        <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10" data-tutorial="imprese-problemi">
           <div className="flex items-center justify-between">
             <p className="text-sm text-red-500">Problemi</p>
             <TrafficLight status="red" />
@@ -363,13 +363,15 @@ export default function Imprese() {
       </div>
 
       {/* Table */}
-      <DataTable
-        data={filteredImprese}
-        columns={columns}
-        keyExtractor={(i) => i.id}
-        onRowClick={(impresa) => setSelectedImpresa(impresa)}
-        emptyMessage="Nessuna impresa trovata"
-      />
+      <div data-tutorial="imprese-table">
+        <DataTable
+          data={filteredImprese}
+          columns={columns}
+          keyExtractor={(i) => i.id}
+          onRowClick={(impresa) => setSelectedImpresa(impresa)}
+          emptyMessage="Nessuna impresa trovata"
+        />
+      </div>
 
       {/* New Impresa Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>

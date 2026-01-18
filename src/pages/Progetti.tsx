@@ -228,7 +228,7 @@ export default function Progetti() {
             <FileSpreadsheet className="w-4 h-4" />
             Export Excel
           </Button>
-          <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2">
+          <Button onClick={() => setShowNewTaskDialog(true)} className="gap-2" data-tutorial="btn-nuovo-task">
             <Plus className="w-4 h-4" />
             Nuovo Task
           </Button>
@@ -295,7 +295,7 @@ export default function Progetti() {
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+        <div className="flex items-center gap-1 p-1 bg-muted rounded-lg" data-tutorial="task-view-toggle">
           <button
             onClick={() => setViewMode('table')}
             className={cn(
@@ -303,6 +303,7 @@ export default function Progetti() {
               viewMode === 'table' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
             )}
             title="Tabella"
+            data-tutorial="view-table"
           >
             <Table className="w-4 h-4" />
             <span className="text-xs hidden sm:inline">Tabella</span>
@@ -314,6 +315,7 @@ export default function Progetti() {
               viewMode === 'board' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
             )}
             title="Board"
+            data-tutorial="view-board"
           >
             <LayoutGrid className="w-4 h-4" />
             <span className="text-xs hidden sm:inline">Board</span>
@@ -325,6 +327,7 @@ export default function Progetti() {
               viewMode === 'calendar' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
             )}
             title="Calendario"
+            data-tutorial="view-calendar"
           >
             <Calendar className="w-4 h-4" />
             <span className="text-xs hidden sm:inline">Calendario</span>
@@ -336,6 +339,7 @@ export default function Progetti() {
               viewMode === 'timeline' ? 'bg-background shadow-sm' : 'hover:bg-background/50'
             )}
             title="Timeline"
+            data-tutorial="view-timeline"
           >
             <GanttChart className="w-4 h-4" />
             <span className="text-xs hidden sm:inline">Timeline</span>
