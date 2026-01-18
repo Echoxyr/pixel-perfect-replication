@@ -312,6 +312,7 @@ export default function UfficioCommerciale() {
     numero: `PRV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
     fornitore_id: '',
     fornitore_nome: '',
+    cantiere_id: '',
     oggetto: '',
     importo: 0,
     scadenza: '',
@@ -322,6 +323,8 @@ export default function UfficioCommerciale() {
     numero: `ORD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
     fornitore_id: '',
     fornitore_nome: '',
+    cantiere_id: '',
+    cantiere_nome: '',
     importo: 0,
     data_consegna_prevista: '',
     note: ''
@@ -332,6 +335,9 @@ export default function UfficioCommerciale() {
     titolo: '',
     tipo: 'appalto',
     contraente: '',
+    contraente_id: '',
+    cantiere_id: '',
+    cantiere_nome: '',
     importo: 0,
     data_inizio: new Date().toISOString().split('T')[0],
     data_fine: '',
@@ -400,6 +406,16 @@ export default function UfficioCommerciale() {
       const { data, error } = await supabase.from('listini_fornitori').select('*').order('valido_dal', { ascending: false });
       if (error) throw error;
       return data as ListinoFornitore[];
+    }
+  });
+
+  // Cantieri for linking
+  const { data: cantieri = [] } = useQuery({
+    queryKey: ['cantieri_for_select'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('cantieri').select('id, nome, codice_commessa').order('nome');
+      if (error) throw error;
+      return data as { id: string; nome: string; codice_commessa: string }[];
     }
   });
 
