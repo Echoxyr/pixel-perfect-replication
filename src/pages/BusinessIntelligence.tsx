@@ -111,7 +111,6 @@ export default function BusinessIntelligence() {
   
   const [showNewReportDialog, setShowNewReportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('executive');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [periodoFiltro, setPeriodoFiltro] = useState('ytd');
 
   // Fetch KPI Finanziari from DB
@@ -127,19 +126,6 @@ export default function BusinessIntelligence() {
     }
   });
 
-  // Fetch AI Predictions from DB
-  const { data: aiPredictions = [] } = useQuery({
-    queryKey: ['ai_predictions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ai_predictions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data;
-    }
-  });
 
   // Fetch Fatture for cash flow
   const { data: fatture = [] } = useQuery({
@@ -193,64 +179,6 @@ export default function BusinessIntelligence() {
     }
   });
 
-  // Generate AI Prediction mutation
-  const generatePrediction = useMutation({
-    mutationFn: async (tipo: string) => {
-      setIsAnalyzing(true);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const predictions = {
-        ritardo: {
-          tipo: 'ritardo_progetto',
-          probabilita: Math.floor(Math.random() * 40) + 10,
-          impatto: Math.random() > 0.5 ? 'medio' : 'basso',
-          fattori_rischio: ['Ritardi nelle forniture', 'Condizioni meteo avverse', 'Carenza manodopera'],
-          raccomandazioni: ['Anticipare ordini materiali di 2 settimane', 'Prevedere piano B per maltempo', 'Contattare agenzia interinale']
-        },
-        cashflow: {
-          tipo: 'cashflow',
-          probabilita: Math.floor(Math.random() * 30) + 20,
-          impatto: 'alto',
-          fattori_rischio: ['Fatture non incassate >60gg', 'Scadenze pagamenti concentrati'],
-          raccomandazioni: ['Sollecitare incassi scaduti', 'Negoziare dilazioni con fornitori', 'Valutare anticipo fatture']
-        },
-        fornitore: {
-          tipo: 'affidabilita_fornitore',
-          probabilita: Math.floor(Math.random() * 25) + 5,
-          impatto: 'medio',
-          fattori_rischio: ['Ritardi consegne ricorrenti', 'Qualità variabile'],
-          raccomandazioni: ['Richiedere referenze aggiornate', 'Valutare fornitori alternativi', 'Inserire penali contrattuali']
-        }
-      };
-
-      const prediction = predictions[tipo as keyof typeof predictions] || predictions.ritardo;
-      
-      const { error } = await supabase.from('ai_predictions').insert({
-        tipo: prediction.tipo,
-        probabilita: prediction.probabilita,
-        impatto: prediction.impatto,
-        dati_input: { 
-          cantieri_attivi: cantieri.filter(c => c.stato === 'attivo').length,
-          hse_alerts: hseStats.documentiScaduti + hseStats.formazioniScadute
-        },
-        raccomandazioni: prediction.raccomandazioni,
-        previsione_dettaglio: { fattori_rischio: prediction.fattori_rischio },
-        valido_fino: addDays(new Date(), 7).toISOString()
-      });
-
-      if (error) throw error;
-      setIsAnalyzing(false);
-      return prediction;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ai_predictions'] });
-      toast.success('Analisi predittiva completata!');
-    },
-    onError: () => {
-      setIsAnalyzing(false);
-      toast.error('Errore nell\'analisi');
-    }
-  });
 
   // Calculate comprehensive stats from real data
   const stats = useMemo(() => {
@@ -269,7 +197,7 @@ export default function BusinessIntelligence() {
     const ordiniInCorso = ordini.filter(o => o.stato !== 'consegnato' && o.stato !== 'annullato');
     const valoreOrdini = ordiniInCorso.reduce((acc, o) => acc + o.importo, 0);
 
-    const rischioAlto = aiPredictions.filter(p => p.impatto === 'alto' || p.impatto === 'critico').length;
+    
 
     // Preventivi stats
     const preventiviInAttesa = preventivi.filter(p => p.stato === 'inviato').length;
@@ -295,7 +223,6 @@ export default function BusinessIntelligence() {
       percentualeMargine: totaleRicavi > 0 ? (margine / totaleRicavi) * 100 : 0,
       dso: Math.round(dso),
       wipTotale: valoreOrdini,
-      rischioAlto,
       fattureScadute: fatture.filter(f => f.stato === 'scaduta').length,
       fattureInAttesa: fatture.filter(f => f.stato === 'emessa').length,
       cantieriAttivi,
@@ -311,7 +238,7 @@ export default function BusinessIntelligence() {
       lavoratoriTotali: lavoratori.length,
       hseAlerts: hseStats.documentiScaduti + hseStats.formazioniScadute + hseStats.visiteMedicheScadute,
     };
-  }, [fatture, ordini, aiPredictions, cantieri, preventivi, contratti, imprese, lavoratori, hseStats]);
+  }, [fatture, ordini, cantieri, preventivi, contratti, imprese, lavoratori, hseStats]);
 
   // Chart data
   const financialTrendData = useMemo(() => {
@@ -400,15 +327,6 @@ export default function BusinessIntelligence() {
               <SelectItem value="all">Tutto</SelectItem>
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
-            className="gap-2"
-            onClick={() => generatePrediction.mutate('ritardo')}
-            disabled={isAnalyzing}
-          >
-            {isAnalyzing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-            Analisi AI
-          </Button>
           <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" />
             Esporta
@@ -435,10 +353,6 @@ export default function BusinessIntelligence() {
             <TabsTrigger value="commerciale" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
               <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Commerciale
-            </TabsTrigger>
-            <TabsTrigger value="predittiva" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-              <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              AI & Previsioni
             </TabsTrigger>
             <TabsTrigger value="compliance" className="flex items-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
               <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -649,9 +563,9 @@ export default function BusinessIntelligence() {
                     <AlertCircle className="w-5 h-5 text-red-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Rischi alti</p>
-                    <p className="text-xl font-bold">{stats.rischioAlto}</p>
-                    <p className="text-xs text-muted-foreground">da AI Predictions</p>
+                    <p className="text-sm text-muted-foreground">HSE Alert</p>
+                    <p className="text-xl font-bold">{stats.hseAlerts}</p>
+                    <p className="text-xs text-muted-foreground">scadenze critiche</p>
                   </div>
                 </div>
               </CardContent>
@@ -982,90 +896,6 @@ export default function BusinessIntelligence() {
           </Card>
         </TabsContent>
 
-        {/* AI & PREVISIONI TAB */}
-        <TabsContent value="predittiva" className="mt-6 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('ritardo')}>
-              <CardContent className="p-6 text-center">
-                <Clock className="w-10 h-10 mx-auto mb-3 text-amber-500" />
-                <h3 className="font-semibold mb-2">Analisi Ritardi</h3>
-                <p className="text-sm text-muted-foreground">Previsione rischi di ritardo sui progetti</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('cashflow')}>
-              <CardContent className="p-6 text-center">
-                <Euro className="w-10 h-10 mx-auto mb-3 text-green-500" />
-                <h3 className="font-semibold mb-2">Previsione Cash Flow</h3>
-                <p className="text-sm text-muted-foreground">Analisi flussi di cassa e liquidità</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => generatePrediction.mutate('fornitore')}>
-              <CardContent className="p-6 text-center">
-                <Truck className="w-10 h-10 mx-auto mb-3 text-blue-500" />
-                <h3 className="font-semibold mb-2">Affidabilità Fornitori</h3>
-                <p className="text-sm text-muted-foreground">Valutazione performance fornitori</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Predictions List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Previsioni AI Recenti
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {aiPredictions.length === 0 ? (
-                <div className="text-center py-12">
-                  <Brain className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-medium mb-2">Nessuna previsione</h3>
-                  <p className="text-muted-foreground mb-4">Clicca su una card sopra per generare un'analisi AI</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {aiPredictions.map((prediction) => (
-                    <div key={prediction.id} className={cn(
-                      "p-4 rounded-lg border",
-                      prediction.impatto === 'alto' || prediction.impatto === 'critico' 
-                        ? "border-red-200 bg-red-50/30 dark:border-red-800/50 dark:bg-red-900/10" 
-                        : "border-border"
-                    )}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline">{prediction.tipo}</Badge>
-                            <Badge className={getImpactBadge(prediction.impatto || 'medio')}>
-                              {prediction.impatto}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{prediction.probabilita}%</p>
-                          <p className="text-xs text-muted-foreground">Probabilità</p>
-                        </div>
-                      </div>
-                      {prediction.raccomandazioni && prediction.raccomandazioni.length > 0 && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">Raccomandazioni:</p>
-                          <ul className="text-sm text-muted-foreground space-y-1">
-                            {prediction.raccomandazioni.map((r, i) => (
-                              <li key={i}>• {r}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-3">
-                        {format(new Date(prediction.created_at || ''), 'dd/MM/yyyy HH:mm', { locale: it })}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* COMPLIANCE TAB */}
         <TabsContent value="compliance" className="mt-6">

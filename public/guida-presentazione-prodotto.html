@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gest-e | Guida Presentazione Prodotto per Investitori</title>
+  <meta name="description" content="Guida completa alla presentazione di Gest-e per investitori: struttura modulare, flussi operativi, ecosistema interconnesso e potenzialità dell'infrastruttura.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #1e293b;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --border: #334155;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a2e 100%);
+      color: var(--text-primary);
+      line-height: 1.7;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 1rem 2rem;
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+    }
+
+    .back-btn {
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem 4rem;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 4rem 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4rem;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 800px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 0.5rem 1.5rem;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--primary);
+      border-radius: 50px;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 4rem;
+      border: 1px solid var(--border);
+    }
+
+    .toc h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .toc-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .toc-item:hover {
+      background: rgba(59, 130, 246, 0.2);
+      transform: translateX(4px);
+    }
+
+    .toc-number {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 4rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .section-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .section h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(59, 130, 246, 0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-features {
+      list-style: none;
+    }
+
+    .card-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .card-features li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    /* Workflow */
+    .workflow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    .workflow-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      min-width: 140px;
+    }
+
+    .workflow-step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin: 0 auto 0.5rem;
+    }
+
+    .workflow-step h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .workflow-arrow {
+      color: var(--primary);
+      font-size: 1.5rem;
+    }
+
+    /* Value Proposition */
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .value-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .value-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .value-card h3 {
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .value-card p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* Highlight Box */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.15));
+      border-left: 4px solid var(--accent);
+      padding: 1.5rem;
+      border-radius: 0 12px 12px 0;
+      margin: 2rem 0;
+    }
+
+    .highlight-box h4 {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .highlight-box p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Talking Points */
+    .talking-points {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+      border: 1px solid var(--border);
+    }
+
+    .talking-points h4 {
+      color: var(--primary);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .talking-points ul {
+      list-style: none;
+    }
+
+    .talking-points li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .talking-points li:last-child {
+      border-bottom: none;
+    }
+
+    .talking-points li strong {
+      color: var(--primary);
+    }
+
+    /* Compliance Badges */
+    .compliance-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .compliance-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--success);
+    }
+
+    /* Print Styles */
+    @media print {
+      .nav { display: none; }
+      .container { padding-top: 2rem; }
+      body { background: white; color: black; }
+      .section { page-break-inside: avoid; }
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 1.75rem; }
+      .container { padding: 5rem 1rem 2rem; }
+      .workflow { flex-direction: column; }
+      .workflow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">G</div>
+        Gest-e
+      </a>
+      <a href="/" class="back-btn">← Torna all'App</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <span class="hero-badge">📋 Guida per Presentazione</span>
+      <h1>Manuale Completo di Presentazione Prodotto</h1>
+      <p>Questa guida ti aiuterà a presentare Gest-e a potenziali investitori, mostrando ogni modulo, le interconnessioni tra le sezioni, e le potenzialità dell'ecosistema integrato.</p>
+    </section>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc">
+      <h2>📑 Indice dei Contenuti</h2>
+      <div class="toc-grid">
+        <a href="#vision" class="toc-item"><span class="toc-number">1</span> Vision & Value Proposition</a>
+        <a href="#architettura" class="toc-item"><span class="toc-number">2</span> Architettura dell'Ecosistema</a>
+        <a href="#principale" class="toc-item"><span class="toc-number">3</span> Area Principale</a>
+        <a href="#commesse" class="toc-item"><span class="toc-number">4</span> Gestione Commesse</a>
+        <a href="#hse" class="toc-item"><span class="toc-number">5</span> Sicurezza & HSE</a>
+        <a href="#commerciale" class="toc-item"><span class="toc-number">6</span> Reparto Commerciale</a>
+        <a href="#amministrazione" class="toc-item"><span class="toc-number">7</span> Amministrazione</a>
+        <a href="#logistica" class="toc-item"><span class="toc-number">8</span> Logistica & Risorse</a>
+        <a href="#compliance" class="toc-item"><span class="toc-number">9</span> Conformità & Certificazioni</a>
+        <a href="#flusso" class="toc-item"><span class="toc-number">10</span> Flusso Documentale</a>
+        <a href="#bi" class="toc-item"><span class="toc-number">11</span> Business Intelligence</a>
+        <a href="#differenziatori" class="toc-item"><span class="toc-number">12</span> Differenziatori Chiave</a>
+      </div>
+    </div>
+
+    <!-- 1. VISION -->
+    <section id="vision" class="section">
+      <div class="section-header">
+        <div class="section-icon">🎯</div>
+        <div>
+          <h2>1. Vision & Value Proposition</h2>
+          <p class="section-subtitle">Il "perché" dietro Gest-e</p>
+        </div>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-icon">🏗️</div>
+          <h3>Unico Strumento</h3>
+          <p>Eliminare i silos: un'unica piattaforma per tutte le attività aziendali dell'impresa edile.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔗</div>
+          <h3>Ecosistema Interconnesso</h3>
+          <p>Ogni dato inserito una volta è disponibile ovunque, con tracciabilità bidirezionale completa.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">⚖️</div>
+          <h3>Compliance Automatica</h3>
+          <p>Monitoraggio continuo di scadenze normative (D.Lgs 81/08, GDPR, ISO) con blocchi automatici.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📊</div>
+          <h3>Decisioni Data-Driven</h3>
+          <p>Dashboard BI con KPI in tempo reale per decisioni strategiche informate.</p>
+        </div>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Punti Chiave per la Presentazione</h4>
+        <ul>
+          <li><strong>Problema:</strong> Le imprese edili usano 5-10 software diversi, fogli Excel, email, WhatsApp. Questo crea errori, ritardi, e rischi di non-conformità.</li>
+          <li><strong>Soluzione:</strong> Gest-e centralizza tutto: dalla creazione del cantiere alla fatturazione, passando per HSE, formazione, magazzino.</li>
+          <li><strong>Risultato:</strong> Riduzione errori del 70%, risparmio tempo del 40%, compliance normativa garantita.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2. ARCHITETTURA -->
+    <section id="architettura" class="section">
+      <div class="section-header">
+        <div class="section-icon">🏛️</div>
+        <div>
+          <h2>2. Architettura dell'Ecosistema</h2>
+          <p class="section-subtitle">Come i moduli si interconnettono</p>
+        </div>
+      </div>
+
+      <p>Gest-e è costruito su un'architettura a <strong>hub centrale</strong> dove ogni entità (Cantiere, Impresa, Lavoratore, Documento) è collegata bidirezionalmente a tutte le altre.</p>
+
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="workflow-step-number">1</div>
+          <h4>Computo Metrico</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">2</div>
+          <h4>Preventivo</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">3</div>
+          <h4>Ordine</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">4</div>
+          <h4>DDT</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">5</div>
+          <h4>Fattura</h4>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <h4>⚡ Tracciabilità End-to-End</h4>
+        <p>Ogni documento mantiene il riferimento al documento padre. Da una fattura puoi risalire all'ordine originale, al preventivo, e al computo metrico. Tutto è auditabile e tracciato.</p>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Come Spiegarlo all'Investitore</h4>
+        <ul>
+          <li><strong>Scenario Pratico:</strong> "Quando creo un Ordine, posso collegarlo direttamente alla Commessa. Quando arriva la merce, genero il DDT dallo stesso ordine. Quando fattura il fornitore, la collego al DDT. Tutto è tracciato."</li>
+          <li><strong>Valore:</strong> "Mai più discrepanze tra ordini e fatture. Il sistema le identifica automaticamente."</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3. AREA PRINCIPALE -->
+    <section id="principale" class="section">
+      <div class="section-header">
+        <div class="section-icon">🏠</div>
+        <div>
+          <h2>3. Area Principale</h2>
+          <p class="section-subtitle">Dashboard, Contatti, Azienda</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📊</div>
+            <h3>Dashboard</h3>
+          </div>
+          <p>Centro di controllo con visione d'insieme su tutti i KPI aziendali.</p>
+          <ul class="card-features">
+            <li>Cantieri attivi e loro stato</li>
+            <li>Alert HSE (documenti scaduti, formazioni)</li>
+            <li>Fatture in scadenza</li>
+            <li>Task urgenti e scadenze</li>
+            <li>Quick actions per operazioni frequenti</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">👥</div>
+            <h3>Contatti (CRM)</h3>
+          </div>
+          <p>Gestione centralizzata di clienti, fornitori, professionisti e PA.</p>
+          <ul class="card-features">
+            <li>Anagrafica completa con storico interazioni</li>
+            <li>Categorizzazione per tipo (cliente, fornitore, PA)</li>
+            <li>Collegamento a documenti e commesse</li>
+            <li>Note e promemoria</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏢</div>
+            <h3>Dati Azienda</h3>
+          </div>
+          <p>Repository centralizzato dei dati aziendali e documentazione societaria.</p>
+          <ul class="card-features">
+            <li>Dati anagrafici e fiscali</li>
+            <li>Certificazioni (SOA, ISO, etc.)</li>
+            <li>Polizze assicurative</li>
+            <li>Organigramma aziendale</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Durante la Demo</h4>
+        <ul>
+          <li>Mostrare come dalla Dashboard si accede rapidamente a qualsiasi alert critico</li>
+          <li>Evidenziare i colori "semaforo" per le scadenze (verde/giallo/rosso)</li>
+          <li>Dimostrare le Quick Actions per creare rapidamente un nuovo cantiere o task</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. GESTIONE COMMESSE -->
+    <section id="commesse" class="section">
+      <div class="section-header">
+        <div class="section-icon">📁</div>
+        <div>
+          <h2>4. Gestione Commesse</h2>
+          <p class="section-subtitle">Cantieri, Imprese, Lavoratori, SAL/Consuntivo</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏗️</div>
+            <h3>Cantieri</h3>
+          </div>
+          <p>Gestione completa del ciclo di vita del cantiere.</p>
+          <ul class="card-features">
+            <li>Anagrafica cantiere con dati contrattuali</li>
+            <li>Figure di riferimento (DL, CSE, RUP)</li>
+            <li>Stati: attivo, sospeso, chiuso</li>
+            <li>Pagina dettaglio con documenti, imprese, lavoratori collegati</li>
+            <li>Timbrature geolocalizzate per cantiere</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏭</div>
+            <h3>Imprese (Subappaltatori)</h3>
+          </div>
+          <p>Registro imprese con gestione documentale completa.</p>
+          <ul class="card-features">
+            <li>Dati anagrafici e fiscali</li>
+            <li>Documenti obbligatori (DURC, Visura, DVR)</li>
+            <li>Scadenzario automatico documenti</li>
+            <li>Blocco pagamento per non-conformità</li>
+            <li>Collegamento ai cantieri</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">👷</div>
+            <h3>Lavoratori</h3>
+          </div>
+          <p>Anagrafica lavoratori con compliance HSE.</p>
+          <ul class="card-features">
+            <li>Dati personali e qualifiche</li>
+            <li>Visite mediche con scadenze</li>
+            <li>Formazione obbligatoria e specifica</li>
+            <li>DPI assegnati</li>
+            <li>Collegamento a impresa e cantieri</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📈</div>
+            <h3>SAL / Consuntivo</h3>
+          </div>
+          <p>Stato Avanzamento Lavori con confronto previsionale.</p>
+          <ul class="card-features">
+            <li>SAL per cantiere con storico</li>
+            <li>Importo eseguito vs contratto</li>
+            <li>Grafico comparativo previsto/eseguito</li>
+            <li>Generazione documenti su carta intestata</li>
+            <li>Import Excel massivo</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <h4>🔗 Interconnessione Chiave</h4>
+        <p>Quando crei un'Impresa, puoi collegarla immediatamente a uno o più Cantieri. I lavoratori dell'impresa ereditano automaticamente i cantieri associati. Le scadenze documentali dell'impresa bloccano i pagamenti se non conformi.</p>
+      </div>
+    </section>
+
+    <!-- 5. SICUREZZA & HSE -->
+    <section id="hse" class="section">
+      <div class="section-header">
+        <div class="section-icon">🛡️</div>
+        <div>
+          <h2>5. Sicurezza & HSE</h2>
+          <p class="section-subtitle">Health, Safety & Environment</p>
+        </div>
+      </div>
+
+      <div class="compliance-badges">
+        <span class="compliance-badge">✓ D.Lgs 81/08</span>
+        <span class="compliance-badge">✓ Testo Unico Sicurezza</span>
+        <span class="compliance-badge">✓ Formazione Obbligatoria</span>
+        <span class="compliance-badge">✓ Sorveglianza Sanitaria</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📚</div>
+            <h3>Formazione</h3>
+          </div>
+          <p>Gestione completa dei corsi di formazione obbligatori e non.</p>
+          <ul class="card-features">
+            <li>Catalogo corsi (base, specifica, aggiornamento)</li>
+            <li>Iscrizione lavoratori con date scadenza</li>
+            <li>Alert automatici per rinnovi</li>
+            <li>Attestati allegabili</li>
+            <li>Report compliance formativa</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🥽</div>
+            <h3>DPI</h3>
+          </div>
+          <p>Dispositivi di Protezione Individuale con tracciabilità.</p>
+          <ul class="card-features">
+            <li>Inventario DPI aziendale</li>
+            <li>Assegnazione a lavoratori con firma</li>
+            <li>Scadenze e date sostituzione</li>
+            <li>Storico consegne</li>
+            <li>Verbali di consegna PDF</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏥</div>
+            <h3>Sorveglianza Sanitaria</h3>
+          </div>
+          <p>Visite mediche e idoneità lavorative.</p>
+          <ul class="card-features">
+            <li>Calendario visite per lavoratore</li>
+            <li>Esiti e idoneità (idoneo, parziale, non idoneo)</li>
+            <li>Prescrizioni/limitazioni</li>
+            <li>Alert scadenza visita</li>
+            <li>Collegamento a rischi specifici</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">✅</div>
+            <h3>Check-in Sicurezza</h3>
+          </div>
+          <p>Controllo accessi cantiere con verifica DPI.</p>
+          <ul class="card-features">
+            <li>Check-in geolocalizzato</li>
+            <li>Verifica automatica DPI assegnati</li>
+            <li>Verifica formazione valida</li>
+            <li>Segnalazione anomalie</li>
+            <li>Registro presenze cantiere</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Value Proposition HSE</h4>
+        <ul>
+          <li><strong>Rischio Zero:</strong> "Il sistema impedisce che un lavoratore senza formazione valida acceda al cantiere."</li>
+          <li><strong>Audit Ready:</strong> "In caso di ispezione ASL, ogni documento è immediatamente recuperabile con storico modifiche."</li>
+          <li><strong>Responsabilità:</strong> "Il datore di lavoro ha evidenza documentale di aver adempiuto agli obblighi."</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 6. REPARTO COMMERCIALE -->
+    <section id="commerciale" class="section">
+      <div class="section-header">
+        <div class="section-icon">💼</div>
+        <div>
+          <h2>6. Reparto Commerciale</h2>
+          <p class="section-subtitle">Fornitori, Preventivi, Ordini, Contratti</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏪</div>
+            <h3>Gestione Fornitori</h3>
+          </div>
+          <p>Anagrafica fornitori con compliance integrata.</p>
+          <ul class="card-features">
+            <li>Dati anagrafici e bancari</li>
+            <li>Documenti obbligatori (DURC, Visura, Polizza)</li>
+            <li>Rating fornitore basato su storico</li>
+            <li>Blocco pagamento automatico</li>
+            <li>Storico ordini e fatture</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📝</div>
+            <h3>Preventivi</h3>
+          </div>
+          <p>Gestione preventivi ricevuti e inviati.</p>
+          <ul class="card-features">
+            <li>Upload preventivi da file esterni</li>
+            <li>Stati: bozza, inviato, accettato, rifiutato</li>
+            <li>Collegamento a commessa</li>
+            <li>Conversione automatica in ordine</li>
+            <li>Storico revisioni</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📦</div>
+            <h3>Ordini</h3>
+          </div>
+          <p>Gestione ordini a fornitori.</p>
+          <ul class="card-features">
+            <li>Creazione da preventivo o manuale</li>
+            <li>Upload documento ordine</li>
+            <li>Stati: emesso, confermato, spedito, consegnato</li>
+            <li>Collegamento a DDT di ricezione</li>
+            <li>Tracciabilità completa</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📄</div>
+            <h3>Contratti</h3>
+          </div>
+          <p>Repository contratti attivi e scadenze.</p>
+          <ul class="card-features">
+            <li>Tipi: appalto, subappalto, fornitura, noleggio</li>
+            <li>Date inizio/fine con alert</li>
+            <li>Importi e condizioni</li>
+            <li>Documenti allegati</li>
+            <li>Collegamento a SAL per monitoraggio</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="workflow-step-number">1</div>
+          <h4>Listino Prezzi</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">2</div>
+          <h4>Computo Metrico</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">3</div>
+          <h4>Preventivo</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">4</div>
+          <h4>Ordine</h4>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. AMMINISTRAZIONE -->
+    <section id="amministrazione" class="section">
+      <div class="section-header">
+        <div class="section-icon">💰</div>
+        <div>
+          <h2>7. Reparto Amministrazione</h2>
+          <p class="section-subtitle">Fatture, Note Spesa, Richieste Dipendenti</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🧾</div>
+            <h3>Fatture</h3>
+          </div>
+          <p>Gestione fatture attive e passive.</p>
+          <ul class="card-features">
+            <li>Fatture attive: emesse ai clienti</li>
+            <li>Fatture passive: ricevute da fornitori</li>
+            <li>Stati: emessa, pagata, scaduta</li>
+            <li>Collegamento a DDT di origine</li>
+            <li>Scadenzario pagamenti</li>
+            <li>Blocco pagamento per fornitori non-compliant</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🧳</div>
+            <h3>Note Spesa</h3>
+          </div>
+          <p>Gestione rimborsi spese dipendenti.</p>
+          <ul class="card-features">
+            <li>Categorie: trasferta, carburante, materiali, vitto</li>
+            <li>Allegati giustificativi</li>
+            <li>Workflow approvazione</li>
+            <li>Stati: in attesa, approvato, rimborsato</li>
+            <li>Report mensile per dipendente</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📨</div>
+            <h3>Richieste Dipendenti</h3>
+          </div>
+          <p>Gestione richieste ferie, permessi, materiali.</p>
+          <ul class="card-features">
+            <li>Tipi: ferie, permesso, materiale, altro</li>
+            <li>Workflow approvazione multilivello</li>
+            <li>Calendario condiviso</li>
+            <li>Notifiche al responsabile</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🕐</div>
+            <h3>Timbrature</h3>
+          </div>
+          <p>Registro presenze con geolocalizzazione.</p>
+          <ul class="card-features">
+            <li>Check-in/out con coordinate GPS</li>
+            <li>Associazione a cantiere</li>
+            <li>Calcolo ore lavorate</li>
+            <li>Export per elaborazione paghe</li>
+            <li>Report per commessa</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. LOGISTICA -->
+    <section id="logistica" class="section">
+      <div class="section-header">
+        <div class="section-icon">🚚</div>
+        <div>
+          <h2>8. Logistica & Risorse</h2>
+          <p class="section-subtitle">Magazzino, DDT, Risorse, Rapportini</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📦</div>
+            <h3>Magazzino</h3>
+          </div>
+          <p>Gestione inventario materiali e attrezzature.</p>
+          <ul class="card-features">
+            <li>Anagrafica articoli con categorie</li>
+            <li>Giacenze per magazzino/cantiere</li>
+            <li>Movimenti carico/scarico</li>
+            <li>Alert sottoscorta</li>
+            <li>Storico movimentazioni</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📋</div>
+            <h3>DDT</h3>
+          </div>
+          <p>Documenti di Trasporto in entrata e uscita.</p>
+          <ul class="card-features">
+            <li>DDT in uscita (verso cantieri/clienti)</li>
+            <li>DDT in entrata (da fornitori)</li>
+            <li>Collegamento a ordine di origine</li>
+            <li>Generazione fattura da DDT</li>
+            <li>Tracciabilità completa</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🔧</div>
+            <h3>Risorse / Mezzi</h3>
+          </div>
+          <p>Gestione mezzi aziendali e attrezzature.</p>
+          <ul class="card-features">
+            <li>Anagrafica mezzi con dati tecnici</li>
+            <li>Scadenze (bollo, assicurazione, revisione)</li>
+            <li>Assegnazione a cantiere</li>
+            <li>Registro manutenzioni</li>
+            <li>Costi di gestione</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📝</div>
+            <h3>Rapportini</h3>
+          </div>
+          <p>Report giornalieri di cantiere.</p>
+          <ul class="card-features">
+            <li>Compilazione rapida da mobile</li>
+            <li>Ore lavorate per lavoratore</li>
+            <li>Materiali utilizzati</li>
+            <li>Avanzamento lavori</li>
+            <li>Foto e annotazioni</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. COMPLIANCE -->
+    <section id="compliance" class="section">
+      <div class="section-header">
+        <div class="section-icon">✅</div>
+        <div>
+          <h2>9. Conformità & Certificazioni</h2>
+          <p class="section-subtitle">GDPR, ISO 9001, ISO 14001, D.Lgs 81/08</p>
+        </div>
+      </div>
+
+      <div class="compliance-badges">
+        <span class="compliance-badge">✓ GDPR Compliance</span>
+        <span class="compliance-badge">✓ ISO 9001:2015</span>
+        <span class="compliance-badge">✓ ISO 14001:2015</span>
+        <span class="compliance-badge">✓ D.Lgs 81/2008</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🔒</div>
+            <h3>GDPR Privacy</h3>
+          </div>
+          <p>Gestione privacy e protezione dati.</p>
+          <ul class="card-features">
+            <li>Registro trattamenti dati</li>
+            <li>Informative e consensi</li>
+            <li>DPIA (valutazione impatto)</li>
+            <li>Gestione data breach</li>
+            <li>Nomina responsabili</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">⭐</div>
+            <h3>ISO 9001 Qualità</h3>
+          </div>
+          <p>Sistema di gestione qualità.</p>
+          <ul class="card-features">
+            <li>Procedure documentate</li>
+            <li>Non conformità e azioni correttive</li>
+            <li>Audit interni</li>
+            <li>Obiettivi e indicatori</li>
+            <li>Riesame della direzione</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🌿</div>
+            <h3>ISO 14001 Ambiente</h3>
+          </div>
+          <p>Sistema di gestione ambientale.</p>
+          <ul class="card-features">
+            <li>Aspetti e impatti ambientali</li>
+            <li>Gestione rifiuti</li>
+            <li>Consumo risorse</li>
+            <li>Obiettivi ambientali</li>
+            <li>Emergenze ambientali</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🛡️</div>
+            <h3>D.Lgs 81/08 Sicurezza</h3>
+          </div>
+          <p>Testo unico sicurezza sul lavoro.</p>
+          <ul class="card-features">
+            <li>DVR aziendale</li>
+            <li>POS per cantiere</li>
+            <li>Nomina figure (RSPP, RLS, MC)</li>
+            <li>Riunioni periodiche</li>
+            <li>Infortuni e near-miss</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. FLUSSO DOCUMENTALE -->
+    <section id="flusso" class="section">
+      <div class="section-header">
+        <div class="section-icon">📂</div>
+        <div>
+          <h2>10. Flusso Documentale</h2>
+          <p class="section-subtitle">Hub centrale per la gestione del ciclo documentale</p>
+        </div>
+      </div>
+
+      <p>Il <strong>Flusso Documentale</strong> è il cuore operativo di Gest-e. Gestisce l'intero ciclo di vita dei documenti commerciali con tracciabilità completa.</p>
+
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="workflow-step-number">1</div>
+          <h4>Computo</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">2</div>
+          <h4>Preventivo</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">3</div>
+          <h4>Ordine</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">4</div>
+          <h4>DDT</h4>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step">
+          <div class="workflow-step-number">5</div>
+          <h4>Fattura</h4>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <h4>🔄 Conversione Automatica</h4>
+        <p>Ogni documento può essere convertito nel documento successivo della catena con un click. I dati vengono ereditati automaticamente, evitando errori di ricopiatura.</p>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Punti Chiave Demo</h4>
+        <ul>
+          <li><strong>Tracciabilità:</strong> "Da qualsiasi fattura posso risalire a tutti i documenti precedenti: DDT, ordine, preventivo, computo."</li>
+          <li><strong>Audit Log:</strong> "Ogni conversione viene registrata con timestamp e utente che l'ha eseguita."</li>
+          <li><strong>Compliance:</strong> "Il sistema verifica che il fornitore sia compliant prima di permettere il pagamento della fattura."</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 11. BUSINESS INTELLIGENCE -->
+    <section id="bi" class="section">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <div>
+          <h2>11. Business Intelligence</h2>
+          <p class="section-subtitle">Dashboard KPI e analisi dati</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📈</div>
+            <h3>Executive Summary</h3>
+          </div>
+          <p>Visione d'insieme per la direzione.</p>
+          <ul class="card-features">
+            <li>Ricavi e margini YTD</li>
+            <li>Cantieri attivi e stato avanzamento</li>
+            <li>Alert HSE critici</li>
+            <li>Trend finanziari</li>
+            <li>Performance indicators</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">💶</div>
+            <h3>Analisi Finanziaria</h3>
+          </div>
+          <p>Controllo economico-finanziario.</p>
+          <ul class="card-features">
+            <li>Ricavi vs Costi</li>
+            <li>Cash flow mensile</li>
+            <li>DSO (Days Sales Outstanding)</li>
+            <li>Fatture in scadenza</li>
+            <li>Grafici interattivi</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🏗️</div>
+            <h3>Analisi Operativa</h3>
+          </div>
+          <p>Monitoraggio operazioni.</p>
+          <ul class="card-features">
+            <li>Stato cantieri (attivi/chiusi/sospesi)</li>
+            <li>Forza lavoro impiegata</li>
+            <li>Ordini in corso</li>
+            <li>Utilizzo risorse</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">🎯</div>
+            <h3>Pipeline Commerciale</h3>
+          </div>
+          <p>Funnel vendite e conversioni.</p>
+          <ul class="card-features">
+            <li>Preventivi per stato</li>
+            <li>Tasso di conversione</li>
+            <li>Valore pipeline</li>
+            <li>Contratti attivi</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. DIFFERENZIATORI -->
+    <section id="differenziatori" class="section">
+      <div class="section-header">
+        <div class="section-icon">⚡</div>
+        <div>
+          <h2>12. Differenziatori Chiave</h2>
+          <p class="section-subtitle">Cosa rende Gest-e unico sul mercato</p>
+        </div>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-icon">🔗</div>
+          <h3>Ecosistema Interconnesso</h3>
+          <p>Nessun dato inserito due volte. Ogni entità collegata bidirezionalmente.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">⚠️</div>
+          <h3>Blocco Pagamento Automatico</h3>
+          <p>Fornitori non-compliant bloccati automaticamente. Zero rischio.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📱</div>
+          <h3>Mobile-First</h3>
+          <p>Interfaccia responsive per uso in cantiere da smartphone/tablet.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔐</div>
+          <h3>Cloud Sicuro</h3>
+          <p>Dati criptati, backup automatici, accesso ovunque.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📄</div>
+          <h3>Repository Documentale</h3>
+          <p>Tutti i documenti aziendali in un unico posto, pronti per gare e audit.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">⏰</div>
+          <h3>Scadenzario Intelligente</h3>
+          <p>Alert automatici per tutte le scadenze: documenti, formazioni, pagamenti.</p>
+        </div>
+      </div>
+
+      <div class="talking-points">
+        <h4>💬 Closing Statement per Investitori</h4>
+        <ul>
+          <li><strong>Mercato:</strong> "Il settore edile italiano è frammentato e sottosservito dal punto di vista digitale. Le PMI usano ancora Excel e WhatsApp."</li>
+          <li><strong>Opportunità:</strong> "Gest-e offre una soluzione all-in-one che nessun competitor ha: dalla compliance HSE alla fatturazione, tutto integrato."</li>
+          <li><strong>Scalabilità:</strong> "L'architettura cloud permette di scalare da 1 a 1000+ cantieri senza cambio infrastruttura."</li>
+          <li><strong>Retention:</strong> "Una volta adottato, Gest-e diventa mission-critical. I dati storici e la compliance creano lock-in naturale."</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="text-align: center; padding: 3rem 0; border-top: 1px solid var(--border); margin-top: 4rem;">
+      <p style="color: var(--text-secondary);">Gest-e — Piattaforma Gestionale per Imprese Edili</p>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">© 2024 — Tutti i diritti riservati</p>
+    </footer>
+  </div>
+</body>
+</html>
