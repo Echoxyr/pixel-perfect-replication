@@ -104,10 +104,12 @@ export function Layout() {
     });
   };
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
-  };
+  const toggleTheme = () => setIsDark((v) => !v);
+
+  // Ensure dark mode is the default on first load, and keep DOM in sync with state
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
 
   const searchResults = searchQuery.trim() ? {
     cantieri: cantieri.filter(c => 
