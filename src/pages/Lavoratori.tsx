@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PostCreationActions } from '@/components/workhub/PostCreationActions';
 
 export default function Lavoratori() {
   const {
@@ -69,6 +70,10 @@ export default function Lavoratori() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [selectedLavoratore, setSelectedLavoratore] = useState<Lavoratore | null>(null);
+  
+  // Post-creation dialog
+  const [showPostCreation, setShowPostCreation] = useState(false);
+  const [createdLavoratore, setCreatedLavoratore] = useState<{ id: string; name: string } | null>(null);
 
   // Form states for adding new items
   const [showAddFormazioneDialog, setShowAddFormazioneDialog] = useState(false);
@@ -188,7 +193,12 @@ export default function Lavoratori() {
   const handleCreate = () => {
     if (!formData.nome || !formData.cognome || !formData.codiceFiscale || !formData.impresaId) return;
 
-    addLavoratore(formData);
+    const newLavoratore = addLavoratore(formData);
+    
+    // Open post-creation dialog
+    setCreatedLavoratore({ id: newLavoratore?.id || '', name: `${formData.nome} ${formData.cognome}` });
+    setShowPostCreation(true);
+    
     setFormData({
       nome: '',
       cognome: '',
@@ -1151,6 +1161,20 @@ export default function Lavoratori() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Post Creation Actions Dialog */}
+      {createdLavoratore && (
+        <PostCreationActions
+          open={showPostCreation}
+          onClose={() => {
+            setShowPostCreation(false);
+            setCreatedLavoratore(null);
+          }}
+          entityType="lavoratore"
+          entityId={createdLavoratore.id}
+          entityName={createdLavoratore.name}
+        />
+      )}
     </div>
   );
 }

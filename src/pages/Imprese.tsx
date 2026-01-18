@@ -39,6 +39,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PostCreationActions } from '@/components/workhub/PostCreationActions';
 
 export default function Imprese() {
   const navigate = useNavigate();
@@ -61,6 +62,10 @@ export default function Imprese() {
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [selectedImpresa, setSelectedImpresa] = useState<Impresa | null>(null);
   const [showAddDocDialog, setShowAddDocDialog] = useState(false);
+  
+  // Post-creation dialog
+  const [showPostCreation, setShowPostCreation] = useState(false);
+  const [createdImpresa, setCreatedImpresa] = useState<{ id: string; name: string } | null>(null);
 
   // Doc form state
   const [docForm, setDocForm] = useState({
@@ -120,7 +125,12 @@ export default function Imprese() {
   const handleCreate = () => {
     if (!formData.ragioneSociale || !formData.partitaIva) return;
 
-    addImpresa(formData);
+    const newImpresa = addImpresa(formData);
+    
+    // Open post-creation dialog
+    setCreatedImpresa({ id: newImpresa?.id || '', name: formData.ragioneSociale });
+    setShowPostCreation(true);
+    
     setFormData({
       ragioneSociale: '',
       partitaIva: '',
@@ -763,6 +773,20 @@ export default function Imprese() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Post Creation Actions Dialog */}
+      {createdImpresa && (
+        <PostCreationActions
+          open={showPostCreation}
+          onClose={() => {
+            setShowPostCreation(false);
+            setCreatedImpresa(null);
+          }}
+          entityType="impresa"
+          entityId={createdImpresa.id}
+          entityName={createdImpresa.name}
+        />
+      )}
     </div>
   );
 }

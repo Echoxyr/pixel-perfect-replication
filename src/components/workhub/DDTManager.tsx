@@ -18,7 +18,9 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Building2,
+  Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,8 +49,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { exportToExcel } from '@/utils/exportUtils';
+import { PostCreationActions, EntityType } from '@/components/workhub/PostCreationActions';
+import { EntityLinks } from '@/components/workhub/EntityLinks';
 
 interface DDT {
   id: string;
@@ -100,6 +105,10 @@ export default function DDTManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStato, setFilterStato] = useState<string>('all');
   const [filterTipo, setFilterTipo] = useState<string>('all');
+  
+  // Post-creation dialog
+  const [showPostCreation, setShowPostCreation] = useState(false);
+  const [createdDDT, setCreatedDDT] = useState<{ id: string; numero: string } | null>(null);
 
   const [newDDT, setNewDDT] = useState({
     numero: '',
@@ -114,11 +123,21 @@ export default function DDTManager() {
     colli: 1,
     vettore: '',
     note: '',
+    commessa_id: '',
   });
 
   const [righe, setRighe] = useState<RigaDDT[]>([
     { codice: '', descrizione: '', quantita: 1, unita_misura: 'pz', ordine: 0 }
   ]);
+
+  // Fetch Cantieri for linking
+  const { data: cantieri = [] } = useQuery({
+    queryKey: ['cantieri_for_ddt'],
+    queryFn: async () => {
+      const { data } = await supabase.from('cantieri').select('id, nome, codice_commessa').order('nome');
+      return data || [];
+    },
+  });
 
   // Fetch DDT
   const { data: ddtList = [], isLoading } = useQuery({
@@ -195,11 +214,14 @@ export default function DDTManager() {
 
       return ddtData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['ddt'] });
       setShowNewDDT(false);
       resetForm();
       toast.success('DDT creato con successo');
+      // Trigger post-creation
+      setCreatedDDT({ id: data.id, numero: data.numero });
+      setShowPostCreation(true);
     },
     onError: (error: any) => {
       toast.error('Errore nella creazione: ' + error.message);
@@ -247,6 +269,7 @@ export default function DDTManager() {
       colli: 1,
       vettore: '',
       note: '',
+      commessa_id: '',
     });
     setRighe([{ codice: '', descrizione: '', quantita: 1, unita_misura: 'pz', ordine: 0 }]);
   };
@@ -554,6 +577,24 @@ export default function DDTManager() {
               </div>
             </div>
 
+            {/* Commessa Selection */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Commessa (opzionale)</Label>
+              <Select 
+                value={newDDT.commessa_id}
+                onValueChange={(v) => setNewDDT(prev => ({ ...prev, commessa_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Collega a commessa..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {cantieri.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.codice_commessa} - {c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Separator />
 
             {/* Mittente e Destinatario */}
@@ -824,6 +865,20 @@ export default function DDTManager() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Post Creation Actions Dialog */}
+      {createdDDT && (
+        <PostCreationActions
+          open={showPostCreation}
+          onClose={() => {
+            setShowPostCreation(false);
+            setCreatedDDT(null);
+          }}
+          entityType="ddt"
+          entityId={createdDDT.id}
+          entityName={createdDDT.numero}
+        />
+      )}
     </div>
   );
 }

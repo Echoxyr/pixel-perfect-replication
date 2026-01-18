@@ -24,6 +24,7 @@ import { Plus, Search, Building, Users, AlertTriangle, Calendar, FolderKanban, F
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { PostCreationActions } from '@/components/workhub/PostCreationActions';
 
 export default function Cantieri() {
   const navigate = useNavigate();
@@ -45,6 +46,10 @@ export default function Cantieri() {
   const [filterStato, setFilterStato] = useState<string>('all');
   const [filterCommittente, setFilterCommittente] = useState<string>('all');
   const [showNewDialog, setShowNewDialog] = useState(false);
+  
+  // Post-creation dialog
+  const [showPostCreation, setShowPostCreation] = useState(false);
+  const [createdCantiere, setCreatedCantiere] = useState<{ id: string; name: string } | null>(null);
   
   // New cantiere form
   const [formData, setFormData] = useState({
@@ -128,7 +133,7 @@ export default function Cantieri() {
       return;
     }
 
-    addCantiere({
+    const newCantiere = addCantiere({
       ...formData,
       stato: 'attivo'
     });
@@ -137,6 +142,10 @@ export default function Cantieri() {
       title: "Cantiere creato",
       description: `"${formData.nome}" è stato aggiunto con successo`
     });
+
+    // Open post-creation actions
+    setCreatedCantiere({ id: newCantiere?.id || '', name: formData.nome });
+    setShowPostCreation(true);
 
     setFormData({
       nome: '',
@@ -598,6 +607,20 @@ export default function Cantieri() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Post Creation Actions Dialog */}
+      {createdCantiere && (
+        <PostCreationActions
+          open={showPostCreation}
+          onClose={() => {
+            setShowPostCreation(false);
+            setCreatedCantiere(null);
+          }}
+          entityType="cantiere"
+          entityId={createdCantiere.id}
+          entityName={createdCantiere.name}
+        />
+      )}
     </div>
   );
 }
