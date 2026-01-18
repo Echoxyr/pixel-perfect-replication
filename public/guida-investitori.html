@@ -567,6 +567,263 @@
       }
     }
 
+    /* Video Demo Section */
+    .demo-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3rem;
+      margin-top: 3rem;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .demo-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .demo-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15);
+    }
+
+    .demo-video-container {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
+      overflow: hidden;
+    }
+
+    .demo-video-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    }
+
+    .demo-animation {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Animated cursor */
+    .demo-cursor {
+      width: 24px;
+      height: 24px;
+      position: absolute;
+      animation: cursorMove 4s ease-in-out infinite;
+    }
+
+    .demo-cursor::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 8px solid white;
+      border-top: 6px solid transparent;
+      border-bottom: 10px solid transparent;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+
+    .demo-cursor::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 30px;
+      height: 30px;
+      background: rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      animation: clickRipple 4s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    @keyframes cursorMove {
+      0%, 100% { transform: translate(20px, 60px); }
+      15% { transform: translate(80px, 40px); }
+      25% { transform: translate(80px, 40px); }
+      40% { transform: translate(150px, 80px); }
+      50% { transform: translate(150px, 80px); }
+      65% { transform: translate(100px, 120px); }
+      75% { transform: translate(100px, 120px); }
+      90% { transform: translate(20px, 60px); }
+    }
+
+    @keyframes clickRipple {
+      0%, 14%, 26%, 40%, 52%, 66%, 76%, 100% { opacity: 0; transform: scale(0); }
+      15%, 25% { opacity: 0.6; transform: scale(1); }
+      41%, 51% { opacity: 0.6; transform: scale(1); }
+      67%, 75% { opacity: 0.6; transform: scale(1); }
+    }
+
+    /* Animated UI elements in demo */
+    .demo-ui-element {
+      position: absolute;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 6px;
+      animation: elementPulse 4s ease-in-out infinite;
+    }
+
+    .demo-ui-element.btn-1 {
+      width: 60px;
+      height: 24px;
+      top: 35px;
+      left: 70px;
+      animation-delay: 0s;
+    }
+
+    .demo-ui-element.btn-2 {
+      width: 80px;
+      height: 28px;
+      top: 75px;
+      left: 140px;
+      animation-delay: 1s;
+    }
+
+    .demo-ui-element.btn-3 {
+      width: 70px;
+      height: 24px;
+      top: 115px;
+      left: 90px;
+      animation-delay: 2s;
+    }
+
+    @keyframes elementPulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+
+    /* Spotlight animation */
+    .demo-spotlight {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+      animation: spotlightMove 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes spotlightMove {
+      0%, 100% { transform: translate(30px, 40px); opacity: 0.5; }
+      25% { transform: translate(90px, 20px); opacity: 0.8; }
+      50% { transform: translate(160px, 60px); opacity: 0.8; }
+      75% { transform: translate(110px, 100px); opacity: 0.8; }
+    }
+
+    .demo-card-content {
+      padding: 1.5rem;
+    }
+
+    .demo-card-content h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .demo-card-content p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .demo-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .demo-feature-tag {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .demo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .demo-play-hint {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Different animation styles for variety */
+    .demo-card:nth-child(2) .demo-cursor {
+      animation: cursorMove2 5s ease-in-out infinite;
+    }
+
+    @keyframes cursorMove2 {
+      0%, 100% { transform: translate(40px, 80px); }
+      20% { transform: translate(120px, 30px); }
+      40% { transform: translate(180px, 90px); }
+      60% { transform: translate(90px, 140px); }
+      80% { transform: translate(60px, 50px); }
+    }
+
+    .demo-card:nth-child(3) .demo-cursor {
+      animation: cursorMove3 6s ease-in-out infinite;
+    }
+
+    @keyframes cursorMove3 {
+      0%, 100% { transform: translate(60px, 40px); }
+      25% { transform: translate(160px, 60px); }
+      50% { transform: translate(140px, 120px); }
+      75% { transform: translate(40px, 100px); }
+    }
+
+    .demo-card:nth-child(4) .demo-cursor {
+      animation: cursorMove4 4.5s ease-in-out infinite;
+    }
+
+    @keyframes cursorMove4 {
+      0%, 100% { transform: translate(100px, 60px); }
+      33% { transform: translate(50px, 120px); }
+      66% { transform: translate(180px, 80px); }
+    }
+
     /* Animations */
     @keyframes fadeInUp {
       from {
@@ -614,13 +871,15 @@
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
         <li><a href="#modules">Moduli</a></li>
+        <li><a href="#demos">Demo</a></li>
         <li><a href="#workflow">Workflow</a></li>
         <li><a href="#architecture">Architettura</a></li>
         <li><a href="#value">Value Proposition</a></li>
       </ul>
       <a href="/" class="cta-btn">Accedi alla Demo →</a>
     </div>
-  </nav>
+
+
 
   <!-- Hero Section -->
   <section class="hero">
@@ -867,6 +1126,195 @@
           <li>Storico per cantiere</li>
         </ul>
       </div>
+    </div>
+
+    <!-- Interactive Demos Section -->
+    <div id="demos" class="demo-section">
+      <div class="section-header" style="margin-bottom: 2rem;">
+        <div class="section-number">🎬</div>
+        <h2>Demo Interattive</h2>
+        <p class="section-subtitle">
+          Guarda come funzionano i tutorial animati passo-passo direttamente nella piattaforma
+        </p>
+      </div>
+
+      <div class="demo-grid">
+        <!-- Demo 1: Creazione Cantiere -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">🏗️ TUTORIAL</span>
+              Creazione Cantiere
+            </h4>
+            <p>Workflow completo dalla navigazione al form, compilazione campi e salvataggio.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">8 passaggi</span>
+              <span class="demo-feature-tag">3 minuti</span>
+              <span class="demo-feature-tag">Interattivo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo 2: Dashboard HSE -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">🛡️ TUTORIAL</span>
+              Dashboard HSE
+            </h4>
+            <p>Monitoraggio scadenze documenti, formazioni e visite mediche con semafori.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">10 passaggi</span>
+              <span class="demo-feature-tag">4 minuti</span>
+              <span class="demo-feature-tag">Compliance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo 3: Gestione Progetti -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">📋 TUTORIAL</span>
+              Gestione Progetti
+            </h4>
+            <p>Kanban board, creazione task, assegnazione priorità e timeline Gantt.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">12 passaggi</span>
+              <span class="demo-feature-tag">5 minuti</span>
+              <span class="demo-feature-tag">Drag & Drop</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo 4: Ufficio Commerciale -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">💼 TUTORIAL</span>
+              CRM Commerciale
+            </h4>
+            <p>Pipeline lead, creazione preventivi e conversione in cantiere operativo.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">9 passaggi</span>
+              <span class="demo-feature-tag">4 minuti</span>
+              <span class="demo-feature-tag">Vendite</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo 5: D.Lgs 81/2008 -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">📜 TUTORIAL</span>
+              D.Lgs 81/2008
+            </h4>
+            <p>Generazione POS, gestione DVR e registro infortuni con template professionali.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">11 passaggi</span>
+              <span class="demo-feature-tag">5 minuti</span>
+              <span class="demo-feature-tag">Normativa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demo 6: Amministrazione -->
+        <div class="demo-card">
+          <div class="demo-video-container">
+            <div class="demo-animation">
+              <div class="demo-spotlight"></div>
+              <div class="demo-ui-element btn-1"></div>
+              <div class="demo-ui-element btn-2"></div>
+              <div class="demo-ui-element btn-3"></div>
+              <div class="demo-cursor"></div>
+            </div>
+            <div class="demo-play-hint">
+              <span>▶</span> Animazione Live
+            </div>
+          </div>
+          <div class="demo-card-content">
+            <h4>
+              <span class="demo-badge">📊 TUTORIAL</span>
+              Ciclo Passivo
+            </h4>
+            <p>Ordini fornitori, gestione DDT e fatturazione con workflow integrato.</p>
+            <div class="demo-features">
+              <span class="demo-feature-tag">10 passaggi</span>
+              <span class="demo-feature-tag">4 minuti</span>
+              <span class="demo-feature-tag">Contabilità</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 2rem;">
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+          🎓 <strong>25+ tutorial interattivi</strong> disponibili nella piattaforma con cursore animato e spotlight guidato
+        </p>
+        <a href="/" class="cta-btn">Prova i Tutorial nella Demo →</a>
+      </div>
+    </div>
 
       <!-- GDPR -->
       <div class="module-card">
