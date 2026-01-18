@@ -12,7 +12,7 @@ import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { OnboardingTour } from './OnboardingTour';
 import { TutorialLauncher } from './TutorialLauncher';
 import { WorkHubSidebar } from './WorkHubSidebar';
-import { Menu, Moon, Sun, User, Calendar, HelpCircle, Settings } from 'lucide-react';
+import { Menu, Moon, Sun, User, Calendar, HelpCircle, Settings, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-// SidebarModuleSettings removed - now in Impostazioni page
 
 export function Layout() {
   const location = useLocation();
@@ -84,547 +82,52 @@ export function Layout() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const NavItem = ({ 
-    to, 
-    icon: Icon, 
-    label, 
-    badge, 
-    badgeColor = 'primary', 
-    isActive,
-    tutorialId
-  }: { 
-    to: string; 
-    icon: any; 
-    label: string; 
-    badge?: number; 
-    badgeColor?: 'primary' | 'warning' | 'danger';
-    isActive: boolean;
-    tutorialId?: string;
-  }) => (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            to={to}
-            data-tutorial={tutorialId}
-            className={cn(
-              'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
-              isActive
-                ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                : 'text-white hover:text-white hover:bg-white/10'
-            )}
-          >
-            {isActive && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-primary-foreground" />
-            )}
-            <Icon className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
-            {!sidebarCollapsed && (
-              <>
-                <span className="font-medium text-[11px] text-white">{label}</span>
-                {badge !== undefined && badge > 0 && (
-                  <span className={cn(
-                    'ml-auto text-xs font-semibold px-2 py-0.5 rounded-full min-w-[24px] text-center',
-                    isActive 
-                      ? 'bg-primary-foreground/20 text-primary-foreground' 
-                      : badgeColor === 'danger' 
-                        ? 'bg-red-500/15 text-red-500' 
-                        : badgeColor === 'warning'
-                          ? 'bg-amber-500/15 text-amber-500'
-                          : 'bg-primary/15 text-primary'
-                  )}>
-                    {badge}
-                  </span>
-                )}
-              </>
-            )}
-          </Link>
-        </TooltipTrigger>
-        {sidebarCollapsed && (
-          <TooltipContent side="right" className="font-medium z-[100] bg-popover text-popover-foreground border border-border shadow-lg">
-            {label} {badge !== undefined && badge > 0 && `(${badge})`}
-          </TooltipContent>
-        )}
-      </Tooltip>
-    </TooltipProvider>
-  );
+  // Shared section state object for WorkHubSidebar
+  const sectionState = {
+    principaleExpanded,
+    setPrincipaleExpanded,
+    commesseExpanded,
+    setCommesseExpanded,
+    hseExpanded,
+    setHseExpanded,
+    complianceExpanded,
+    setComplianceExpanded,
+    commercialeExpanded,
+    setCommercialeExpanded,
+    amministrazioneExpanded,
+    setAmministrazioneExpanded,
+    logisticaExpanded,
+    setLogisticaExpanded,
+  };
+
+  // Shared data for WorkHubSidebar
+  const sidebarData = {
+    totalAlerts,
+    openTasks,
+    lavoratoriAlerts,
+    impreseCritical,
+    cantieriCount: cantieri.length,
+  };
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
-      {/* Sidebar - Desktop with Glass Effect */}
+      {/* Sidebar - Desktop */}
       <aside className={cn(
         'hidden md:flex flex-col border-r border-sidebar-border transition-all duration-300 relative z-10 h-screen',
         'bg-sidebar',
         sidebarCollapsed ? 'w-[72px]' : 'w-64'
       )}>
-        {/* Logo Header */}
-        <div className={cn(
-          'h-16 flex items-center border-b border-sidebar-border',
-          sidebarCollapsed ? 'justify-center px-2' : 'px-4'
-        )}>
-          <Link to="/dashboard" className="flex items-center">
-            {sidebarCollapsed ? <EgestLogo size="sm" showText={false} inSidebar /> : <EgestLogo size="md" inSidebar />}
-          </Link>
-        </div>
-
-        {/* Search Bar in Sidebar */}
-        {!sidebarCollapsed && (
-          <div className="px-3 py-3 border-b border-sidebar-border">
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-sidebar-accent/50 text-white/70 hover:bg-sidebar-accent hover:text-white transition-colors text-sm"
-            >
-              <Search className="w-4 h-4" />
-              <span>Cerca...</span>
-              <kbd className="ml-auto h-5 items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] hidden lg:inline-flex">
-                <Command className="w-3 h-3" />K
-              </kbd>
-            </button>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 overflow-y-auto overscroll-contain scrollbar-thin space-y-6">
-          {/* User Section - First */}
-          <div>
-            {!sidebarCollapsed && (
-              <p className="text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2">
-                Utente
-              </p>
-            )}
-            <div className="space-y-1">
-              <NavItem 
-                to="/utente" 
-                icon={UserCircle} 
-                label="Area Personale" 
-                isActive={location.pathname === '/utente'} 
-              />
-            </div>
-          </div>
-
-          {/* Main Section - Collapsible */}
-          {(isModuleVisible('dashboard') || isModuleVisible('progetti') || isModuleVisible('sal')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setPrincipaleExpanded(!principaleExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Principale</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !principaleExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || principaleExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('dashboard') && (
-                    <NavItem 
-                      to="/dashboard" 
-                      icon={LayoutDashboard} 
-                      label="Dashboard" 
-                      isActive={location.pathname === '/dashboard'} 
-                    />
-                  )}
-                  {isModuleVisible('progetti') && (
-                    <NavItem 
-                      to="/progetti" 
-                      icon={FolderKanban} 
-                      label="Progetti & Task" 
-                      badge={openTasks}
-                      isActive={location.pathname === '/progetti' || location.pathname.startsWith('/progetti/')} 
-                    />
-                  )}
-                  {isModuleVisible('sal') && (
-                    <NavItem 
-                      to="/sal" 
-                      icon={TrendingUp} 
-                      label="Consuntivo" 
-                      isActive={location.pathname === '/sal'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Commesse Section - Collapsible */}
-          {isModuleVisible('cantieri') && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setCommesseExpanded(!commesseExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Commesse</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !commesseExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || commesseExpanded) && (
-                <div className="space-y-1">
-                  <NavItem 
-                    to="/cantieri" 
-                    icon={Building2} 
-                    label="Elenco Commesse" 
-                    badge={cantieri.length}
-                    isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
-                    tutorialId="nav-cantieri"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* HSE Section - Collapsible */}
-          {(isModuleVisible('hse') || isModuleVisible('sicurezza') || isModuleVisible('imprese') || isModuleVisible('lavoratori') || isModuleVisible('formazione') || isModuleVisible('dpi') || isModuleVisible('sorveglianza') || isModuleVisible('checkin')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setHseExpanded(!hseExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Sicurezza & HSE</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !hseExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || hseExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('hse') && (
-                    <NavItem 
-                      to="/hse" 
-                      icon={ShieldCheck} 
-                      label="Dashboard HSE" 
-                      badge={totalAlerts}
-                      badgeColor="danger"
-                      isActive={location.pathname === '/hse'} 
-                      tutorialId="nav-hse"
-                    />
-                  )}
-                  {isModuleVisible('sicurezza') && (
-                    <NavItem 
-                      to="/compliance/sicurezza" 
-                      icon={FileCheck} 
-                      label="D.Lgs 81/2008" 
-                      isActive={location.pathname === '/compliance/sicurezza'} 
-                    />
-                  )}
-                  {isModuleVisible('imprese') && (
-                    <NavItem 
-                      to="/imprese" 
-                      icon={Building2} 
-                      label="Imprese Esterne" 
-                      badge={hseStats.impreseCritical}
-                      badgeColor="danger"
-                      isActive={location.pathname === '/imprese'} 
-                    />
-                  )}
-                  {isModuleVisible('lavoratori') && (
-                    <NavItem 
-                      to="/lavoratori" 
-                      icon={HardHat} 
-                      label="Dipendenti" 
-                      badge={hseStats.lavoratoriCritical + hseStats.lavoratoriWarning}
-                      badgeColor={hseStats.lavoratoriCritical > 0 ? 'danger' : 'warning'}
-                      isActive={location.pathname === '/lavoratori'} 
-                    />
-                  )}
-                  {isModuleVisible('formazione') && (
-                    <NavItem 
-                      to="/formazione" 
-                      icon={GraduationCap} 
-                      label="Formazione" 
-                      isActive={location.pathname === '/formazione'} 
-                      tutorialId="nav-formazione"
-                    />
-                  )}
-                  {isModuleVisible('dpi') && (
-                    <NavItem 
-                      to="/dpi" 
-                      icon={ShieldAlert} 
-                      label="DPI" 
-                      isActive={location.pathname === '/dpi'} 
-                      tutorialId="nav-dpi"
-                    />
-                  )}
-                  {isModuleVisible('sorveglianza') && (
-                    <NavItem 
-                      to="/sorveglianza-sanitaria" 
-                      icon={Stethoscope} 
-                      label="Sorveglianza Sanitaria" 
-                      isActive={location.pathname === '/sorveglianza-sanitaria'} 
-                    />
-                  )}
-                  {isModuleVisible('checkin') && (
-                    <NavItem 
-                      to="/checkin-sicurezza" 
-                      icon={ClipboardList} 
-                      label="Check-in Sicurezza" 
-                      isActive={location.pathname === '/checkin-sicurezza'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Reparto Commerciale Section - Collapsible */}
-          {(isModuleVisible('commerciale') || isModuleVisible('computo') || isModuleVisible('listino')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setCommercialeExpanded(!commercialeExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Commerciale</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !commercialeExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || commercialeExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('commerciale') && (
-                    <NavItem 
-                      to="/reparto-commerciale" 
-                      icon={Briefcase} 
-                      label="Reparto Commerciale" 
-                      isActive={location.pathname === '/reparto-commerciale'} 
-                    />
-                  )}
-                  {isModuleVisible('computo') && (
-                    <NavItem 
-                      to="/computo-metrico" 
-                      icon={Calculator} 
-                      label="Computo Metrico" 
-                      isActive={location.pathname === '/computo-metrico'} 
-                    />
-                  )}
-                  {isModuleVisible('listino') && (
-                    <NavItem 
-                      to="/listino-prezzi" 
-                      icon={Euro} 
-                      label="Listino Prezzi" 
-                      isActive={location.pathname === '/listino-prezzi'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Reparto Amministrazione Section - Collapsible */}
-          {(isModuleVisible('amministrazione') || isModuleVisible('timbrature') || isModuleVisible('scadenzario') || isModuleVisible('rapportini') || isModuleVisible('contatti')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setAmministrazioneExpanded(!amministrazioneExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Amministrazione</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !amministrazioneExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || amministrazioneExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('amministrazione') && (
-                    <NavItem 
-                      to="/reparto-amministrazione" 
-                      icon={FileText} 
-                      label="Reparto Amministrazione" 
-                      isActive={location.pathname === '/reparto-amministrazione'} 
-                    />
-                  )}
-                  {isModuleVisible('timbrature') && (
-                    <NavItem 
-                      to="/timbrature" 
-                      icon={Clock} 
-                      label="Timbrature" 
-                      isActive={location.pathname === '/timbrature'} 
-                    />
-                  )}
-                  {isModuleVisible('scadenzario') && (
-                    <NavItem 
-                      to="/scadenzario" 
-                      icon={Calendar} 
-                      label="Scadenzario" 
-                      isActive={location.pathname === '/scadenzario'} 
-                    />
-                  )}
-                  {isModuleVisible('rapportini') && (
-                    <NavItem 
-                      to="/rapportini" 
-                      icon={ClipboardList} 
-                      label="Rapportini" 
-                      isActive={location.pathname === '/rapportini'} 
-                    />
-                  )}
-                  {isModuleVisible('contatti') && (
-                    <NavItem 
-                      to="/contatti" 
-                      icon={User} 
-                      label="Contatti" 
-                      isActive={location.pathname === '/contatti'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Logistica Section - Collapsible */}
-          {(isModuleVisible('risorse') || isModuleVisible('magazzino')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setLogisticaExpanded(!logisticaExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Logistica</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !logisticaExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || logisticaExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('risorse') && (
-                    <NavItem 
-                      to="/risorse" 
-                      icon={Truck} 
-                      label="Risorse & Mezzi" 
-                      isActive={location.pathname === '/risorse'} 
-                    />
-                  )}
-                  {isModuleVisible('magazzino') && (
-                    <NavItem 
-                      to="/magazzino" 
-                      icon={Boxes} 
-                      label="Magazzino" 
-                      isActive={location.pathname === '/magazzino'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Conformità Section - Collapsible (Last Module) */}
-          {(isModuleVisible('gdpr') || isModuleVisible('qualita') || isModuleVisible('ambiente') || isModuleVisible('bi')) && (
-            <div>
-              {!sidebarCollapsed ? (
-                <button
-                  onClick={() => setComplianceExpanded(!complianceExpanded)}
-                  className="w-full flex items-center justify-between text-[11px] font-medium text-white/70 uppercase tracking-wider px-3 mb-2 hover:text-white transition-colors"
-                >
-                  <span>Conformità & Certificazioni</span>
-                  <ChevronDown className={cn('w-3 h-3 text-white/60 transition-transform', !complianceExpanded && '-rotate-90')} />
-                </button>
-              ) : (
-                <div className="w-8 h-px bg-sidebar-border mx-auto mb-3" />
-              )}
-              
-              {(sidebarCollapsed || complianceExpanded) && (
-                <div className="space-y-1">
-                  {isModuleVisible('gdpr') && (
-                    <NavItem 
-                      to="/compliance/gdpr" 
-                      icon={Shield} 
-                      label="GDPR Privacy" 
-                      isActive={location.pathname === '/compliance/gdpr'} 
-                    />
-                  )}
-                  {isModuleVisible('qualita') && (
-                    <NavItem 
-                      to="/compliance/qualita" 
-                      icon={Award} 
-                      label="ISO 9001 Qualità" 
-                      isActive={location.pathname === '/compliance/qualita'} 
-                    />
-                  )}
-                  {isModuleVisible('ambiente') && (
-                    <NavItem 
-                      to="/compliance/ambiente" 
-                      icon={Leaf} 
-                      label="ISO 14001 Ambiente" 
-                      isActive={location.pathname === '/compliance/ambiente'} 
-                    />
-                  )}
-                  {isModuleVisible('bi') && (
-                    <NavItem 
-                      to="/compliance/bi" 
-                      icon={BarChart3} 
-                      label="Business Intelligence" 
-                      isActive={location.pathname === '/compliance/bi'} 
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </nav>
-
-        {/* Removed HSE Status Widget as per user request */}
-
-        {/* Footer */}
-        <div className="p-3 border-t border-sidebar-border space-y-1">
-          {/* Interactive Tutorials Button */}
-          <button
-            onClick={() => setTutorialOpen(true)}
-            className={cn(
-              'group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
-              'text-white hover:text-white hover:bg-white/10'
-            )}
-          >
-            <GraduationCap className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
-            {!sidebarCollapsed && (
-              <span className="font-medium text-sm text-white">Tutorial Interattivi</span>
-            )}
-          </button>
-          
-          {/* Investor Guide Link */}
-          <a
-            href="/guida-investitori.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
-              'text-white hover:text-white hover:bg-white/10'
-            )}
-          >
-            <HelpCircle className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
-            {!sidebarCollapsed && (
-              <span className="font-medium text-sm text-white">Guida Investitori</span>
-            )}
-          </a>
-          
-          <NavItem 
-            to="/impostazioni" 
-            icon={Settings} 
-            label="Impostazioni" 
-            isActive={location.pathname === '/impostazioni'} 
-          />
-          
-          
-          {/* Collapse Button */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
-          >
-            <ChevronRight className={cn('w-4 h-4 transition-transform', sidebarCollapsed ? '' : 'rotate-180')} />
-            {!sidebarCollapsed && <span>Comprimi</span>}
-          </button>
-        </div>
+        <WorkHubSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onOpenSearch={() => setSearchOpen(true)}
+          onOpenTutorial={() => setTutorialOpen(true)}
+          sectionState={sectionState}
+          data={sidebarData}
+          isModuleVisible={isModuleVisible}
+          currentPath={location.pathname}
+          onNavigate={() => {}}
+        />
       </aside>
 
       {/* Mobile Sidebar Overlay */}
@@ -634,220 +137,30 @@ export function Layout() {
             className="fixed inset-0 bg-background/80 backdrop-blur-sm" 
             onClick={() => setMobileMenuOpen(false)} 
           />
-          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-sidebar border-r border-sidebar-border animate-slide-in-left overflow-y-auto">
-            <div className="h-16 px-4 flex items-center justify-between border-b border-sidebar-border">
-              <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                <EgestLogo size="md" inSidebar />
-              </Link>
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-sidebar border-r border-sidebar-border animate-slide-in-left overflow-y-auto flex flex-col">
+            <div className="absolute top-4 right-4 z-10">
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="text-white hover:bg-white/10">
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <nav className="p-4 space-y-6">
-              {/* Mobile Nav Items - Same structure as desktop */}
-              <div className="space-y-1">
-                {[
-                  { to: '/utente', icon: UserCircle, label: 'Utente' },
-                  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-                  { to: '/progetti', icon: FolderKanban, label: 'Progetti & Task', badge: openTasks },
-                  { to: '/sal', icon: TrendingUp, label: 'Consuntivo' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                    {item.badge && (
-                      <Badge variant="secondary" className="ml-auto">{item.badge}</Badge>
-                    )}
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Commesse</p>
-                <Link
-                  to="/cantieri"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                    location.pathname === '/cantieri'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted/50'
-                  )}
-                >
-                  <Building2 className="w-5 h-5" />
-                  <span className="font-medium">Elenco Commesse</span>
-                  <Badge variant="secondary" className="ml-auto">{cantieri.length}</Badge>
-                </Link>
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Sicurezza</p>
-                {[
-                  { to: '/imprese', icon: Building2, label: 'Imprese Esterne' },
-                  { to: '/lavoratori', icon: HardHat, label: 'Dipendenti' },
-                  { to: '/hse', icon: ShieldCheck, label: 'Dashboard HSE', badge: totalAlerts },
-                  { to: '/formazione', icon: GraduationCap, label: 'Formazione' },
-                  { to: '/dpi', icon: ShieldAlert, label: 'DPI' },
-                  { to: '/sorveglianza-sanitaria', icon: Stethoscope, label: 'Sorveglianza Sanitaria' },
-                  { to: '/checkin-sicurezza', icon: ClipboardList, label: 'Check-in Sicurezza' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                    {item.badge && item.badge > 0 && (
-                      <Badge variant="destructive" className="ml-auto">{item.badge}</Badge>
-                    )}
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Compliance</p>
-                {[
-                  { to: '/compliance/gdpr', icon: Shield, label: 'GDPR Privacy' },
-                  { to: '/compliance/qualita', icon: Award, label: 'ISO 9001 Qualità' },
-                  { to: '/compliance/sicurezza', icon: FileCheck, label: 'D.Lgs 81/2008' },
-                  { to: '/compliance/ambiente', icon: Leaf, label: 'ISO 14001 Ambiente' },
-                  { to: '/compliance/bi', icon: BarChart3, label: 'Business Intelligence' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Commerciale</p>
-                {[
-                  { to: '/reparto-commerciale', icon: Briefcase, label: 'Ufficio Commerciale' },
-                  { to: '/computo-metrico', icon: Calculator, label: 'Computo Metrico' },
-                  { to: '/listino-prezzi', icon: Euro, label: 'Listino Prezzi' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Amministrazione</p>
-                {[
-                  { to: '/reparto-amministrazione', icon: FileText, label: 'Amministrazione' },
-                  { to: '/timbrature', icon: Clock, label: 'Timbrature' },
-                  { to: '/scadenzario', icon: Calendar, label: 'Scadenzario' },
-                  { to: '/rapportini', icon: ClipboardList, label: 'Rapportini' },
-                  { to: '/contatti', icon: User, label: 'Contatti' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-muted-foreground uppercase px-3 mb-2">Logistica</p>
-                {[
-                  { to: '/risorse', icon: Truck, label: 'Risorse & Mezzi' },
-                  { to: '/magazzino', icon: Boxes, label: 'Magazzino' },
-                ].map(item => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                      location.pathname === item.to
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    )}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-              
-              <div className="h-px bg-sidebar-border" />
-              
-              <Link
-                to="/impostazioni"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors',
-                  location.pathname === '/impostazioni'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted/50'
-                )}
-              >
-                <Settings className="w-5 h-5" />
-                <span className="font-medium">Impostazioni</span>
-              </Link>
-            </nav>
+            <WorkHubSidebar
+              collapsed={false}
+              onToggleCollapse={() => {}}
+              onOpenSearch={() => {
+                setMobileMenuOpen(false);
+                setSearchOpen(true);
+              }}
+              onOpenTutorial={() => {
+                setMobileMenuOpen(false);
+                setTutorialOpen(true);
+              }}
+              sectionState={sectionState}
+              data={sidebarData}
+              isModuleVisible={isModuleVisible}
+              currentPath={location.pathname}
+              onNavigate={() => setMobileMenuOpen(false)}
+              isMobile={true}
+            />
           </aside>
         </div>
       )}
