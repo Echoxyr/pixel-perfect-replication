@@ -325,7 +325,11 @@ export default function Cantieri() {
           <h1 className="text-2xl font-bold">Tutte le Commesse</h1>
           <p className="text-muted-foreground">Gestione commesse</p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2">
+        <Button 
+          onClick={() => setShowNewDialog(true)} 
+          className="gap-2"
+          data-tutorial="btn-nuovo-cantiere"
+        >
           <Plus className="w-4 h-4" />
           Nuova Commessa
         </Button>

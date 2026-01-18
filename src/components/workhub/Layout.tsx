@@ -12,6 +12,7 @@ import { GlobalSearch } from './GlobalSearch';
 import { CriticalDeadlinesAlert } from './CriticalDeadlinesAlert';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { OnboardingTour } from './OnboardingTour';
+import { TutorialLauncher } from './TutorialLauncher';
 import { QuickActions } from './QuickActions';
 import {
   LayoutDashboard,
@@ -94,6 +95,7 @@ export function Layout() {
   const [commercialeExpanded, setCommercialeExpanded] = useState(false);
   const [amministrazioneExpanded, setAmministrazioneExpanded] = useState(false);
   const [logisticaExpanded, setLogisticaExpanded] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   const formatCurrentDate = () => {
     return new Date().toLocaleDateString('it-IT', {
@@ -159,8 +161,9 @@ export function Layout() {
     icon: Icon, 
     label, 
     badge, 
-    badgeColor = 'primary',
-    isActive 
+    badgeColor = 'primary', 
+    isActive,
+    tutorialId
   }: { 
     to: string; 
     icon: any; 
@@ -168,12 +171,14 @@ export function Layout() {
     badge?: number; 
     badgeColor?: 'primary' | 'warning' | 'danger';
     isActive: boolean;
+    tutorialId?: string;
   }) => (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
             to={to}
+            data-tutorial={tutorialId}
             className={cn(
               'group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
               isActive
@@ -338,6 +343,7 @@ export function Layout() {
                     label="Elenco Commesse" 
                     badge={cantieri.length}
                     isActive={location.pathname === '/cantieri' || location.pathname.startsWith('/cantieri/')} 
+                    tutorialId="nav-cantieri"
                   />
                 </div>
               )}
@@ -369,6 +375,7 @@ export function Layout() {
                       badge={totalAlerts}
                       badgeColor="danger"
                       isActive={location.pathname === '/hse'} 
+                      tutorialId="nav-hse"
                     />
                   )}
                   {isModuleVisible('sicurezza') && (
@@ -405,6 +412,7 @@ export function Layout() {
                       icon={GraduationCap} 
                       label="Formazione" 
                       isActive={location.pathname === '/formazione'} 
+                      tutorialId="nav-formazione"
                     />
                   )}
                   {isModuleVisible('dpi') && (
@@ -413,6 +421,7 @@ export function Layout() {
                       icon={ShieldAlert} 
                       label="DPI" 
                       isActive={location.pathname === '/dpi'} 
+                      tutorialId="nav-dpi"
                     />
                   )}
                   {isModuleVisible('sorveglianza') && (
@@ -641,6 +650,20 @@ export function Layout() {
 
         {/* Footer */}
         <div className="p-3 border-t border-sidebar-border space-y-1">
+          {/* Interactive Tutorials Button */}
+          <button
+            onClick={() => setTutorialOpen(true)}
+            className={cn(
+              'group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
+              'text-white hover:text-white hover:bg-white/10'
+            )}
+          >
+            <GraduationCap className={cn('w-5 h-5 flex-shrink-0', sidebarCollapsed && 'mx-auto')} />
+            {!sidebarCollapsed && (
+              <span className="font-medium text-sm text-white">Tutorial Interattivi</span>
+            )}
+          </button>
+          
           {/* Investor Guide Link */}
           <a
             href="/guida-investitori.html"
@@ -1000,6 +1023,9 @@ export function Layout() {
       
       {/* Onboarding Tour */}
       <OnboardingTour />
+      
+      {/* Interactive Tutorial Launcher */}
+      <TutorialLauncher isOpen={tutorialOpen} onClose={() => setTutorialOpen(false)} />
     </div>
   );
 }
