@@ -564,10 +564,10 @@ export function WorkHubSidebar({
               )}
               {isModuleVisible("bi") && (
                 <NavItem
-                  to="/business-intelligence"
+                  to="/compliance/bi"
                   icon={BarChart3}
                   label="Business Intelligence"
-                  active={isActive("/business-intelligence")}
+                  active={isActive("/compliance/bi")}
                 />
               )}
             </div>
