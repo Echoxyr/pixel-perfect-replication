@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_predictions: {
+        Row: {
+          created_at: string | null
+          dati_input: Json | null
+          entita_id: string | null
+          entita_nome: string | null
+          entita_tipo: string | null
+          id: string
+          impatto: string | null
+          modello_usato: string | null
+          previsione_dettaglio: Json | null
+          probabilita: number | null
+          raccomandazioni: string[] | null
+          tipo: string
+          valido_fino: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dati_input?: Json | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo?: string | null
+          id?: string
+          impatto?: string | null
+          modello_usato?: string | null
+          previsione_dettaglio?: Json | null
+          probabilita?: number | null
+          raccomandazioni?: string[] | null
+          tipo: string
+          valido_fino?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dati_input?: Json | null
+          entita_id?: string | null
+          entita_nome?: string | null
+          entita_tipo?: string | null
+          id?: string
+          impatto?: string | null
+          modello_usato?: string | null
+          previsione_dettaglio?: Json | null
+          probabilita?: number | null
+          raccomandazioni?: string[] | null
+          tipo?: string
+          valido_fino?: string | null
+        }
+        Relationships: []
+      }
       analisi_predittive: {
         Row: {
           azioni_mitigazione: string[] | null
@@ -482,6 +530,53 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_checks: {
+        Row: {
+          blocco_pagamento: boolean | null
+          data_scadenza: string | null
+          fornitore_id: string | null
+          fornitore_nome: string | null
+          giorni_rimanenti: number | null
+          id: string
+          note: string | null
+          stato: string | null
+          tipo_check: string
+          ultimo_controllo: string | null
+        }
+        Insert: {
+          blocco_pagamento?: boolean | null
+          data_scadenza?: string | null
+          fornitore_id?: string | null
+          fornitore_nome?: string | null
+          giorni_rimanenti?: number | null
+          id?: string
+          note?: string | null
+          stato?: string | null
+          tipo_check: string
+          ultimo_controllo?: string | null
+        }
+        Update: {
+          blocco_pagamento?: boolean | null
+          data_scadenza?: string | null
+          fornitore_id?: string | null
+          fornitore_nome?: string | null
+          giorni_rimanenti?: number | null
+          id?: string
+          note?: string | null
+          stato?: string | null
+          tipo_check?: string
+          ultimo_controllo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_checks_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       computi_metrici: {
         Row: {
           cantiere_id: string | null
@@ -675,14 +770,18 @@ export type Database = {
           causale_trasporto: string | null
           colli: number | null
           commessa_id: string | null
+          convertito_in_fattura_at: string | null
           created_at: string
           data: string
           destinatario: string
+          fattura_generata_id: string | null
+          fornitore_id: string | null
           id: string
           indirizzo_destinazione: string | null
           mittente: string
           note: string | null
           numero: string
+          ordine_origine_id: string | null
           peso_kg: number | null
           stato: string
           tipo: string
@@ -695,14 +794,18 @@ export type Database = {
           causale_trasporto?: string | null
           colli?: number | null
           commessa_id?: string | null
+          convertito_in_fattura_at?: string | null
           created_at?: string
           data?: string
           destinatario: string
+          fattura_generata_id?: string | null
+          fornitore_id?: string | null
           id?: string
           indirizzo_destinazione?: string | null
           mittente: string
           note?: string | null
           numero: string
+          ordine_origine_id?: string | null
           peso_kg?: number | null
           stato?: string
           tipo?: string
@@ -715,19 +818,71 @@ export type Database = {
           causale_trasporto?: string | null
           colli?: number | null
           commessa_id?: string | null
+          convertito_in_fattura_at?: string | null
           created_at?: string
           data?: string
           destinatario?: string
+          fattura_generata_id?: string | null
+          fornitore_id?: string | null
           id?: string
           indirizzo_destinazione?: string | null
           mittente?: string
           note?: string | null
           numero?: string
+          ordine_origine_id?: string | null
           peso_kg?: number | null
           stato?: string
           tipo?: string
           updated_at?: string
           vettore?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ddt_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ddt_ordine_origine_id_fkey"
+            columns: ["ordine_origine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini_fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_conversions: {
+        Row: {
+          convertito_da: string | null
+          created_at: string | null
+          documento_destinazione_id: string
+          documento_destinazione_tipo: string
+          documento_origine_id: string
+          documento_origine_tipo: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          convertito_da?: string | null
+          created_at?: string | null
+          documento_destinazione_id: string
+          documento_destinazione_tipo: string
+          documento_origine_id: string
+          documento_origine_tipo: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          convertito_da?: string | null
+          created_at?: string | null
+          documento_destinazione_id?: string
+          documento_destinazione_tipo?: string
+          documento_origine_id?: string
+          documento_origine_tipo?: string
+          id?: string
+          note?: string | null
         }
         Relationships: []
       }
@@ -993,17 +1148,23 @@ export type Database = {
         Row: {
           aliquota_iva: number
           allegati: string[] | null
+          cantiere_id: string | null
           cliente_fornitore: string
           commessa_id: string | null
           created_at: string
           data: string
           data_pagamento: string | null
+          ddt_origine_id: string | null
           descrizione: string | null
+          fornitore_id: string | null
           id: string
           imponibile: number
           iva: number | null
           metodo_pagamento: string | null
           numero: string
+          ordine_origine_id: string | null
+          preventivo_origine_id: string | null
+          sal_origine_id: string | null
           scadenza: string
           stato: Database["public"]["Enums"]["stato_fattura"]
           tipo: Database["public"]["Enums"]["tipo_fattura"]
@@ -1013,17 +1174,23 @@ export type Database = {
         Insert: {
           aliquota_iva?: number
           allegati?: string[] | null
+          cantiere_id?: string | null
           cliente_fornitore: string
           commessa_id?: string | null
           created_at?: string
           data?: string
           data_pagamento?: string | null
+          ddt_origine_id?: string | null
           descrizione?: string | null
+          fornitore_id?: string | null
           id?: string
           imponibile?: number
           iva?: number | null
           metodo_pagamento?: string | null
           numero: string
+          ordine_origine_id?: string | null
+          preventivo_origine_id?: string | null
+          sal_origine_id?: string | null
           scadenza: string
           stato?: Database["public"]["Enums"]["stato_fattura"]
           tipo: Database["public"]["Enums"]["tipo_fattura"]
@@ -1033,24 +1200,45 @@ export type Database = {
         Update: {
           aliquota_iva?: number
           allegati?: string[] | null
+          cantiere_id?: string | null
           cliente_fornitore?: string
           commessa_id?: string | null
           created_at?: string
           data?: string
           data_pagamento?: string | null
+          ddt_origine_id?: string | null
           descrizione?: string | null
+          fornitore_id?: string | null
           id?: string
           imponibile?: number
           iva?: number | null
           metodo_pagamento?: string | null
           numero?: string
+          ordine_origine_id?: string | null
+          preventivo_origine_id?: string | null
+          sal_origine_id?: string | null
           scadenza?: string
           stato?: Database["public"]["Enums"]["stato_fattura"]
           tipo?: Database["public"]["Enums"]["tipo_fattura"]
           totale?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fatture_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatture_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       formazioni: {
         Row: {
@@ -1945,16 +2133,19 @@ export type Database = {
           allegati: string[] | null
           cantiere_id: string | null
           cantiere_nome: string | null
+          convertito_in_ddt_at: string | null
           created_at: string | null
           data: string
           data_consegna_effettiva: string | null
           data_consegna_prevista: string | null
+          ddt_generato_id: string | null
           fornitore_id: string | null
           fornitore_nome: string
           id: string
           importo: number
           note: string | null
           numero: string
+          preventivo_origine_id: string | null
           stato: string
           updated_at: string | null
         }
@@ -1962,16 +2153,19 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          convertito_in_ddt_at?: string | null
           created_at?: string | null
           data?: string
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
+          ddt_generato_id?: string | null
           fornitore_id?: string | null
           fornitore_nome: string
           id?: string
           importo?: number
           note?: string | null
           numero: string
+          preventivo_origine_id?: string | null
           stato?: string
           updated_at?: string | null
         }
@@ -1979,16 +2173,19 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          convertito_in_ddt_at?: string | null
           created_at?: string | null
           data?: string
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
+          ddt_generato_id?: string | null
           fornitore_id?: string | null
           fornitore_nome?: string
           id?: string
           importo?: number
           note?: string | null
           numero?: string
+          preventivo_origine_id?: string | null
           stato?: string
           updated_at?: string | null
         }
@@ -1998,6 +2195,13 @@ export type Database = {
             columns: ["fornitore_id"]
             isOneToOne: false
             referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_fornitori_preventivo_origine_id_fkey"
+            columns: ["preventivo_origine_id"]
+            isOneToOne: false
+            referencedRelation: "preventivi_fornitori"
             referencedColumns: ["id"]
           },
         ]
@@ -2243,6 +2447,8 @@ export type Database = {
           allegati: string[] | null
           cantiere_id: string | null
           cantiere_nome: string | null
+          computo_id: string | null
+          convertito_in_ordine_at: string | null
           created_at: string | null
           data: string
           fornitore_id: string | null
@@ -2252,6 +2458,7 @@ export type Database = {
           note: string | null
           numero: string
           oggetto: string
+          ordine_generato_id: string | null
           scadenza: string | null
           stato: string
           updated_at: string | null
@@ -2260,6 +2467,8 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          computo_id?: string | null
+          convertito_in_ordine_at?: string | null
           created_at?: string | null
           data?: string
           fornitore_id?: string | null
@@ -2269,6 +2478,7 @@ export type Database = {
           note?: string | null
           numero: string
           oggetto: string
+          ordine_generato_id?: string | null
           scadenza?: string | null
           stato?: string
           updated_at?: string | null
@@ -2277,6 +2487,8 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          computo_id?: string | null
+          convertito_in_ordine_at?: string | null
           created_at?: string | null
           data?: string
           fornitore_id?: string | null
@@ -2286,6 +2498,7 @@ export type Database = {
           note?: string | null
           numero?: string
           oggetto?: string
+          ordine_generato_id?: string | null
           scadenza?: string | null
           stato?: string
           updated_at?: string | null
@@ -2296,6 +2509,13 @@ export type Database = {
             columns: ["fornitore_id"]
             isOneToOne: false
             referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventivi_fornitori_ordine_generato_id_fkey"
+            columns: ["ordine_generato_id"]
+            isOneToOne: false
+            referencedRelation: "ordini_fornitori"
             referencedColumns: ["id"]
           },
         ]
@@ -3348,11 +3568,67 @@ export type Database = {
           },
         ]
       }
+      workflow_notifications: {
+        Row: {
+          azione_suggerita: string | null
+          created_at: string | null
+          entita_id: string
+          entita_tipo: string
+          id: string
+          letta_at: string | null
+          link_azione: string | null
+          messaggio: string
+          priorita: string | null
+          stato: string | null
+          tipo: string
+          titolo: string
+        }
+        Insert: {
+          azione_suggerita?: string | null
+          created_at?: string | null
+          entita_id: string
+          entita_tipo: string
+          id?: string
+          letta_at?: string | null
+          link_azione?: string | null
+          messaggio: string
+          priorita?: string | null
+          stato?: string | null
+          tipo: string
+          titolo: string
+        }
+        Update: {
+          azione_suggerita?: string | null
+          created_at?: string | null
+          entita_id?: string
+          entita_tipo?: string
+          id?: string
+          letta_at?: string | null
+          link_azione?: string | null
+          messaggio?: string
+          priorita?: string | null
+          stato?: string | null
+          tipo?: string
+          titolo?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      calculate_supplier_compliance: {
+        Args: { p_fornitore_id: string }
+        Returns: {
+          blocco_motivo: string
+          documenti_mancanti: number
+          documenti_scadenza: number
+          documenti_scaduti: number
+          documenti_validi: number
+          pagabile: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
