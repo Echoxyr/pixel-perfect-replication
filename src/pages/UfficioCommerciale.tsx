@@ -57,7 +57,8 @@ import {
   Calendar,
   AlertTriangle,
   FileWarning,
-  Shield
+  Shield,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +68,8 @@ import { exportToExcel } from '@/utils/exportUtils';
 import { Link } from 'react-router-dom';
 import { differenceInDays, format, addDays } from 'date-fns';
 import { it } from 'date-fns/locale';
+import DocumentFlowManager from '@/components/workhub/DocumentFlowManager';
+import ComplianceMonitor from '@/components/workhub/ComplianceMonitor';
 
 // Types
 interface Fornitore {
@@ -810,7 +813,7 @@ export default function UfficioCommerciale() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1">
+        <TabsList className="tabs-scrollable-header flex w-full h-auto flex-nowrap justify-start gap-1 p-1 overflow-x-auto">
           <TabsTrigger value="contratti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileText className="w-4 h-4" />Contratti</TabsTrigger>
           <TabsTrigger value="fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Building2 className="w-4 h-4" />Fornitori</TabsTrigger>
           <TabsTrigger value="documenti-fornitori" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
@@ -821,6 +824,8 @@ export default function UfficioCommerciale() {
           <TabsTrigger value="ordini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
           <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
           <TabsTrigger value="computi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
+          <TabsTrigger value="flusso-doc" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2 text-primary"><Zap className="w-4 h-4" />Flusso Documentale</TabsTrigger>
+          <TabsTrigger value="compliance" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Shield className="w-4 h-4" />Compliance</TabsTrigger>
         </TabsList>
 
         {/* Contratti Tab */}
@@ -1387,6 +1392,16 @@ export default function UfficioCommerciale() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Flusso Documentale Tab */}
+        <TabsContent value="flusso-doc" className="mt-6">
+          <DocumentFlowManager />
+        </TabsContent>
+
+        {/* Compliance Tab */}
+        <TabsContent value="compliance" className="mt-6">
+          <ComplianceMonitor />
         </TabsContent>
       </Tabs>
 

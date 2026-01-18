@@ -20,6 +20,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   Leaf,
+  Link2,
   Search,
   Settings,
   Shield,
@@ -29,6 +30,7 @@ import {
   TrendingUp,
   Truck,
   UserCircle,
+  Zap,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -446,6 +448,12 @@ export function WorkHubSidebar({
                   active={isActive("/listino-prezzi")}
                 />
               )}
+              <NavItem
+                to="/flusso-documentale"
+                icon={Link2}
+                label="Flusso Documentale"
+                active={isActive("/flusso-documentale")}
+              />
             </div>
           )}
         </div>
