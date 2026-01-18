@@ -1,60 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { useUser } from '@/contexts/UserContext';
-import { useSidebarModules, SIDEBAR_MODULES, SECTIONS } from '@/hooks/useSidebarModules';
+import { useSidebarModules } from '@/hooks/useSidebarModules';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { EgestLogo } from './EgestLogo';
 import { NotificationCenter } from './NotificationCenter';
 import { GlobalSearch } from './GlobalSearch';
 import { CriticalDeadlinesAlert } from './CriticalDeadlinesAlert';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { OnboardingTour } from './OnboardingTour';
 import { TutorialLauncher } from './TutorialLauncher';
-import { QuickActions } from './QuickActions';
-import {
-  LayoutDashboard,
-  FolderKanban,
-  Building2,
-  HardHat,
-  ShieldCheck,
-  ShieldAlert,
-  TrendingUp,
-  Settings,
-  Menu,
-  X,
-  Search,
-  Bell,
-  Moon,
-  Sun,
-  User,
-  ChevronRight,
-  ChevronDown,
-  Command,
-  Calendar,
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  HelpCircle,
-  Shield,
-  Award,
-  Leaf,
-  BarChart3,
-  FileCheck,
-  GraduationCap,
-  Stethoscope,
-  Briefcase,
-  Calculator,
-  Truck,
-  ClipboardList,
-  Boxes,
-  Euro,
-  UserCircle,
-  Cog
-} from 'lucide-react';
+import { WorkHubSidebar } from './WorkHubSidebar';
+import { Menu, Moon, Sun, User, Calendar, HelpCircle, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,18 +21,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
+
 // SidebarModuleSettings removed - now in Impostazioni page
 
 export function Layout() {
@@ -85,9 +37,10 @@ export function Layout() {
   const { isModuleVisible } = useSidebarModules();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isDark, setIsDark] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Desktop & mobile condividono lo stesso stato delle sezioni (così l'esperienza resta identica)
   const [principaleExpanded, setPrincipaleExpanded] = useState(false);
   const [commesseExpanded, setCommesseExpanded] = useState(false);
   const [hseExpanded, setHseExpanded] = useState(false);
@@ -95,6 +48,7 @@ export function Layout() {
   const [commercialeExpanded, setCommercialeExpanded] = useState(false);
   const [amministrazioneExpanded, setAmministrazioneExpanded] = useState(false);
   const [logisticaExpanded, setLogisticaExpanded] = useState(false);
+
   const [tutorialOpen, setTutorialOpen] = useState(false);
 
   const formatCurrentDate = () => {
@@ -113,36 +67,10 @@ export function Layout() {
     document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
 
-  const searchResults = searchQuery.trim() ? {
-    cantieri: cantieri.filter(c => 
-      c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.codiceCommessa.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 3),
-    imprese: imprese.filter(i => 
-      i.ragioneSociale.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 3),
-    lavoratori: lavoratori.filter(l => 
-      `${l.nome} ${l.cognome}`.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 3),
-    tasks: tasks.filter(t => 
-      t.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 3)
-  } : null;
-
   const totalAlerts = hseStats.documentiScaduti + hseStats.formazioniScadute + hseStats.visiteMedicheScadute;
   const openTasks = tasks.filter(t => t.status !== 'fatto').length;
-  const activeCantieri = cantieri.filter(c => c.stato === 'attivo');
-
-  const handleSearchSelect = (type: string, id: string) => {
-    setSearchOpen(false);
-    setSearchQuery('');
-    switch (type) {
-      case 'cantiere': navigate(`/cantieri/${id}`); break;
-      case 'impresa': navigate('/imprese'); break;
-      case 'lavoratore': navigate('/lavoratori'); break;
-      case 'task': navigate('/progetti'); break;
-    }
-  };
+  const lavoratoriAlerts = hseStats.lavoratoriCritical + hseStats.lavoratoriWarning;
+  const impreseCritical = hseStats.impreseCritical;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -944,18 +872,7 @@ export function Layout() {
               <span className="text-muted-foreground">{formatCurrentDate()}</span>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
-            {/* Search Button - Mobile only (desktop uses sidebar) */}
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="md:hidden"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search className="w-5 h-5" />
-            </Button>
-
             {/* Theme Toggle */}
             <TooltipProvider>
               <Tooltip>
