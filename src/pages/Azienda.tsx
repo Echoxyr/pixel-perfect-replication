@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import UniversalComplianceMonitor from '@/components/workhub/UniversalComplianceMonitor';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
@@ -396,8 +397,17 @@ export default function Azienda() {
               <span className="hidden sm:inline">{cat.label}</span>
             </TabsTrigger>
           ))}
+          <TabsTrigger value="compliance" className="whitespace-nowrap flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            <span className="hidden sm:inline">Compliance Universale</span>
+          </TabsTrigger>
         </TabsList>
 
+        {activeTab === 'compliance' ? (
+          <div className="mt-4">
+            <UniversalComplianceMonitor />
+          </div>
+        ) : (
         <div className="mt-4">
           <Card>
             <CardHeader className="pb-3">
@@ -495,6 +505,7 @@ export default function Azienda() {
             </CardContent>
           </Card>
         </div>
+        )}
       </Tabs>
 
       {/* Dialog */}
