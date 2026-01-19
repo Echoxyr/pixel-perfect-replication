@@ -252,6 +252,11 @@ export default function UfficioCommerciale() {
   const [showNewListino, setShowNewListino] = useState(false);
   const [showNewDocumento, setShowNewDocumento] = useState(false);
   const [showDocumentiFornitore, setShowDocumentiFornitore] = useState(false);
+  const [showViewContratto, setShowViewContratto] = useState(false);
+  const [showViewListino, setShowViewListino] = useState(false);
+  const [showEditListino, setShowEditListino] = useState(false);
+  const [selectedContratto, setSelectedContratto] = useState<Contratto | null>(null);
+  const [selectedListino, setSelectedListino] = useState<ListinoFornitore | null>(null);
   
   // Post-creation dialog state
   const [showPostCreation, setShowPostCreation] = useState(false);
@@ -615,6 +620,32 @@ export default function UfficioCommerciale() {
       setShowNewListino(false);
     },
     onError: () => toast.error('Errore nella creazione')
+  });
+
+  const updateListinoMutation = useMutation({
+    mutationFn: async (data: { id: string; nome: string; valido_dal: string; valido_al: string | null; sconto_applicato: number; attivo: boolean }) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase.from('listini_fornitori').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listini_fornitori'] });
+      toast.success('Listino aggiornato');
+      setShowEditListino(false);
+      setSelectedListino(null);
+    },
+    onError: () => toast.error('Errore nell\'aggiornamento')
+  });
+
+  const deleteListinoMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('listini_fornitori').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listini_fornitori'] });
+      toast.success('Listino eliminato');
+    }
   });
 
   const deleteFornitoreMutation = useMutation({
@@ -1033,7 +1064,7 @@ export default function UfficioCommerciale() {
                       <TableCell className="text-sm">{formatDate(c.data_inizio)} - {formatDate(c.data_fine)}</TableCell>
                       <TableCell><Badge className={cn("gap-1", getStatoColor(c.stato))}>{getStatoIcon(c.stato)}{c.stato}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setSelectedContratto(c); setShowViewContratto(true); }}><Eye className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteContrattoMutation.mutate(c.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
@@ -1568,8 +1599,8 @@ export default function UfficioCommerciale() {
                       <TableCell>{l.sconto_applicato}%</TableCell>
                       <TableCell><Badge className={l.attivo ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted'}>{l.attivo ? 'Attivo' : 'Inattivo'}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon"><Edit className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setSelectedListino(l); setShowViewListino(true); }}><Eye className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setSelectedListino(l); setShowEditListino(true); }}><Edit className="w-4 h-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1740,6 +1771,157 @@ export default function UfficioCommerciale() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Visualizza Contratto */}
+      <Dialog open={showViewContratto} onOpenChange={setShowViewContratto}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Dettagli Contratto {selectedContratto?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedContratto && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Numero</Label>
+                  <p className="font-mono font-medium">{selectedContratto.numero}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Tipo</Label>
+                  <Badge variant="outline">{selectedContratto.tipo}</Badge>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Titolo</Label>
+                  <p className="font-medium">{selectedContratto.titolo}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Contraente</Label>
+                  <p>{selectedContratto.contraente}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Importo</Label>
+                  <p className="font-bold text-primary">{formatCurrency(selectedContratto.importo)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data Inizio</Label>
+                  <p>{formatDate(selectedContratto.data_inizio)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data Fine</Label>
+                  <p>{formatDate(selectedContratto.data_fine)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <Badge className={getStatoColor(selectedContratto.stato)}>{selectedContratto.stato}</Badge>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Rinnovo Automatico</Label>
+                  <p>{selectedContratto.rinnovo_automatico ? 'Sì' : 'No'}</p>
+                </div>
+                {selectedContratto.descrizione && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">Descrizione</Label>
+                    <p className="text-sm">{selectedContratto.descrizione}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowViewContratto(false)}>Chiudi</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Visualizza Listino */}
+      <Dialog open={showViewListino} onOpenChange={setShowViewListino}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5" />
+              Dettagli Listino
+            </DialogTitle>
+          </DialogHeader>
+          {selectedListino && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Fornitore</Label>
+                  <p className="font-medium">{selectedListino.fornitore_nome}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Nome Listino</Label>
+                  <p className="font-medium">{selectedListino.nome}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Valido Dal</Label>
+                  <p>{formatDate(selectedListino.valido_dal)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Valido Al</Label>
+                  <p>{selectedListino.valido_al ? formatDate(selectedListino.valido_al) : 'Indeterminato'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Sconto Applicato</Label>
+                  <p className="font-bold text-primary">{selectedListino.sconto_applicato}%</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <Badge className={selectedListino.attivo ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted'}>{selectedListino.attivo ? 'Attivo' : 'Inattivo'}</Badge>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowViewListino(false)}>Chiudi</Button>
+                <Button onClick={() => { setShowViewListino(false); setShowEditListino(true); }}>Modifica</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Modifica Listino */}
+      <Dialog open={showEditListino} onOpenChange={setShowEditListino}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifica Listino</DialogTitle></DialogHeader>
+          {selectedListino && (
+            <div className="grid gap-4 pt-4">
+              <div><Label>Fornitore</Label><Input value={selectedListino.fornitore_nome} disabled /></div>
+              <div><Label>Nome Listino *</Label><Input value={selectedListino.nome} onChange={(e) => setSelectedListino({ ...selectedListino, nome: e.target.value })} /></div>
+              <div><Label>Valido Dal</Label><Input type="date" value={selectedListino.valido_dal} onChange={(e) => setSelectedListino({ ...selectedListino, valido_dal: e.target.value })} /></div>
+              <div><Label>Valido Al</Label><Input type="date" value={selectedListino.valido_al || ''} onChange={(e) => setSelectedListino({ ...selectedListino, valido_al: e.target.value || null })} /></div>
+              <div><Label>Sconto Applicato %</Label><Input type="number" value={selectedListino.sconto_applicato || 0} onChange={(e) => setSelectedListino({ ...selectedListino, sconto_applicato: parseFloat(e.target.value) || 0 })} /></div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="listino-attivo" 
+                  checked={selectedListino.attivo || false} 
+                  onChange={(e) => setSelectedListino({ ...selectedListino, attivo: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="listino-attivo">Listino Attivo</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditListino(false); setSelectedListino(null); }}>Annulla</Button>
+            <Button 
+              onClick={() => selectedListino && updateListinoMutation.mutate({
+                id: selectedListino.id,
+                nome: selectedListino.nome,
+                valido_dal: selectedListino.valido_dal,
+                valido_al: selectedListino.valido_al,
+                sconto_applicato: selectedListino.sconto_applicato || 0,
+                attivo: selectedListino.attivo || false
+              })}
+              disabled={!selectedListino?.nome}
+            >
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

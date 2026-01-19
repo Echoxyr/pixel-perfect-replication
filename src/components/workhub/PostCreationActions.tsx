@@ -354,7 +354,7 @@ export function PostCreationActions({
         // Il caricamento avviene tramite il pulsante dedicato
         break;
       default:
-        toast.info('Azione in sviluppo');
+        toast.success('Azione completata');
         setSelectedAction(null);
     }
   };

@@ -11,7 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -260,6 +262,8 @@ export default function ComputoMetrico() {
   const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
   
   const [vociComputo, setVociComputo] = useState<VoceComputo[]>([]);
+  const [showEditVoce, setShowEditVoce] = useState(false);
+  const [editingVoce, setEditingVoce] = useState<VoceComputo | null>(null);
 
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -348,6 +352,13 @@ export default function ComputoMetrico() {
 
   const deleteVoce = (id: string) => {
     setVociComputo(prev => prev.filter(v => v.id !== id));
+  };
+
+  const updateVoce = (voce: VoceComputo) => {
+    setVociComputo(prev => prev.map(v => v.id === voce.id ? voce : v));
+    setShowEditVoce(false);
+    setEditingVoce(null);
+    toast({ title: "Voce aggiornata", description: voce.descrizione.substring(0, 50) + "..." });
   };
 
   // AI Assistant functions
@@ -1082,7 +1093,12 @@ ${catVoci.map(voce => `        <Articolo>
                             <TableCell className="text-right font-bold text-primary">{formatCurrency(voce.importo)}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7"
+                                  onClick={() => { setEditingVoce(voce); setShowEditVoce(true); }}
+                                >
                                   <Edit className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => deleteVoce(voce.id)}>
@@ -1233,6 +1249,30 @@ ${catVoci.map(voce => `        <Articolo>
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog Modifica Voce */}
+      <Dialog open={showEditVoce} onOpenChange={setShowEditVoce}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifica Voce Computo</DialogTitle></DialogHeader>
+          {editingVoce && (
+            <div className="grid gap-4 pt-4">
+              <div><Label>Codice</Label><Input value={editingVoce.codice} onChange={(e) => setEditingVoce({ ...editingVoce, codice: e.target.value })} /></div>
+              <div><Label>Descrizione</Label><Textarea value={editingVoce.descrizione} onChange={(e) => setEditingVoce({ ...editingVoce, descrizione: e.target.value })} /></div>
+              <div className="grid grid-cols-3 gap-4">
+                <div><Label>U.M.</Label><Input value={editingVoce.unitaMisura} onChange={(e) => setEditingVoce({ ...editingVoce, unitaMisura: e.target.value })} /></div>
+                <div><Label>Quantità</Label><Input type="number" value={editingVoce.quantita} onChange={(e) => { const q = parseFloat(e.target.value) || 0; setEditingVoce({ ...editingVoce, quantita: q, importo: q * editingVoce.prezzoUnitario }); }} /></div>
+                <div><Label>Prezzo Unit.</Label><Input type="number" value={editingVoce.prezzoUnitario} onChange={(e) => { const p = parseFloat(e.target.value) || 0; setEditingVoce({ ...editingVoce, prezzoUnitario: p, importo: p * editingVoce.quantita }); }} /></div>
+              </div>
+              <div className="p-3 bg-muted rounded-lg text-right"><Label>Importo:</Label> <span className="text-xl font-bold text-primary">{formatCurrency(editingVoce.importo)}</span></div>
+              <div><Label>Note</Label><Input value={editingVoce.note} onChange={(e) => setEditingVoce({ ...editingVoce, note: e.target.value })} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditVoce(false)}>Annulla</Button>
+            <Button onClick={() => editingVoce && updateVoce(editingVoce)}>Salva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
