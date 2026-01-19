@@ -104,6 +104,9 @@ export default function RepartoAmministrazione() {
   const [showNewNota, setShowNewNota] = useState(false);
   const [showNewRichiesta, setShowNewRichiesta] = useState(false);
   const [showNewDDT, setShowNewDDT] = useState(false);
+  const [showViewFattura, setShowViewFattura] = useState(false);
+  const [showEditFattura, setShowEditFattura] = useState(false);
+  const [selectedFattura, setSelectedFattura] = useState<typeof fatture[0] | null>(null);
 
   // Form states
   const [newFattura, setNewFattura] = useState({
@@ -313,6 +316,29 @@ export default function RepartoAmministrazione() {
       queryClient.invalidateQueries({ queryKey: ['fatture'] });
       toast.success('Stato fattura aggiornato');
     }
+  });
+
+  // Update fattura (full edit)
+  const updateFattura = useMutation({
+    mutationFn: async (data: { id: string; cliente_fornitore: string; descrizione: string; imponibile: number; aliquota_iva: number; scadenza: string }) => {
+      const totale = data.imponibile * (1 + data.aliquota_iva / 100);
+      const { error } = await supabase.from('fatture').update({
+        cliente_fornitore: data.cliente_fornitore,
+        descrizione: data.descrizione,
+        imponibile: data.imponibile,
+        aliquota_iva: data.aliquota_iva,
+        totale,
+        scadenza: data.scadenza
+      }).eq('id', data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fatture'] });
+      setShowEditFattura(false);
+      setSelectedFattura(null);
+      toast.success('Fattura aggiornata');
+    },
+    onError: (error) => toast.error('Errore: ' + error.message)
   });
 
   // Delete fattura
@@ -1137,8 +1163,8 @@ export default function RepartoAmministrazione() {
                         <TableCell>{formatDate(fattura.scadenza)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedFattura(fattura); setShowViewFattura(true); }}><Eye className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedFattura(fattura); setShowEditFattura(true); }}><Edit className="w-4 h-4" /></Button>
                             {fattura.stato === 'emessa' && (
                               <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500" onClick={() => updateFatturaStatus.mutate({ id: fattura.id, stato: 'pagata' })}>
                                 <CheckCircle className="w-4 h-4" />
@@ -1515,6 +1541,170 @@ export default function RepartoAmministrazione() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog Visualizza Fattura */}
+      <Dialog open={showViewFattura} onOpenChange={setShowViewFattura}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Dettagli Fattura {selectedFattura?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedFattura && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Numero</Label>
+                  <p className="font-mono font-medium">{selectedFattura.numero}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Tipo</Label>
+                  <Badge variant="outline" className={selectedFattura.tipo === 'attiva' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'}>
+                    {selectedFattura.tipo === 'attiva' ? 'Attiva' : 'Passiva'}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data Emissione</Label>
+                  <p>{formatDate(selectedFattura.data)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Scadenza</Label>
+                  <p>{formatDate(selectedFattura.scadenza)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Cliente/Fornitore</Label>
+                  <p className="font-medium">{selectedFattura.cliente_fornitore}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Imponibile</Label>
+                  <p>{formatCurrency(selectedFattura.imponibile)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">IVA ({selectedFattura.aliquota_iva}%)</Label>
+                  <p>{formatCurrency(selectedFattura.imponibile * selectedFattura.aliquota_iva / 100)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Totale</Label>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(selectedFattura.totale)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <Badge className={getStatoColor(selectedFattura.stato)}>{selectedFattura.stato}</Badge>
+                </div>
+                {selectedFattura.data_pagamento && (
+                  <div>
+                    <Label className="text-muted-foreground">Data Pagamento</Label>
+                    <p>{formatDate(selectedFattura.data_pagamento)}</p>
+                  </div>
+                )}
+                {selectedFattura.descrizione && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">Descrizione</Label>
+                    <p className="text-sm">{selectedFattura.descrizione}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setShowViewFattura(false)}>Chiudi</Button>
+                <Button className="flex-1" onClick={() => { setShowViewFattura(false); setShowEditFattura(true); }}>Modifica</Button>
+                <Button variant="outline" onClick={() => window.print()}><Printer className="w-4 h-4" /></Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Modifica Fattura */}
+      <Dialog open={showEditFattura} onOpenChange={setShowEditFattura}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Modifica Fattura</DialogTitle></DialogHeader>
+          {selectedFattura && (
+            <div className="grid gap-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Numero</Label>
+                  <Input value={selectedFattura.numero} disabled />
+                </div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Input value={selectedFattura.tipo === 'attiva' ? 'Attiva' : 'Passiva'} disabled />
+                </div>
+              </div>
+              <div>
+                <Label>Cliente/Fornitore *</Label>
+                <Input 
+                  value={selectedFattura.cliente_fornitore} 
+                  onChange={(e) => setSelectedFattura({ ...selectedFattura, cliente_fornitore: e.target.value })} 
+                />
+              </div>
+              <div>
+                <Label>Descrizione</Label>
+                <Textarea 
+                  value={selectedFattura.descrizione || ''} 
+                  onChange={(e) => setSelectedFattura({ ...selectedFattura, descrizione: e.target.value })} 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Imponibile €</Label>
+                  <Input 
+                    type="number" 
+                    value={selectedFattura.imponibile} 
+                    onChange={(e) => setSelectedFattura({ ...selectedFattura, imponibile: parseFloat(e.target.value) || 0 })} 
+                  />
+                </div>
+                <div>
+                  <Label>Aliquota IVA %</Label>
+                  <Select 
+                    value={String(selectedFattura.aliquota_iva)} 
+                    onValueChange={(v) => setSelectedFattura({ ...selectedFattura, aliquota_iva: parseInt(v) })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0%</SelectItem>
+                      <SelectItem value="4">4%</SelectItem>
+                      <SelectItem value="10">10%</SelectItem>
+                      <SelectItem value="22">22%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Scadenza</Label>
+                <Input 
+                  type="date" 
+                  value={selectedFattura.scadenza} 
+                  onChange={(e) => setSelectedFattura({ ...selectedFattura, scadenza: e.target.value })} 
+                />
+              </div>
+              <div className="p-3 bg-muted rounded-lg">
+                <Label className="text-muted-foreground">Totale Calcolato</Label>
+                <p className="text-xl font-bold text-primary">
+                  {formatCurrency(selectedFattura.imponibile * (1 + selectedFattura.aliquota_iva / 100))}
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 pt-4">
+            <Button variant="outline" className="flex-1" onClick={() => { setShowEditFattura(false); setSelectedFattura(null); }}>Annulla</Button>
+            <Button 
+              className="flex-1"
+              onClick={() => selectedFattura && updateFattura.mutate({
+                id: selectedFattura.id,
+                cliente_fornitore: selectedFattura.cliente_fornitore,
+                descrizione: selectedFattura.descrizione || '',
+                imponibile: selectedFattura.imponibile,
+                aliquota_iva: selectedFattura.aliquota_iva,
+                scadenza: selectedFattura.scadenza
+              })}
+              disabled={!selectedFattura?.cliente_fornitore}
+            >
+              Salva Modifiche
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
