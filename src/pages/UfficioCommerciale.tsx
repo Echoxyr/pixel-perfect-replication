@@ -255,8 +255,14 @@ export default function UfficioCommerciale() {
   const [showViewContratto, setShowViewContratto] = useState(false);
   const [showViewListino, setShowViewListino] = useState(false);
   const [showEditListino, setShowEditListino] = useState(false);
+  const [showViewPreventivo, setShowViewPreventivo] = useState(false);
+  const [showEditPreventivo, setShowEditPreventivo] = useState(false);
+  const [showViewOrdine, setShowViewOrdine] = useState(false);
+  const [showEditOrdine, setShowEditOrdine] = useState(false);
   const [selectedContratto, setSelectedContratto] = useState<Contratto | null>(null);
   const [selectedListino, setSelectedListino] = useState<ListinoFornitore | null>(null);
+  const [selectedPreventivo, setSelectedPreventivo] = useState<PreventivoFornitore | null>(null);
+  const [selectedOrdine, setSelectedOrdine] = useState<OrdineFornitore | null>(null);
   
   // Post-creation dialog state
   const [showPostCreation, setShowPostCreation] = useState(false);
@@ -694,6 +700,36 @@ export default function UfficioCommerciale() {
     }
   });
 
+  const updatePreventivoMutation = useMutation({
+    mutationFn: async (data: { id: string; note?: string; importo?: number; scadenza?: string }) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase.from('preventivi_fornitori').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preventivi_fornitori'] });
+      toast.success('Preventivo aggiornato');
+      setShowEditPreventivo(false);
+      setSelectedPreventivo(null);
+    },
+    onError: () => toast.error('Errore nell\'aggiornamento')
+  });
+
+  const updateOrdineMutation = useMutation({
+    mutationFn: async (data: { id: string; note?: string; data_consegna_prevista?: string; data_consegna_effettiva?: string }) => {
+      const { id, ...updateData } = data;
+      const { error } = await supabase.from('ordini_fornitori').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ordini_fornitori'] });
+      toast.success('Ordine aggiornato');
+      setShowEditOrdine(false);
+      setSelectedOrdine(null);
+    },
+    onError: () => toast.error('Errore nell\'aggiornamento')
+  });
+
   // Helpers
   const getStatoColor = (stato: string) => {
     switch (stato) {
@@ -866,62 +902,62 @@ export default function UfficioCommerciale() {
         </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="border-2 border-primary/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10"><FileText className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-2xl font-bold">{stats.contrattiAttivi}</p>
-                <p className="text-xs text-muted-foreground">Contratti Attivi</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <Card className="border-2 border-primary/50 min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0"><FileText className="w-4 h-4 text-primary" /></div>
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-xl font-bold truncate">{stats.contrattiAttivi}</p>
+                <p className="text-xs text-muted-foreground truncate">Contratti Attivi</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="border-2 border-primary/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10"><Euro className="w-5 h-5 text-emerald-500" /></div>
-              <div>
-                <p className="text-xl font-bold">{formatCurrency(stats.valoreTotaleContratti)}</p>
-                <p className="text-xs text-muted-foreground">Valore Contratti</p>
+        <Card className="border-2 border-primary/50 min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-emerald-500/10 flex-shrink-0"><Euro className="w-4 h-4 text-emerald-500" /></div>
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-sm font-bold truncate">{formatCurrency(stats.valoreTotaleContratti)}</p>
+                <p className="text-xs text-muted-foreground truncate">Valore Contratti</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10"><Receipt className="w-5 h-5 text-amber-500" /></div>
-              <div>
-                <p className="text-2xl font-bold">{stats.preventiviInAttesa}</p>
-                <p className="text-xs text-muted-foreground">Preventivi in Attesa</p>
+        <Card className="border-2 border-primary/50 min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0"><Receipt className="w-4 h-4 text-amber-500" /></div>
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-xl font-bold truncate">{stats.preventiviInAttesa}</p>
+                <p className="text-xs text-muted-foreground truncate">Preventivi in Attesa</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-sky-500/10"><Truck className="w-5 h-5 text-sky-500" /></div>
-              <div>
-                <p className="text-2xl font-bold">{stats.ordiniInCorso}</p>
-                <p className="text-xs text-muted-foreground">Ordini in Corso</p>
+        <Card className="border-2 border-primary/50 min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-sky-500/10 flex-shrink-0"><Truck className="w-4 h-4 text-sky-500" /></div>
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-xl font-bold truncate">{stats.ordiniInCorso}</p>
+                <p className="text-xs text-muted-foreground truncate">Ordini in Corso</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-primary/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-500/10"><Building2 className="w-5 h-5 text-purple-500" /></div>
-              <div>
-                <p className="text-2xl font-bold">{stats.fornitoriAttivi}</p>
-                <p className="text-xs text-muted-foreground">Fornitori Attivi</p>
+        <Card className="border-2 border-primary/50 min-w-0">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0"><Building2 className="w-4 h-4 text-purple-500" /></div>
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-xl font-bold truncate">{stats.fornitoriAttivi}</p>
+                <p className="text-xs text-muted-foreground truncate">Fornitori Attivi</p>
               </div>
             </div>
           </CardContent>
@@ -1335,13 +1371,13 @@ export default function UfficioCommerciale() {
         <TabsContent value="preventivi" className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Richieste Preventivo</CardTitle>
+              <CardTitle>Preventivo</CardTitle>
               <div className="flex gap-2">
                 <Button variant="outline" className="gap-2" onClick={() => handleExport(preventivi, 'preventivi')}><Download className="w-4 h-4" />Esporta</Button>
                 <Dialog open={showNewPreventivo} onOpenChange={setShowNewPreventivo}>
-                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuova Richiesta</Button></DialogTrigger>
+                  <DialogTrigger asChild><Button className="gap-2"><Plus className="w-4 h-4" />Nuovo Preventivo</Button></DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Nuova Richiesta Preventivo</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>Nuovo Preventivo</DialogTitle></DialogHeader>
                     <div className="grid gap-4 pt-4">
                       <div><Label>Fornitore *</Label>
                         <Select value={newPreventivo.fornitore_id} onValueChange={(v) => {
@@ -1396,43 +1432,53 @@ export default function UfficioCommerciale() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Fornitore</TableHead>
-                    <TableHead>Oggetto</TableHead>
-                    <TableHead>Importo</TableHead>
-                    <TableHead>Scadenza</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {preventivi.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-mono">{p.numero}</TableCell>
-                      <TableCell>{formatDate(p.data)}</TableCell>
-                      <TableCell>{p.fornitore_nome}</TableCell>
-                      <TableCell>{p.oggetto}</TableCell>
-                      <TableCell>{p.importo ? formatCurrency(p.importo) : '-'}</TableCell>
-                      <TableCell>{p.scadenza ? formatDate(p.scadenza) : '-'}</TableCell>
-                      <TableCell><Badge className={getStatoColor(p.stato)}>{p.stato}</Badge></TableCell>
-                      <TableCell className="text-right flex gap-1 justify-end">
-                        {p.stato === 'richiesto' && <Button size="sm" variant="outline" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'ricevuto' })}>Ricevuto</Button>}
-                        {p.stato === 'ricevuto' && (
-                          <>
-                            <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'approvato' })}>Approva</Button>
-                            <Button size="sm" variant="outline" className="text-destructive" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'rifiutato' })}>Rifiuta</Button>
-                          </>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Numero</TableHead>
+                      <TableHead className="whitespace-nowrap">Data</TableHead>
+                      <TableHead className="whitespace-nowrap">Fornitore</TableHead>
+                      <TableHead className="min-w-[150px]">Oggetto</TableHead>
+                      <TableHead className="whitespace-nowrap">Importo</TableHead>
+                      <TableHead className="whitespace-nowrap">Scadenza</TableHead>
+                      <TableHead className="min-w-[120px]">Note</TableHead>
+                      <TableHead className="whitespace-nowrap">Stato</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Azioni</TableHead>
                     </TableRow>
-                  ))}
-                  {preventivi.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun preventivo trovato</TableCell></TableRow>}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {preventivi.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-mono whitespace-nowrap">{p.numero}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(p.data)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{p.fornitore_nome}</TableCell>
+                        <TableCell className="max-w-[200px] break-words">{p.oggetto}</TableCell>
+                        <TableCell className="whitespace-nowrap">{p.importo ? formatCurrency(p.importo) : '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{p.scadenza ? formatDate(p.scadenza) : '-'}</TableCell>
+                        <TableCell className="max-w-[150px]">
+                          {p.note ? <span className="text-xs text-muted-foreground break-words line-clamp-2">{p.note}</span> : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell><Badge className={getStatoColor(p.stato)}>{p.stato}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end flex-wrap">
+                            <Button variant="ghost" size="icon" onClick={() => { setSelectedPreventivo(p); setShowViewPreventivo(true); }}><Eye className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { setSelectedPreventivo(p); setShowEditPreventivo(true); }}><Edit className="w-4 h-4" /></Button>
+                            {p.stato === 'richiesto' && <Button size="sm" variant="outline" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'ricevuto' })}>Ricevuto</Button>}
+                            {p.stato === 'ricevuto' && (
+                              <>
+                                <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'approvato' })}>Approva</Button>
+                                <Button size="sm" variant="outline" className="text-destructive" onClick={() => updatePreventivoStatoMutation.mutate({ id: p.id, stato: 'rifiutato' })}>Rifiuta</Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {preventivi.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nessun preventivo trovato</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1504,40 +1550,50 @@ export default function UfficioCommerciale() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Numero</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Fornitore</TableHead>
-                    <TableHead>Importo</TableHead>
-                    <TableHead>Consegna Prevista</TableHead>
-                    <TableHead>Consegna Effettiva</TableHead>
-                    <TableHead>Stato</TableHead>
-                    <TableHead className="text-right">Azioni</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ordini.map(o => (
-                    <TableRow key={o.id}>
-                      <TableCell className="font-mono">{o.numero}</TableCell>
-                      <TableCell>{formatDate(o.data)}</TableCell>
-                      <TableCell>{o.fornitore_nome}</TableCell>
-                      <TableCell>{formatCurrency(o.importo)}</TableCell>
-                      <TableCell>{o.data_consegna_prevista ? formatDate(o.data_consegna_prevista) : '-'}</TableCell>
-                      <TableCell>{o.data_consegna_effettiva ? formatDate(o.data_consegna_effettiva) : '-'}</TableCell>
-                      <TableCell><Badge className={cn("gap-1", getStatoColor(o.stato))}>{getStatoIcon(o.stato)}{o.stato.replace('_', ' ')}</Badge></TableCell>
-                      <TableCell className="text-right flex gap-1 justify-end">
-                        {o.stato === 'bozza' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'inviato' })}><Send className="w-3 h-3 mr-1" />Invia</Button>}
-                        {o.stato === 'inviato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'confermato' })}>Conferma</Button>}
-                        {o.stato === 'confermato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'in_consegna' })}>In Consegna</Button>}
-                        {o.stato === 'in_consegna' && <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'consegnato' })}><CheckCircle className="w-3 h-3 mr-1" />Consegnato</Button>}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Numero</TableHead>
+                      <TableHead className="whitespace-nowrap">Data</TableHead>
+                      <TableHead className="whitespace-nowrap">Fornitore</TableHead>
+                      <TableHead className="whitespace-nowrap">Importo</TableHead>
+                      <TableHead className="whitespace-nowrap">Consegna Prevista</TableHead>
+                      <TableHead className="whitespace-nowrap">Consegna Effettiva</TableHead>
+                      <TableHead className="min-w-[120px]">Note</TableHead>
+                      <TableHead className="whitespace-nowrap">Stato</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">Azioni</TableHead>
                     </TableRow>
-                  ))}
-                  {ordini.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nessun ordine trovato</TableCell></TableRow>}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ordini.map(o => (
+                      <TableRow key={o.id}>
+                        <TableCell className="font-mono whitespace-nowrap">{o.numero}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatDate(o.data)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{o.fornitore_nome}</TableCell>
+                        <TableCell className="whitespace-nowrap">{formatCurrency(o.importo)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{o.data_consegna_prevista ? formatDate(o.data_consegna_prevista) : '-'}</TableCell>
+                        <TableCell className="whitespace-nowrap">{o.data_consegna_effettiva ? formatDate(o.data_consegna_effettiva) : '-'}</TableCell>
+                        <TableCell className="max-w-[150px]">
+                          {o.note ? <span className="text-xs text-muted-foreground break-words line-clamp-2">{o.note}</span> : <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell><Badge className={cn("gap-1", getStatoColor(o.stato))}>{getStatoIcon(o.stato)}{o.stato.replace('_', ' ')}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-1 justify-end flex-wrap">
+                            <Button variant="ghost" size="icon" onClick={() => { setSelectedOrdine(o); setShowViewOrdine(true); }}><Eye className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { setSelectedOrdine(o); setShowEditOrdine(true); }}><Edit className="w-4 h-4" /></Button>
+                            {o.stato === 'bozza' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'inviato' })}><Send className="w-3 h-3 mr-1" />Invia</Button>}
+                            {o.stato === 'inviato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'confermato' })}>Conferma</Button>}
+                            {o.stato === 'confermato' && <Button size="sm" variant="outline" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'in_consegna' })}>In Consegna</Button>}
+                            {o.stato === 'in_consegna' && <Button size="sm" variant="outline" className="text-emerald-500" onClick={() => updateOrdineStatoMutation.mutate({ id: o.id, stato: 'consegnato' })}><CheckCircle className="w-3 h-3 mr-1" />Consegnato</Button>}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {ordini.length === 0 && <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nessun ordine trovato</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1918,6 +1974,178 @@ export default function UfficioCommerciale() {
                 attivo: selectedListino.attivo || false
               })}
               disabled={!selectedListino?.nome}
+            >
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Visualizza Preventivo */}
+      <Dialog open={showViewPreventivo} onOpenChange={setShowViewPreventivo}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="w-5 h-5" />
+              Dettagli Preventivo {selectedPreventivo?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedPreventivo && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Numero</Label>
+                  <p className="font-mono">{selectedPreventivo.numero}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data</Label>
+                  <p>{formatDate(selectedPreventivo.data)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Fornitore</Label>
+                  <p className="font-medium">{selectedPreventivo.fornitore_nome}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Oggetto</Label>
+                  <p>{selectedPreventivo.oggetto}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Importo</Label>
+                  <p className="font-bold text-primary">{selectedPreventivo.importo ? formatCurrency(selectedPreventivo.importo) : '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Scadenza</Label>
+                  <p>{selectedPreventivo.scadenza ? formatDate(selectedPreventivo.scadenza) : '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <Badge className={getStatoColor(selectedPreventivo.stato)}>{selectedPreventivo.stato}</Badge>
+                </div>
+                {selectedPreventivo.note && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">Note</Label>
+                    <p className="text-sm whitespace-pre-wrap">{selectedPreventivo.note}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowViewPreventivo(false)}>Chiudi</Button>
+                <Button onClick={() => { setShowViewPreventivo(false); setShowEditPreventivo(true); }}>Modifica</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Modifica Preventivo */}
+      <Dialog open={showEditPreventivo} onOpenChange={setShowEditPreventivo}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Modifica Preventivo</DialogTitle></DialogHeader>
+          {selectedPreventivo && (
+            <div className="grid gap-4 pt-4">
+              <div><Label>Numero</Label><Input value={selectedPreventivo.numero} disabled /></div>
+              <div><Label>Fornitore</Label><Input value={selectedPreventivo.fornitore_nome} disabled /></div>
+              <div><Label>Oggetto</Label><Input value={selectedPreventivo.oggetto} disabled /></div>
+              <div><Label>Importo €</Label><Input type="number" value={selectedPreventivo.importo || 0} onChange={(e) => setSelectedPreventivo({ ...selectedPreventivo, importo: parseFloat(e.target.value) || 0 })} /></div>
+              <div><Label>Scadenza</Label><Input type="date" value={selectedPreventivo.scadenza || ''} onChange={(e) => setSelectedPreventivo({ ...selectedPreventivo, scadenza: e.target.value || null })} /></div>
+              <div><Label>Note</Label><Textarea value={selectedPreventivo.note || ''} onChange={(e) => setSelectedPreventivo({ ...selectedPreventivo, note: e.target.value })} placeholder="Aggiungi note..." /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditPreventivo(false); setSelectedPreventivo(null); }}>Annulla</Button>
+            <Button 
+              onClick={() => selectedPreventivo && updatePreventivoMutation.mutate({
+                id: selectedPreventivo.id,
+                importo: selectedPreventivo.importo || undefined,
+                scadenza: selectedPreventivo.scadenza || undefined,
+                note: selectedPreventivo.note || undefined
+              })}
+            >
+              Salva Modifiche
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Visualizza Ordine */}
+      <Dialog open={showViewOrdine} onOpenChange={setShowViewOrdine}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              Dettagli Ordine {selectedOrdine?.numero}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedOrdine && (
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Numero</Label>
+                  <p className="font-mono">{selectedOrdine.numero}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Data</Label>
+                  <p>{formatDate(selectedOrdine.data)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Fornitore</Label>
+                  <p className="font-medium">{selectedOrdine.fornitore_nome}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Importo</Label>
+                  <p className="font-bold text-primary">{formatCurrency(selectedOrdine.importo)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Stato</Label>
+                  <Badge className={cn("gap-1", getStatoColor(selectedOrdine.stato))}>{getStatoIcon(selectedOrdine.stato)}{selectedOrdine.stato.replace('_', ' ')}</Badge>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Consegna Prevista</Label>
+                  <p>{selectedOrdine.data_consegna_prevista ? formatDate(selectedOrdine.data_consegna_prevista) : '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Consegna Effettiva</Label>
+                  <p>{selectedOrdine.data_consegna_effettiva ? formatDate(selectedOrdine.data_consegna_effettiva) : '-'}</p>
+                </div>
+                {selectedOrdine.note && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">Note</Label>
+                    <p className="text-sm whitespace-pre-wrap">{selectedOrdine.note}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowViewOrdine(false)}>Chiudi</Button>
+                <Button onClick={() => { setShowViewOrdine(false); setShowEditOrdine(true); }}>Modifica</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Modifica Ordine */}
+      <Dialog open={showEditOrdine} onOpenChange={setShowEditOrdine}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Modifica Ordine</DialogTitle></DialogHeader>
+          {selectedOrdine && (
+            <div className="grid gap-4 pt-4">
+              <div><Label>Numero</Label><Input value={selectedOrdine.numero} disabled /></div>
+              <div><Label>Fornitore</Label><Input value={selectedOrdine.fornitore_nome} disabled /></div>
+              <div><Label>Importo €</Label><Input value={formatCurrency(selectedOrdine.importo)} disabled /></div>
+              <div><Label>Data Consegna Prevista</Label><Input type="date" value={selectedOrdine.data_consegna_prevista || ''} onChange={(e) => setSelectedOrdine({ ...selectedOrdine, data_consegna_prevista: e.target.value || null })} /></div>
+              <div><Label>Data Consegna Effettiva</Label><Input type="date" value={selectedOrdine.data_consegna_effettiva || ''} onChange={(e) => setSelectedOrdine({ ...selectedOrdine, data_consegna_effettiva: e.target.value || null })} /></div>
+              <div><Label>Note</Label><Textarea value={selectedOrdine.note || ''} onChange={(e) => setSelectedOrdine({ ...selectedOrdine, note: e.target.value })} placeholder="Aggiungi note su consegna, problemi, ecc..." /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditOrdine(false); setSelectedOrdine(null); }}>Annulla</Button>
+            <Button 
+              onClick={() => selectedOrdine && updateOrdineMutation.mutate({
+                id: selectedOrdine.id,
+                data_consegna_prevista: selectedOrdine.data_consegna_prevista || undefined,
+                data_consegna_effettiva: selectedOrdine.data_consegna_effettiva || undefined,
+                note: selectedOrdine.note || undefined
+              })}
             >
               Salva Modifiche
             </Button>
