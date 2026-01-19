@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Briefcase, GitBranch, AlertTriangle } from 'lucide-react';
 import RFQManager from '@/components/workhub/RFQManager';
 import SubappaltiManager from '@/components/workhub/SubappaltiManager';
+import VariantiManager from '@/components/workhub/VariantiManager';
+import NCCAPAManager from '@/components/workhub/NCCAPAManager';
 
 export default function ProcurementHub() {
   const [activeTab, setActiveTab] = useState('rfq');
@@ -54,15 +56,11 @@ export default function ProcurementHub() {
         </TabsContent>
 
         <TabsContent value="varianti" className="mt-6 tab-content-fixed">
-          <div className="text-center py-12 text-muted-foreground">
-            Modulo Varianti in sviluppo - Gestione change order con storicizzazione
-          </div>
+          <VariantiManager />
         </TabsContent>
 
         <TabsContent value="nccapa" className="mt-6 tab-content-fixed">
-          <div className="text-center py-12 text-muted-foreground">
-            Modulo NC/CAPA in sviluppo - Non conformità e azioni correttive
-          </div>
+          <NCCAPAManager />
         </TabsContent>
       </Tabs>
     </div>
