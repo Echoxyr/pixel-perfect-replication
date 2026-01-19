@@ -198,27 +198,37 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
     mutationFn: async (preventivo: Preventivo) => {
       const numeroOrdine = `ORD-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
       
+      // Prepare insert data - handle nullable fields properly
+      const insertData = {
+        numero: numeroOrdine,
+        data: new Date().toISOString().split('T')[0],
+        fornitore_id: preventivo.fornitore_id || null,
+        fornitore_nome: preventivo.fornitore_nome || 'N/D',
+        cantiere_id: preventivo.cantiere_id || null,
+        importo: preventivo.importo || 0,
+        stato: 'confermato',
+        preventivo_origine_id: preventivo.id,
+        note: `Generato da preventivo ${preventivo.numero}`
+      };
+      
+      console.log('Creating ordine with data:', insertData);
+      
       // Create new order
       const { data: newOrdine, error: ordineError } = await supabase
         .from('ordini_fornitori')
-        .insert({
-          numero: numeroOrdine,
-          data: new Date().toISOString().split('T')[0],
-          fornitore_id: preventivo.fornitore_id,
-          fornitore_nome: preventivo.fornitore_nome,
-          importo: preventivo.importo || 0,
-          stato: 'confermato',
-          preventivo_origine_id: preventivo.id,
-          cantiere_id: preventivo.cantiere_id,
-          note: `Generato da preventivo ${preventivo.numero}`
-        })
+        .insert(insertData)
         .select()
         .single();
       
-      if (ordineError) throw ordineError;
+      if (ordineError) {
+        console.error('Error creating ordine:', ordineError);
+        throw ordineError;
+      }
+      
+      console.log('Ordine created:', newOrdine);
 
       // Update preventivo with link
-      await supabase
+      const { error: updateError } = await supabase
         .from('preventivi_fornitori')
         .update({
           stato: 'approvato',
@@ -226,6 +236,10 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
           convertito_in_ordine_at: new Date().toISOString()
         })
         .eq('id', preventivo.id);
+      
+      if (updateError) {
+        console.error('Error updating preventivo:', updateError);
+      }
 
       // Log conversion
       await supabase.from('document_conversions').insert({
@@ -261,6 +275,7 @@ export default function DocumentFlowManager({ className }: DocumentFlowManagerPr
       setConversionNote('');
     },
     onError: (error) => {
+      console.error('Conversion error:', error);
       toast.error('Errore nella conversione: ' + (error as Error).message);
     }
   });

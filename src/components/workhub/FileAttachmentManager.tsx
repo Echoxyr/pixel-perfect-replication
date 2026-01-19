@@ -41,6 +41,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { FileViewerModal } from './FileViewerModal';
 
 export interface FileAttachment {
   id: string;
@@ -110,6 +111,7 @@ export function FileAttachmentManager({
 }: FileAttachmentManagerProps) {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showViewerModal, setShowViewerModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<FileAttachment | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -192,7 +194,8 @@ export function FileAttachmentManager({
 
   const handleView = (file: FileAttachment) => {
     if (file.url) {
-      window.open(file.url, '_blank');
+      setSelectedFile(file);
+      setShowViewerModal(true);
     } else {
       toast.info('URL non disponibile');
     }
@@ -561,6 +564,24 @@ export function FileAttachmentManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* File Viewer Modal with Adobe/Office integration */}
+      <FileViewerModal
+        open={showViewerModal}
+        onOpenChange={setShowViewerModal}
+        file={selectedFile ? {
+          name: selectedFile.name,
+          url: selectedFile.url || '',
+          size: selectedFile.size,
+          path: selectedFile.path,
+        } : null}
+        onDelete={async () => {
+          if (selectedFile) {
+            await handleDelete(selectedFile);
+          }
+        }}
+        allowDelete={allowDelete}
+      />
     </div>
   );
 }

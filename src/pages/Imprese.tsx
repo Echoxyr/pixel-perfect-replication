@@ -34,12 +34,14 @@ import {
   Upload,
   Camera,
   Trash2,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { PostCreationActions } from '@/components/workhub/PostCreationActions';
+import { FileViewerModal } from '@/components/workhub/FileViewerModal';
 
 export default function Imprese() {
   const navigate = useNavigate();
@@ -76,6 +78,10 @@ export default function Imprese() {
   });
   const [uploadedFileName, setUploadedFileName] = useState('');
   const docFileRef = useRef<HTMLInputElement>(null);
+  
+  // File viewer modal state
+  const [showFileViewer, setShowFileViewer] = useState(false);
+  const [viewingFile, setViewingFile] = useState<{ name: string; url: string } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -787,6 +793,13 @@ export default function Imprese() {
           entityName={createdImpresa.name}
         />
       )}
+
+      {/* File Viewer Modal */}
+      <FileViewerModal
+        open={showFileViewer}
+        onOpenChange={setShowFileViewer}
+        file={viewingFile}
+      />
     </div>
   );
 }

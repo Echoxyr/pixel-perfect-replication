@@ -35,11 +35,13 @@ import {
   Trash2,
   Edit,
   Download,
-  Camera
+  Camera,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { PostCreationActions } from '@/components/workhub/PostCreationActions';
+import { FileViewerModal } from '@/components/workhub/FileViewerModal';
 
 export default function Lavoratori() {
   const {
@@ -122,6 +124,10 @@ export default function Lavoratori() {
   const formazioneFileRef = useRef<HTMLInputElement>(null);
   const docFileRef = useRef<HTMLInputElement>(null);
   const [uploadedFileName, setUploadedFileName] = useState('');
+  
+  // File viewer modal state
+  const [showFileViewer, setShowFileViewer] = useState(false);
+  const [viewingFile, setViewingFile] = useState<{ name: string; url: string } | null>(null);
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -1175,6 +1181,13 @@ export default function Lavoratori() {
           entityName={createdLavoratore.name}
         />
       )}
+
+      {/* File Viewer Modal */}
+      <FileViewerModal
+        open={showFileViewer}
+        onOpenChange={setShowFileViewer}
+        file={viewingFile}
+      />
     </div>
   );
 }
