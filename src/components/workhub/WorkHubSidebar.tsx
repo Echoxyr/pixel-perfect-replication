@@ -454,6 +454,12 @@ export function WorkHubSidebar({
                 label="Flusso Documentale"
                 active={isActive("/flusso-documentale")}
               />
+              <NavItem
+                to="/procurement"
+                icon={Truck}
+                label="Procurement Hub"
+                active={isActive("/procurement")}
+              />
             </div>
           )}
         </div>
