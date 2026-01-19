@@ -411,6 +411,95 @@ export type Database = {
           },
         ]
       }
+      capa: {
+        Row: {
+          allegati: Json | null
+          analisi_causa: string | null
+          azione_proposta: string
+          codice: string
+          costo_implementazione: number | null
+          created_at: string
+          data_apertura: string
+          data_completamento: string | null
+          data_scadenza: string
+          data_verifica: string | null
+          descrizione: string
+          efficace: boolean | null
+          esito_verifica: string | null
+          id: string
+          nc_id: string | null
+          note: string | null
+          oggetto: string
+          priorita: string | null
+          responsabile: string
+          risultato_atteso: string | null
+          stato: string
+          tipo: string
+          updated_at: string
+          verificato_da: string | null
+        }
+        Insert: {
+          allegati?: Json | null
+          analisi_causa?: string | null
+          azione_proposta: string
+          codice: string
+          costo_implementazione?: number | null
+          created_at?: string
+          data_apertura?: string
+          data_completamento?: string | null
+          data_scadenza: string
+          data_verifica?: string | null
+          descrizione: string
+          efficace?: boolean | null
+          esito_verifica?: string | null
+          id?: string
+          nc_id?: string | null
+          note?: string | null
+          oggetto: string
+          priorita?: string | null
+          responsabile: string
+          risultato_atteso?: string | null
+          stato?: string
+          tipo: string
+          updated_at?: string
+          verificato_da?: string | null
+        }
+        Update: {
+          allegati?: Json | null
+          analisi_causa?: string | null
+          azione_proposta?: string
+          codice?: string
+          costo_implementazione?: number | null
+          created_at?: string
+          data_apertura?: string
+          data_completamento?: string | null
+          data_scadenza?: string
+          data_verifica?: string | null
+          descrizione?: string
+          efficace?: boolean | null
+          esito_verifica?: string | null
+          id?: string
+          nc_id?: string | null
+          note?: string | null
+          oggetto?: string
+          priorita?: string | null
+          responsabile?: string
+          risultato_atteso?: string | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+          verificato_da?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capa_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformita"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centri_costo: {
         Row: {
           attivo: boolean | null
@@ -2035,6 +2124,118 @@ export type Database = {
           },
         ]
       }
+      non_conformita: {
+        Row: {
+          allegati: Json | null
+          cantiere_id: string | null
+          causa_radice: string | null
+          chiuso_da: string | null
+          codice: string
+          costo_stimato: number | null
+          created_at: string
+          data_chiusura: string | null
+          data_rilevazione: string
+          data_scadenza_trattamento: string | null
+          descrizione: string
+          efficacia_verificata: boolean | null
+          esito_verifica: string | null
+          fornitore_id: string | null
+          gravita: string
+          id: string
+          impatto: string | null
+          note: string | null
+          oggetto: string
+          origine: string | null
+          responsabile_trattamento: string | null
+          rilevato_da: string | null
+          stato: string
+          subappalto_id: string | null
+          tipo: string
+          trattamento_immediato: string | null
+          updated_at: string
+        }
+        Insert: {
+          allegati?: Json | null
+          cantiere_id?: string | null
+          causa_radice?: string | null
+          chiuso_da?: string | null
+          codice: string
+          costo_stimato?: number | null
+          created_at?: string
+          data_chiusura?: string | null
+          data_rilevazione?: string
+          data_scadenza_trattamento?: string | null
+          descrizione: string
+          efficacia_verificata?: boolean | null
+          esito_verifica?: string | null
+          fornitore_id?: string | null
+          gravita: string
+          id?: string
+          impatto?: string | null
+          note?: string | null
+          oggetto: string
+          origine?: string | null
+          responsabile_trattamento?: string | null
+          rilevato_da?: string | null
+          stato?: string
+          subappalto_id?: string | null
+          tipo: string
+          trattamento_immediato?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allegati?: Json | null
+          cantiere_id?: string | null
+          causa_radice?: string | null
+          chiuso_da?: string | null
+          codice?: string
+          costo_stimato?: number | null
+          created_at?: string
+          data_chiusura?: string | null
+          data_rilevazione?: string
+          data_scadenza_trattamento?: string | null
+          descrizione?: string
+          efficacia_verificata?: boolean | null
+          esito_verifica?: string | null
+          fornitore_id?: string | null
+          gravita?: string
+          id?: string
+          impatto?: string | null
+          note?: string | null
+          oggetto?: string
+          origine?: string | null
+          responsabile_trattamento?: string | null
+          rilevato_da?: string | null
+          stato?: string
+          subappalto_id?: string | null
+          tipo?: string
+          trattamento_immediato?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "non_conformita_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformita_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformita_subappalto_id_fkey"
+            columns: ["subappalto_id"]
+            isOneToOne: false
+            referencedRelation: "subappalti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_spesa: {
         Row: {
           allegati: string[] | null
@@ -2133,18 +2334,21 @@ export type Database = {
           allegati: string[] | null
           cantiere_id: string | null
           cantiere_nome: string | null
+          condizioni_pagamento: string | null
           convertito_in_ddt_at: string | null
           created_at: string | null
           data: string
           data_consegna_effettiva: string | null
           data_consegna_prevista: string | null
           ddt_generato_id: string | null
+          documenti_richiesti: Json | null
           fornitore_id: string | null
           fornitore_nome: string
           id: string
           importo: number
           note: string | null
           numero: string
+          penali: string | null
           preventivo_origine_id: string | null
           stato: string
           updated_at: string | null
@@ -2153,18 +2357,21 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          condizioni_pagamento?: string | null
           convertito_in_ddt_at?: string | null
           created_at?: string | null
           data?: string
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
           ddt_generato_id?: string | null
+          documenti_richiesti?: Json | null
           fornitore_id?: string | null
           fornitore_nome: string
           id?: string
           importo?: number
           note?: string | null
           numero: string
+          penali?: string | null
           preventivo_origine_id?: string | null
           stato?: string
           updated_at?: string | null
@@ -2173,18 +2380,21 @@ export type Database = {
           allegati?: string[] | null
           cantiere_id?: string | null
           cantiere_nome?: string | null
+          condizioni_pagamento?: string | null
           convertito_in_ddt_at?: string | null
           created_at?: string | null
           data?: string
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
           ddt_generato_id?: string | null
+          documenti_richiesti?: Json | null
           fornitore_id?: string | null
           fornitore_nome?: string
           id?: string
           importo?: number
           note?: string | null
           numero?: string
+          penali?: string | null
           preventivo_origine_id?: string | null
           stato?: string
           updated_at?: string | null
@@ -2637,6 +2847,215 @@ export type Database = {
         }
         Relationships: []
       }
+      rfq_comparazioni: {
+        Row: {
+          approvato_da: string | null
+          created_at: string
+          criteri_valutazione: Json | null
+          data_approvazione: string | null
+          data_comparazione: string
+          id: string
+          motivazione_scelta: string
+          note_commissione: string | null
+          rfq_id: string
+          risposta_vincente_id: string | null
+        }
+        Insert: {
+          approvato_da?: string | null
+          created_at?: string
+          criteri_valutazione?: Json | null
+          data_approvazione?: string | null
+          data_comparazione?: string
+          id?: string
+          motivazione_scelta: string
+          note_commissione?: string | null
+          rfq_id: string
+          risposta_vincente_id?: string | null
+        }
+        Update: {
+          approvato_da?: string | null
+          created_at?: string
+          criteri_valutazione?: Json | null
+          data_approvazione?: string | null
+          data_comparazione?: string
+          id?: string
+          motivazione_scelta?: string
+          note_commissione?: string | null
+          rfq_id?: string
+          risposta_vincente_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_comparazioni_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_richieste"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_comparazioni_risposta_vincente_id_fkey"
+            columns: ["risposta_vincente_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_risposte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_richieste: {
+        Row: {
+          allegati_tecnici: Json | null
+          cantiere_id: string | null
+          created_at: string
+          created_by: string | null
+          data_emissione: string
+          data_scadenza: string
+          descrizione: string | null
+          id: string
+          importo_stimato: number | null
+          lavorazione: string | null
+          note: string | null
+          numero: string
+          oggetto: string
+          solleciti_inviati: number | null
+          stato: string
+          ultimo_sollecito: string | null
+          updated_at: string
+          urgenza: string | null
+        }
+        Insert: {
+          allegati_tecnici?: Json | null
+          cantiere_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissione?: string
+          data_scadenza: string
+          descrizione?: string | null
+          id?: string
+          importo_stimato?: number | null
+          lavorazione?: string | null
+          note?: string | null
+          numero: string
+          oggetto: string
+          solleciti_inviati?: number | null
+          stato?: string
+          ultimo_sollecito?: string | null
+          updated_at?: string
+          urgenza?: string | null
+        }
+        Update: {
+          allegati_tecnici?: Json | null
+          cantiere_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissione?: string
+          data_scadenza?: string
+          descrizione?: string | null
+          id?: string
+          importo_stimato?: number | null
+          lavorazione?: string | null
+          note?: string | null
+          numero?: string
+          oggetto?: string
+          solleciti_inviati?: number | null
+          stato?: string
+          ultimo_sollecito?: string | null
+          updated_at?: string
+          urgenza?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_richieste_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rfq_risposte: {
+        Row: {
+          allegati: Json | null
+          condizioni_pagamento: string | null
+          created_at: string
+          data_ricezione: string
+          fornitore_id: string | null
+          fornitore_nome: string | null
+          id: string
+          importo_offerto: number
+          motivo_esclusione: string | null
+          motivo_selezione: string | null
+          note_tecniche: string | null
+          punteggio_economico: number | null
+          punteggio_tecnico: number | null
+          punteggio_totale: number | null
+          rfq_id: string
+          selezionata: boolean | null
+          tempi_consegna: string | null
+          updated_at: string
+          validita_offerta: string | null
+          valutazione: number | null
+        }
+        Insert: {
+          allegati?: Json | null
+          condizioni_pagamento?: string | null
+          created_at?: string
+          data_ricezione?: string
+          fornitore_id?: string | null
+          fornitore_nome?: string | null
+          id?: string
+          importo_offerto: number
+          motivo_esclusione?: string | null
+          motivo_selezione?: string | null
+          note_tecniche?: string | null
+          punteggio_economico?: number | null
+          punteggio_tecnico?: number | null
+          punteggio_totale?: number | null
+          rfq_id: string
+          selezionata?: boolean | null
+          tempi_consegna?: string | null
+          updated_at?: string
+          validita_offerta?: string | null
+          valutazione?: number | null
+        }
+        Update: {
+          allegati?: Json | null
+          condizioni_pagamento?: string | null
+          created_at?: string
+          data_ricezione?: string
+          fornitore_id?: string | null
+          fornitore_nome?: string | null
+          id?: string
+          importo_offerto?: number
+          motivo_esclusione?: string | null
+          motivo_selezione?: string | null
+          note_tecniche?: string | null
+          punteggio_economico?: number | null
+          punteggio_tecnico?: number | null
+          punteggio_totale?: number | null
+          rfq_id?: string
+          selezionata?: boolean | null
+          tempi_consegna?: string | null
+          updated_at?: string
+          validita_offerta?: string | null
+          valutazione?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rfq_risposte_fornitore_id_fkey"
+            columns: ["fornitore_id"]
+            isOneToOne: false
+            referencedRelation: "fornitori"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfq_risposte_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfq_richieste"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       richieste_dipendenti: {
         Row: {
           approvato_da: string | null
@@ -2996,6 +3415,167 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      subappalti: {
+        Row: {
+          allegati: Json | null
+          cantiere_id: string | null
+          condizioni_pagamento: string | null
+          created_at: string
+          data_contratto: string | null
+          data_fine_effettiva: string | null
+          data_fine_prevista: string | null
+          data_inizio_lavori: string | null
+          documenti_obbligatori: Json | null
+          documenti_ricevuti: Json | null
+          id: string
+          importo_autorizzato: number | null
+          importo_contratto: number
+          impresa_id: string | null
+          impresa_nome: string | null
+          lotto: string | null
+          note: string | null
+          numero_contratto: string
+          oggetto: string
+          penali: string | null
+          percentuale_ribasso: number | null
+          referente_email: string | null
+          referente_nome: string | null
+          referente_telefono: string | null
+          stato: string
+          updated_at: string
+        }
+        Insert: {
+          allegati?: Json | null
+          cantiere_id?: string | null
+          condizioni_pagamento?: string | null
+          created_at?: string
+          data_contratto?: string | null
+          data_fine_effettiva?: string | null
+          data_fine_prevista?: string | null
+          data_inizio_lavori?: string | null
+          documenti_obbligatori?: Json | null
+          documenti_ricevuti?: Json | null
+          id?: string
+          importo_autorizzato?: number | null
+          importo_contratto: number
+          impresa_id?: string | null
+          impresa_nome?: string | null
+          lotto?: string | null
+          note?: string | null
+          numero_contratto: string
+          oggetto: string
+          penali?: string | null
+          percentuale_ribasso?: number | null
+          referente_email?: string | null
+          referente_nome?: string | null
+          referente_telefono?: string | null
+          stato?: string
+          updated_at?: string
+        }
+        Update: {
+          allegati?: Json | null
+          cantiere_id?: string | null
+          condizioni_pagamento?: string | null
+          created_at?: string
+          data_contratto?: string | null
+          data_fine_effettiva?: string | null
+          data_fine_prevista?: string | null
+          data_inizio_lavori?: string | null
+          documenti_obbligatori?: Json | null
+          documenti_ricevuti?: Json | null
+          id?: string
+          importo_autorizzato?: number | null
+          importo_contratto?: number
+          impresa_id?: string | null
+          impresa_nome?: string | null
+          lotto?: string | null
+          note?: string | null
+          numero_contratto?: string
+          oggetto?: string
+          penali?: string | null
+          percentuale_ribasso?: number | null
+          referente_email?: string | null
+          referente_nome?: string | null
+          referente_telefono?: string | null
+          stato?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subappalti_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subappalti_impresa_id_fkey"
+            columns: ["impresa_id"]
+            isOneToOne: false
+            referencedRelation: "imprese"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subappalti_documenti: {
+        Row: {
+          created_at: string
+          data_ricezione: string | null
+          data_richiesta: string | null
+          data_scadenza: string | null
+          data_verifica: string | null
+          file_url: string | null
+          id: string
+          nome_documento: string | null
+          note: string | null
+          stato: string
+          subappalto_id: string
+          tipo_documento: string
+          updated_at: string
+          verificato_da: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_ricezione?: string | null
+          data_richiesta?: string | null
+          data_scadenza?: string | null
+          data_verifica?: string | null
+          file_url?: string | null
+          id?: string
+          nome_documento?: string | null
+          note?: string | null
+          stato?: string
+          subappalto_id: string
+          tipo_documento: string
+          updated_at?: string
+          verificato_da?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_ricezione?: string | null
+          data_richiesta?: string | null
+          data_scadenza?: string | null
+          data_verifica?: string | null
+          file_url?: string | null
+          id?: string
+          nome_documento?: string | null
+          note?: string | null
+          stato?: string
+          subappalto_id?: string
+          tipo_documento?: string
+          updated_at?: string
+          verificato_da?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subappalti_documenti_subappalto_id_fkey"
+            columns: ["subappalto_id"]
+            isOneToOne: false
+            referencedRelation: "subappalti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -3414,6 +3994,133 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      varianti: {
+        Row: {
+          allegati: Json | null
+          approvato_da: string | null
+          cantiere_id: string | null
+          created_at: string
+          data_approvazione: string | null
+          data_richiesta: string
+          descrizione: string | null
+          id: string
+          importo_nuovo_totale: number | null
+          importo_originale: number | null
+          importo_variante: number
+          motivazione: string
+          note_approvazione: string | null
+          numero_variante: string
+          oggetto: string
+          percentuale_variazione: number | null
+          richiesto_da: string | null
+          riferimento_id: string
+          riferimento_numero: string | null
+          stato: string
+          tipo_riferimento: string
+          tipo_variante: string
+          updated_at: string
+          versione: number | null
+        }
+        Insert: {
+          allegati?: Json | null
+          approvato_da?: string | null
+          cantiere_id?: string | null
+          created_at?: string
+          data_approvazione?: string | null
+          data_richiesta?: string
+          descrizione?: string | null
+          id?: string
+          importo_nuovo_totale?: number | null
+          importo_originale?: number | null
+          importo_variante: number
+          motivazione: string
+          note_approvazione?: string | null
+          numero_variante: string
+          oggetto: string
+          percentuale_variazione?: number | null
+          richiesto_da?: string | null
+          riferimento_id: string
+          riferimento_numero?: string | null
+          stato?: string
+          tipo_riferimento: string
+          tipo_variante: string
+          updated_at?: string
+          versione?: number | null
+        }
+        Update: {
+          allegati?: Json | null
+          approvato_da?: string | null
+          cantiere_id?: string | null
+          created_at?: string
+          data_approvazione?: string | null
+          data_richiesta?: string
+          descrizione?: string | null
+          id?: string
+          importo_nuovo_totale?: number | null
+          importo_originale?: number | null
+          importo_variante?: number
+          motivazione?: string
+          note_approvazione?: string | null
+          numero_variante?: string
+          oggetto?: string
+          percentuale_variazione?: number | null
+          richiesto_da?: string | null
+          riferimento_id?: string
+          riferimento_numero?: string | null
+          stato?: string
+          tipo_riferimento?: string
+          tipo_variante?: string
+          updated_at?: string
+          versione?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "varianti_cantiere_id_fkey"
+            columns: ["cantiere_id"]
+            isOneToOne: false
+            referencedRelation: "cantieri"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      varianti_storico: {
+        Row: {
+          data_modifica: string
+          dati_snapshot: Json
+          id: string
+          modificato_da: string | null
+          note_modifica: string | null
+          variante_id: string
+          versione: number
+        }
+        Insert: {
+          data_modifica?: string
+          dati_snapshot: Json
+          id?: string
+          modificato_da?: string | null
+          note_modifica?: string | null
+          variante_id: string
+          versione: number
+        }
+        Update: {
+          data_modifica?: string
+          dati_snapshot?: Json
+          id?: string
+          modificato_da?: string | null
+          note_modifica?: string | null
+          variante_id?: string
+          versione?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "varianti_storico_variante_id_fkey"
+            columns: ["variante_id"]
+            isOneToOne: false
+            referencedRelation: "varianti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visite_mediche: {
         Row: {
