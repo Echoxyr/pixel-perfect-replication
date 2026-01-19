@@ -46,6 +46,7 @@ import CheckinSicurezza from "./pages/CheckinSicurezza";
 import ListinoPrezzi from "./pages/ListinoPrezzi";
 import Azienda from "./pages/Azienda";
 import FlussoDocumentale from "./pages/FlussoDocumentale";
+import ProcurementHub from "./pages/ProcurementHub";
 
 const queryClient = new QueryClient();
 
