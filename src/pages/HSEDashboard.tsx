@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Search,
   Filter,
-  ExternalLink
+  ExternalLink,
+  ClipboardCheck
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import NCCAPAManager from '@/components/workhub/NCCAPAManager';
 
 export default function HSEDashboard() {
   const navigate = useNavigate();
@@ -249,6 +252,21 @@ export default function HSEDashboard() {
           <p className="text-sm text-muted-foreground">Console centrale sicurezza, salute e ambiente</p>
         </div>
       </div>
+
+      {/* Main Tabs */}
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList className="flex w-full h-auto flex-nowrap justify-start gap-1 p-1 overflow-x-auto">
+          <TabsTrigger value="dashboard" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="nccapa" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2">
+            <ClipboardCheck className="w-4 h-4" />
+            NC & CAPA
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="dashboard" className="mt-6 space-y-6">
 
       {/* Filters */}
       <div className="flex flex-col gap-3 p-3 sm:p-4 rounded-xl border border-border bg-card min-w-0">
@@ -652,6 +670,13 @@ export default function HSEDashboard() {
           })}
         </div>
       </div>
+        </TabsContent>
+
+        {/* NC & CAPA Tab */}
+        <TabsContent value="nccapa" className="mt-6">
+          <NCCAPAManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

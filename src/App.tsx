@@ -46,7 +46,7 @@ import CheckinSicurezza from "./pages/CheckinSicurezza";
 import ListinoPrezzi from "./pages/ListinoPrezzi";
 import Azienda from "./pages/Azienda";
 import FlussoDocumentale from "./pages/FlussoDocumentale";
-import ProcurementHub from "./pages/ProcurementHub";
+// ProcurementHub removed - features integrated into UfficioCommerciale, SAL, HSE
 
 const queryClient = new QueryClient();
 
@@ -98,7 +98,6 @@ const App = () => (
                     <Route path="/contatti" element={<Contatti />} />
                     <Route path="/azienda" element={<Azienda />} />
                     <Route path="/flusso-documentale" element={<FlussoDocumentale />} />
-                    <Route path="/procurement" element={<ProcurementHub />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

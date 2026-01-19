@@ -57,6 +57,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { SALComparisonChart } from '@/components/workhub/SALComparisonChart';
+import VariantiManager from '@/components/workhub/VariantiManager';
 import * as XLSX from 'xlsx';
 
 export default function SALPage() {
@@ -975,6 +976,7 @@ export default function SALPage() {
           <TabsList className="inline-flex w-auto min-w-max">
             <TabsTrigger value="sal">SAL Mensili</TabsTrigger>
             <TabsTrigger value="contratti">Contratti Lavorazioni</TabsTrigger>
+            <TabsTrigger value="varianti">Varianti</TabsTrigger>
             <TabsTrigger value="previsioni">Previsioni</TabsTrigger>
             <TabsTrigger value="gantt">Timeline Gantt</TabsTrigger>
           </TabsList>
@@ -1303,6 +1305,11 @@ export default function SALPage() {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        {/* Varianti Tab */}
+        <TabsContent value="varianti" className="mt-6">
+          <VariantiManager />
         </TabsContent>
       </Tabs>
 

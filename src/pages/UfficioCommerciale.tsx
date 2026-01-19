@@ -74,6 +74,8 @@ import ComplianceMonitor from '@/components/workhub/ComplianceMonitor';
 import { PostCreationActions, EntityType } from '@/components/workhub/PostCreationActions';
 import { EntityLinks, DocumentFlowChain } from '@/components/workhub/EntityLinks';
 import { useFileUpload } from '@/hooks/useFileUpload';
+import RFQManager from '@/components/workhub/RFQManager';
+import SubappaltiManager from '@/components/workhub/SubappaltiManager';
 
 // Types
 interface Fornitore {
@@ -1000,6 +1002,8 @@ export default function UfficioCommerciale() {
           <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
           <TabsTrigger value="computi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
           <TabsTrigger value="flusso-doc" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2 text-primary"><Zap className="w-4 h-4" />Flusso Documentale</TabsTrigger>
+          <TabsTrigger value="rfq" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Truck className="w-4 h-4" />RFQ & Offerte</TabsTrigger>
+          <TabsTrigger value="subappalti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileCheck className="w-4 h-4" />Subappalti</TabsTrigger>
           <TabsTrigger value="compliance" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Shield className="w-4 h-4" />Compliance</TabsTrigger>
         </TabsList>
 
@@ -1688,6 +1692,16 @@ export default function UfficioCommerciale() {
         {/* Flusso Documentale Tab */}
         <TabsContent value="flusso-doc" className="mt-6">
           <DocumentFlowManager />
+        </TabsContent>
+
+        {/* RFQ & Offerte Tab */}
+        <TabsContent value="rfq" className="mt-6">
+          <RFQManager />
+        </TabsContent>
+
+        {/* Subappalti Tab */}
+        <TabsContent value="subappalti" className="mt-6">
+          <SubappaltiManager />
         </TabsContent>
 
         {/* Compliance Tab */}
