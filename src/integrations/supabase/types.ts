@@ -2990,6 +2990,7 @@ export type Database = {
           punteggio_totale: number | null
           rfq_id: string
           selezionata: boolean | null
+          stato_approvazione: string | null
           tempi_consegna: string | null
           updated_at: string
           validita_offerta: string | null
@@ -3012,6 +3013,7 @@ export type Database = {
           punteggio_totale?: number | null
           rfq_id: string
           selezionata?: boolean | null
+          stato_approvazione?: string | null
           tempi_consegna?: string | null
           updated_at?: string
           validita_offerta?: string | null
@@ -3034,6 +3036,7 @@ export type Database = {
           punteggio_totale?: number | null
           rfq_id?: string
           selezionata?: boolean | null
+          stato_approvazione?: string | null
           tempi_consegna?: string | null
           updated_at?: string
           validita_offerta?: string | null

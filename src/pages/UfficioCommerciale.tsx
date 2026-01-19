@@ -1000,7 +1000,7 @@ export default function UfficioCommerciale() {
           <TabsTrigger value="preventivi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Receipt className="w-4 h-4" />Preventivi</TabsTrigger>
           <TabsTrigger value="ordini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
           <TabsTrigger value="listini" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileSpreadsheet className="w-4 h-4" />Listini</TabsTrigger>
-          <TabsTrigger value="computi" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Calculator className="w-4 h-4" />Computo</TabsTrigger>
+          
           <TabsTrigger value="flusso-doc" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2 text-primary"><Zap className="w-4 h-4" />Flusso Documentale</TabsTrigger>
           <TabsTrigger value="rfq" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><Truck className="w-4 h-4" />RFQ & Offerte</TabsTrigger>
           <TabsTrigger value="subappalti" className="flex-shrink-0 whitespace-nowrap flex items-center gap-2"><FileCheck className="w-4 h-4" />Subappalti</TabsTrigger>
@@ -1046,7 +1046,7 @@ export default function UfficioCommerciale() {
                       </div>
                       <div><Label>Importo €</Label><Input type="number" value={newContratto.importo} onChange={(e) => setNewContratto(p => ({ ...p, importo: parseFloat(e.target.value) || 0 }))} /></div>
                       <div><Label>Data Inizio</Label><Input type="date" value={newContratto.data_inizio} onChange={(e) => setNewContratto(p => ({ ...p, data_inizio: e.target.value }))} /></div>
-                      <div><Label>Data Fine</Label><Input type="date" value={newContratto.data_fine} onChange={(e) => setNewContratto(p => ({ ...p, data_fine: e.target.value }))} /></div>
+                      <div><Label>Data Fine *</Label><Input type="date" value={newContratto.data_fine} onChange={(e) => setNewContratto(p => ({ ...p, data_fine: e.target.value }))} required /></div>
                       <div className="col-span-2">
                         <Label>Carica Contratto (PDF/Doc)</Label>
                         <div className="mt-1">
@@ -1070,7 +1070,7 @@ export default function UfficioCommerciale() {
                       <Button variant="outline" onClick={() => setShowNewContratto(false)}>Annulla</Button>
                       <Button 
                         onClick={() => createContrattoMutation.mutate({ formData: newContratto, file: contrattoFile })} 
-                        disabled={!newContratto.titolo || !newContratto.contraente || uploadingContratto}
+                        disabled={!newContratto.titolo || !newContratto.contraente || !newContratto.data_fine || uploadingContratto}
                       >
                         {uploadingContratto ? 'Caricamento...' : 'Salva'}
                       </Button>
@@ -1667,24 +1667,6 @@ export default function UfficioCommerciale() {
                   {listini.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nessun listino trovato</TableCell></TableRow>}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Computo Metrico Tab */}
-        <TabsContent value="computi" className="mt-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Computo Metrico</CardTitle>
-              <Link to="/computo-metrico"><Button className="gap-2"><Calculator className="w-4 h-4" />Apri Modulo Completo</Button></Link>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Calculator className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">Gestione Computi Metrici</h3>
-                <p className="text-muted-foreground mb-4">Accedi al modulo completo per la gestione dei computi metrici estimativi</p>
-                <Link to="/computo-metrico"><Button>Vai al Computo Metrico</Button></Link>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

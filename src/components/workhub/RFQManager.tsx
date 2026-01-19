@@ -18,8 +18,11 @@ import { it } from 'date-fns/locale';
 import { 
   FileText, Plus, Send, Clock, CheckCircle, XCircle, AlertTriangle, 
   Eye, Edit, Trash2, Bell, BarChart3, Trophy, Scale, FileCheck,
-  Building2, Calendar, Euro, Star, MessageSquare
+  Building2, Calendar, Euro, Star, MessageSquare, Upload, Download,
+  ThumbsUp, ThumbsDown, Paperclip
 } from 'lucide-react';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import FileAttachmentManager from '@/components/workhub/FileAttachmentManager';
 
 interface RFQRichiesta {
   id: string;
@@ -33,7 +36,7 @@ interface RFQRichiesta {
   data_scadenza: string;
   stato: string;
   urgenza: string;
-  allegati_tecnici?: any[];
+  allegati_tecnici?: string[];
   note?: string;
   solleciti_inviati: number;
   ultimo_sollecito?: string;
@@ -51,7 +54,7 @@ interface RFQRisposta {
   condizioni_pagamento?: string;
   validita_offerta?: string;
   note_tecniche?: string;
-  allegati?: any[];
+  allegati?: string[];
   valutazione?: number;
   punteggio_tecnico?: number;
   punteggio_economico?: number;
@@ -59,6 +62,7 @@ interface RFQRisposta {
   selezionata: boolean;
   motivo_selezione?: string;
   motivo_esclusione?: string;
+  stato_approvazione?: string;
 }
 
 interface RFQComparazione {
@@ -96,8 +100,25 @@ export default function RFQManager() {
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [showCompareDialog, setShowCompareDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [selectedRFQ, setSelectedRFQ] = useState<RFQRichiesta | null>(null);
   const [selectedResponse, setSelectedResponse] = useState<RFQRisposta | null>(null);
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
+  const [approvalMotivo, setApprovalMotivo] = useState('');
+  
+  // File upload hooks
+  const { uploadFile: uploadRFQFile, uploading: uploadingRFQ } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'rfq-richieste',
+  });
+  
+  const { uploadFile: uploadResponseFile, uploading: uploadingResponse } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'rfq-risposte',
+  });
+
+  const [rfqFile, setRfqFile] = useState<File | null>(null);
+  const [responseFile, setResponseFile] = useState<File | null>(null);
   
   const [newRFQ, setNewRFQ] = useState({
     oggetto: '',
@@ -199,17 +220,27 @@ export default function RFQManager() {
 
   // Create RFQ Mutation
   const createRFQMutation = useMutation({
-    mutationFn: async (data: typeof newRFQ) => {
+    mutationFn: async (data: { formData: typeof newRFQ; file: File | null }) => {
+      let allegati_tecnici: string[] = [];
+      
+      if (data.file) {
+        const uploadResult = await uploadRFQFile(data.file);
+        if (uploadResult) {
+          allegati_tecnici = [uploadResult.url];
+        }
+      }
+      
       const { error } = await supabase.from('rfq_richieste').insert({
         numero: generateRFQNumber(),
-        oggetto: data.oggetto,
-        descrizione: data.descrizione || null,
-        cantiere_id: data.cantiere_id || null,
-        lavorazione: data.lavorazione || null,
-        importo_stimato: data.importo_stimato ? parseFloat(data.importo_stimato) : null,
-        data_scadenza: data.data_scadenza,
-        urgenza: data.urgenza,
-        note: data.note || null,
+        oggetto: data.formData.oggetto,
+        descrizione: data.formData.descrizione || null,
+        cantiere_id: data.formData.cantiere_id || null,
+        lavorazione: data.formData.lavorazione || null,
+        importo_stimato: data.formData.importo_stimato ? parseFloat(data.formData.importo_stimato) : null,
+        data_scadenza: data.formData.data_scadenza,
+        urgenza: data.formData.urgenza,
+        note: data.formData.note || null,
+        allegati_tecnici,
         stato: 'aperta'
       });
       if (error) throw error;
@@ -218,6 +249,7 @@ export default function RFQManager() {
       queryClient.invalidateQueries({ queryKey: ['rfq-richieste'] });
       setShowNewRFQDialog(false);
       setNewRFQ({ oggetto: '', descrizione: '', cantiere_id: '', lavorazione: '', importo_stimato: '', data_scadenza: '', urgenza: 'normale', note: '' });
+      setRfqFile(null);
       toast({ title: 'RFQ Creata', description: 'Richiesta di offerta creata con successo' });
     },
     onError: (error: any) => {
@@ -227,15 +259,26 @@ export default function RFQManager() {
 
   // Add Response Mutation
   const addResponseMutation = useMutation({
-    mutationFn: async (data: { rfq_id: string } & typeof newResponse) => {
+    mutationFn: async (data: { rfq_id: string; formData: typeof newResponse; file: File | null }) => {
+      let allegati: string[] = [];
+      
+      if (data.file) {
+        const uploadResult = await uploadResponseFile(data.file);
+        if (uploadResult) {
+          allegati = [uploadResult.url];
+        }
+      }
+      
       const { error } = await supabase.from('rfq_risposte').insert({
         rfq_id: data.rfq_id,
-        fornitore_nome: data.fornitore_nome,
-        importo_offerto: parseFloat(data.importo_offerto),
-        tempi_consegna: data.tempi_consegna || null,
-        condizioni_pagamento: data.condizioni_pagamento || null,
-        validita_offerta: data.validita_offerta || null,
-        note_tecniche: data.note_tecniche || null
+        fornitore_nome: data.formData.fornitore_nome,
+        importo_offerto: parseFloat(data.formData.importo_offerto),
+        tempi_consegna: data.formData.tempi_consegna || null,
+        condizioni_pagamento: data.formData.condizioni_pagamento || null,
+        validita_offerta: data.formData.validita_offerta || null,
+        note_tecniche: data.formData.note_tecniche || null,
+        allegati,
+        stato_approvazione: 'in_valutazione'
       });
       if (error) throw error;
     },
@@ -243,10 +286,36 @@ export default function RFQManager() {
       queryClient.invalidateQueries({ queryKey: ['rfq-risposte'] });
       setShowResponseDialog(false);
       setNewResponse({ fornitore_nome: '', importo_offerto: '', tempi_consegna: '', condizioni_pagamento: '', validita_offerta: '', note_tecniche: '' });
-      toast({ title: 'Risposta Registrata', description: 'Offerta del fornitore registrata con successo' });
+      setResponseFile(null);
+      toast({ title: 'Offerta Registrata', description: 'Offerta del fornitore registrata con allegato' });
     },
     onError: (error: any) => {
       toast({ title: 'Errore', description: error.message, variant: 'destructive' });
+    }
+  });
+
+  // Approve/Reject Response Mutation
+  const approveRejectMutation = useMutation({
+    mutationFn: async ({ id, action, motivo }: { id: string; action: 'approve' | 'reject'; motivo: string }) => {
+      const update: Record<string, unknown> = {
+        stato_approvazione: action === 'approve' ? 'approvata' : 'rifiutata',
+      };
+      if (action === 'approve') {
+        update.motivo_selezione = motivo;
+      } else {
+        update.motivo_esclusione = motivo;
+      }
+      const { error } = await supabase.from('rfq_risposte').update(update).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['rfq-risposte'] });
+      setShowApproveDialog(false);
+      setApprovalMotivo('');
+      toast({ 
+        title: variables.action === 'approve' ? 'Offerta Approvata' : 'Offerta Rifiutata',
+        description: variables.action === 'approve' ? 'L\'offerta è stata approvata' : 'L\'offerta è stata rifiutata'
+      });
     }
   });
 
@@ -268,7 +337,7 @@ export default function RFQManager() {
       // Deselect all other responses
       await supabase.from('rfq_risposte').update({ selezionata: false }).eq('rfq_id', rfq_id);
       // Select winner
-      await supabase.from('rfq_risposte').update({ selezionata: true, motivo_selezione: motivazione }).eq('id', risposta_id);
+      await supabase.from('rfq_risposte').update({ selezionata: true, motivo_selezione: motivazione, stato_approvazione: 'vincente' }).eq('id', risposta_id);
       // Create comparison record
       const { error } = await supabase.from('rfq_comparazioni').insert({
         rfq_id,
@@ -326,6 +395,19 @@ export default function RFQManager() {
     return days;
   };
 
+  const getApprovalBadge = (stato?: string) => {
+    switch (stato) {
+      case 'approvata':
+        return <Badge className="bg-green-100 text-green-800"><ThumbsUp className="w-3 h-3 mr-1" />Approvata</Badge>;
+      case 'rifiutata':
+        return <Badge className="bg-red-100 text-red-800"><ThumbsDown className="w-3 h-3 mr-1" />Rifiutata</Badge>;
+      case 'vincente':
+        return <Badge className="bg-emerald-100 text-emerald-800"><Trophy className="w-3 h-3 mr-1" />Vincente</Badge>;
+      default:
+        return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" />In Valutazione</Badge>;
+    }
+  };
+
   // Statistics
   const stats = {
     totali: rfqRichieste.length,
@@ -347,7 +429,7 @@ export default function RFQManager() {
             Gestione RFQ (Richieste di Offerta)
           </h2>
           <p className="text-sm text-muted-foreground">
-            Crea richieste, raccogli offerte, confronta e seleziona i fornitori
+            Crea richieste, carica offerte ricevute, approva/rifiuta e confronta fornitori
           </p>
         </div>
         <Button onClick={() => setShowNewRFQDialog(true)}>
@@ -421,8 +503,8 @@ export default function RFQManager() {
                         <TableHead>Scadenza</TableHead>
                         <TableHead>Stato</TableHead>
                         <TableHead>Urgenza</TableHead>
+                        <TableHead>Allegati</TableHead>
                         <TableHead>Offerte</TableHead>
-                        <TableHead>Solleciti</TableHead>
                         <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -438,6 +520,7 @@ export default function RFQManager() {
                           const responses = getResponsesForRFQ(rfq.id);
                           const daysRemaining = getDaysRemaining(rfq.data_scadenza);
                           const cantiere = cantieri.find(c => c.id === rfq.cantiere_id);
+                          const hasAttachments = rfq.allegati_tecnici && rfq.allegati_tecnici.length > 0;
                           
                           return (
                             <TableRow key={rfq.id}>
@@ -474,10 +557,15 @@ export default function RFQManager() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">{responses.length}</Badge>
+                                {hasAttachments ? (
+                                  <Badge variant="outline" className="gap-1">
+                                    <Paperclip className="w-3 h-3" />
+                                    {rfq.allegati_tecnici?.length}
+                                  </Badge>
+                                ) : '-'}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">{rfq.solleciti_inviati || 0}</Badge>
+                                <Badge variant="outline">{responses.length}</Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center justify-end gap-1">
@@ -499,6 +587,7 @@ export default function RFQManager() {
                                       setShowResponseDialog(true);
                                     }}
                                     disabled={rfq.stato === 'assegnata' || rfq.stato === 'annullata'}
+                                    title="Aggiungi Offerta Ricevuta"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </Button>
@@ -510,6 +599,7 @@ export default function RFQManager() {
                                         setSelectedRFQ(rfq);
                                         setShowCompareDialog(true);
                                       }}
+                                      title="Confronta Offerte"
                                     >
                                       <Scale className="w-4 h-4" />
                                     </Button>
@@ -519,6 +609,7 @@ export default function RFQManager() {
                                     size="icon"
                                     onClick={() => sendReminderMutation.mutate(rfq.id)}
                                     disabled={rfq.stato === 'assegnata' || rfq.stato === 'annullata'}
+                                    title="Invia Sollecito"
                                   >
                                     <Bell className="w-4 h-4" />
                                   </Button>
@@ -548,7 +639,7 @@ export default function RFQManager() {
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <div className="min-w-[800px]">
+                <div className="min-w-[1000px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -557,25 +648,27 @@ export default function RFQManager() {
                         <TableHead>Data Ricezione</TableHead>
                         <TableHead>Importo</TableHead>
                         <TableHead>Tempi Consegna</TableHead>
-                        <TableHead>Validità</TableHead>
+                        <TableHead>Allegati</TableHead>
                         <TableHead>Stato</TableHead>
-                        <TableHead>Note</TableHead>
+                        <TableHead className="text-right">Azioni</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {rfqRisposte.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                            Nessuna offerta ricevuta
+                            Nessuna offerta ricevuta. Aggiungi offerte dalle richieste RFQ.
                           </TableCell>
                         </TableRow>
                       ) : (
                         rfqRisposte.map((resp) => {
                           const rfq = rfqRichieste.find(r => r.id === resp.rfq_id);
+                          const hasAttachments = resp.allegati && resp.allegati.length > 0;
+                          
                           return (
                             <TableRow key={resp.id} className={resp.selezionata ? 'bg-green-50' : ''}>
                               <TableCell className="font-mono text-sm">{rfq?.numero || '-'}</TableCell>
-                              <TableCell>{resp.fornitore_nome}</TableCell>
+                              <TableCell className="font-medium">{resp.fornitore_nome}</TableCell>
                               <TableCell>
                                 {format(new Date(resp.data_ricezione), 'dd/MM/yyyy', { locale: it })}
                               </TableCell>
@@ -584,24 +677,73 @@ export default function RFQManager() {
                               </TableCell>
                               <TableCell>{resp.tempi_consegna || '-'}</TableCell>
                               <TableCell>
-                                {resp.validita_offerta 
-                                  ? format(new Date(resp.validita_offerta), 'dd/MM/yyyy', { locale: it })
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                {resp.selezionata ? (
-                                  <Badge className="bg-green-100 text-green-800">
-                                    <Trophy className="w-3 h-3 mr-1" />
-                                    Vincente
-                                  </Badge>
-                                ) : resp.motivo_esclusione ? (
-                                  <Badge variant="destructive">Esclusa</Badge>
+                                {hasAttachments ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="gap-1"
+                                    onClick={() => {
+                                      if (resp.allegati?.[0]) {
+                                        window.open(resp.allegati[0], '_blank');
+                                      }
+                                    }}
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    Scarica
+                                  </Button>
                                 ) : (
-                                  <Badge variant="outline">In valutazione</Badge>
+                                  <span className="text-muted-foreground">-</span>
                                 )}
                               </TableCell>
-                              <TableCell className="max-w-[200px] truncate">
-                                {resp.note_tecniche || '-'}
+                              <TableCell>
+                                {getApprovalBadge(resp.stato_approvazione)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  {resp.stato_approvazione === 'in_valutazione' && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-green-600 hover:text-green-700"
+                                        onClick={() => {
+                                          setSelectedResponse(resp);
+                                          setApprovalAction('approve');
+                                          setShowApproveDialog(true);
+                                        }}
+                                        title="Approva Offerta"
+                                      >
+                                        <ThumbsUp className="w-4 h-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-red-600 hover:text-red-700"
+                                        onClick={() => {
+                                          setSelectedResponse(resp);
+                                          setApprovalAction('reject');
+                                          setShowApproveDialog(true);
+                                        }}
+                                        title="Rifiuta Offerta"
+                                      >
+                                        <ThumbsDown className="w-4 h-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      const rfqItem = rfqRichieste.find(r => r.id === resp.rfq_id);
+                                      if (rfqItem) {
+                                        setSelectedRFQ(rfqItem);
+                                        setShowDetailDialog(true);
+                                      }
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -684,7 +826,7 @@ export default function RFQManager() {
           <DialogHeader>
             <DialogTitle>Nuova Richiesta di Offerta (RFQ)</DialogTitle>
             <DialogDescription>
-              Crea una nuova richiesta da inviare ai fornitori
+              Crea una nuova richiesta da inviare ai fornitori con allegati tecnici
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -768,6 +910,23 @@ export default function RFQManager() {
               </div>
             </div>
             <div className="grid gap-2">
+              <Label>Allegati Tecnici (Capitolato, Specifiche, ecc.)</Label>
+              <div className="border rounded-lg p-3 bg-muted/30">
+                <Input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.dwg,.zip"
+                  onChange={(e) => setRfqFile(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                />
+                {rfqFile && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <Upload className="w-3 h-3" />
+                    {rfqFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-2">
               <Label>Note</Label>
               <Textarea
                 value={newRFQ.note}
@@ -780,10 +939,10 @@ export default function RFQManager() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewRFQDialog(false)}>Annulla</Button>
             <Button 
-              onClick={() => createRFQMutation.mutate(newRFQ)}
-              disabled={!newRFQ.oggetto || !newRFQ.data_scadenza}
+              onClick={() => createRFQMutation.mutate({ formData: newRFQ, file: rfqFile })}
+              disabled={!newRFQ.oggetto || !newRFQ.data_scadenza || uploadingRFQ}
             >
-              Crea RFQ
+              {uploadingRFQ ? 'Caricamento...' : 'Crea RFQ'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -845,6 +1004,23 @@ export default function RFQManager() {
               </div>
             </div>
             <div className="grid gap-2">
+              <Label>Carica Offerta PDF/Doc Fornitore</Label>
+              <div className="border rounded-lg p-3 bg-muted/30">
+                <Input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={(e) => setResponseFile(e.target.files?.[0] || null)}
+                  className="cursor-pointer"
+                />
+                {responseFile && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <Upload className="w-3 h-3" />
+                    {responseFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid gap-2">
               <Label>Note Tecniche</Label>
               <Textarea
                 value={newResponse.note_tecniche}
@@ -857,10 +1033,56 @@ export default function RFQManager() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowResponseDialog(false)}>Annulla</Button>
             <Button 
-              onClick={() => selectedRFQ && addResponseMutation.mutate({ rfq_id: selectedRFQ.id, ...newResponse })}
-              disabled={!newResponse.fornitore_nome || !newResponse.importo_offerto}
+              onClick={() => selectedRFQ && addResponseMutation.mutate({ rfq_id: selectedRFQ.id, formData: newResponse, file: responseFile })}
+              disabled={!newResponse.fornitore_nome || !newResponse.importo_offerto || uploadingResponse}
             >
-              Registra Offerta
+              {uploadingResponse ? 'Caricamento...' : 'Registra Offerta'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Approval Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {approvalAction === 'approve' ? 'Approva Offerta' : 'Rifiuta Offerta'}
+            </DialogTitle>
+            <DialogDescription>
+              Offerta di: {selectedResponse?.fornitore_nome} - € {selectedResponse?.importo_offerto?.toLocaleString('it-IT')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>{approvalAction === 'approve' ? 'Motivazione Approvazione *' : 'Motivazione Rifiuto *'}</Label>
+              <Textarea
+                value={approvalMotivo}
+                onChange={(e) => setApprovalMotivo(e.target.value)}
+                placeholder={approvalAction === 'approve' 
+                  ? "Es: Miglior rapporto qualità/prezzo, tempi consegna adeguati..."
+                  : "Es: Prezzo fuori budget, tempi non compatibili..."
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>Annulla</Button>
+            <Button 
+              onClick={() => selectedResponse && approveRejectMutation.mutate({
+                id: selectedResponse.id,
+                action: approvalAction,
+                motivo: approvalMotivo
+              })}
+              disabled={!approvalMotivo}
+              variant={approvalAction === 'approve' ? 'default' : 'destructive'}
+            >
+              {approvalAction === 'approve' ? (
+                <><ThumbsUp className="w-4 h-4 mr-2" />Approva</>
+              ) : (
+                <><ThumbsDown className="w-4 h-4 mr-2" />Rifiuta</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -930,7 +1152,8 @@ export default function RFQManager() {
                       <TableHead>Fornitore</TableHead>
                       <TableHead>Importo</TableHead>
                       <TableHead>Tempi</TableHead>
-                      <TableHead>Condizioni</TableHead>
+                      <TableHead>Stato</TableHead>
+                      <TableHead>Allegato</TableHead>
                       <TableHead>Azione</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -940,7 +1163,18 @@ export default function RFQManager() {
                         <TableCell className="font-medium">{resp.fornitore_nome}</TableCell>
                         <TableCell>€ {resp.importo_offerto.toLocaleString('it-IT')}</TableCell>
                         <TableCell>{resp.tempi_consegna || '-'}</TableCell>
-                        <TableCell>{resp.condizioni_pagamento || '-'}</TableCell>
+                        <TableCell>{getApprovalBadge(resp.stato_approvazione)}</TableCell>
+                        <TableCell>
+                          {resp.allegati && resp.allegati.length > 0 ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(resp.allegati![0], '_blank')}
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell>
                           <Button
                             size="sm"
@@ -1037,25 +1271,54 @@ export default function RFQManager() {
                 </div>
               </div>
               
+              {/* Allegati Tecnici */}
+              {selectedRFQ.allegati_tecnici && selectedRFQ.allegati_tecnici.length > 0 && (
+                <div>
+                  <Label className="text-muted-foreground">Allegati Tecnici</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedRFQ.allegati_tecnici.map((url, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Allegato {idx + 1}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {/* Offerte Ricevute */}
               <div>
                 <Label className="text-muted-foreground">Offerte Ricevute ({getResponsesForRFQ(selectedRFQ.id).length})</Label>
                 <div className="mt-2 space-y-2">
                   {getResponsesForRFQ(selectedRFQ.id).map((resp) => (
                     <Card key={resp.id} className={resp.selezionata ? 'border-green-500' : ''}>
-                      <CardContent className="p-3 flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{resp.fornitore_nome}</p>
-                          <p className="text-sm text-muted-foreground">
-                            € {resp.importo_offerto.toLocaleString('it-IT')} - {resp.tempi_consegna || 'N/D'}
-                          </p>
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{resp.fornitore_nome}</p>
+                            <p className="text-sm text-muted-foreground">
+                              € {resp.importo_offerto.toLocaleString('it-IT')} - {resp.tempi_consegna || 'N/D'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {resp.allegati && resp.allegati.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => window.open(resp.allegati![0], '_blank')}
+                              >
+                                <Download className="w-3 h-3 mr-1" />
+                                PDF
+                              </Button>
+                            )}
+                            {getApprovalBadge(resp.stato_approvazione)}
+                          </div>
                         </div>
-                        {resp.selezionata && (
-                          <Badge className="bg-green-100 text-green-800">
-                            <Trophy className="w-3 h-3 mr-1" />
-                            Vincente
-                          </Badge>
-                        )}
                       </CardContent>
                     </Card>
                   ))}
