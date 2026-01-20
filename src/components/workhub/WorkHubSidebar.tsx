@@ -400,6 +400,15 @@ export function WorkHubSidebar({
                   tutorialId="nav-sorveglianza"
                 />
               )}
+              {isModuleVisible("sicurezza-dlgs81") && (
+                <NavItem
+                  to="/compliance/sicurezza"
+                  icon={Shield}
+                  label="Sicurezza D.Lgs 81"
+                  active={isActive("/compliance/sicurezza")}
+                  tutorialId="nav-sicurezza-dlgs81"
+                />
+              )}
               {isModuleVisible("scadenzario") && (
                 <NavItem
                   to="/scadenzario"
