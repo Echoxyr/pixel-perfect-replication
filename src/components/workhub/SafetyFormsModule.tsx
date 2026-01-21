@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useWorkHub } from '@/contexts/WorkHubContext';
 import { formatDateFull, generateId, DatiAzienda } from '@/types/workhub';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+import { FileAttachmentManager } from '@/components/workhub/FileAttachmentManager';
+import PostCreationActions from '@/components/workhub/PostCreationActions';
 import {
   FileText,
   Download,
@@ -44,7 +47,11 @@ import {
   Users,
   Trash2,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Link,
+  Paperclip,
+  BarChart3,
+  Send
 } from 'lucide-react';
 
 // Tipologie di moduli standard D.Lgs 81/2008
@@ -98,7 +105,18 @@ interface ModuloCompilato {
   dataFirma?: string;
   firmato: boolean;
   datiForm: Record<string, any>;
-  allegatiUrl?: string[];
+  allegati: FileAttachment[];
+  inviato?: boolean;
+  dataInvio?: string;
+  destinatario?: string;
+}
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  uploadedAt: string;
 }
 
 interface ModuloCustom {
@@ -769,8 +787,14 @@ export default function SafetyFormsModule() {
   const { toast } = useToast();
 
   const [activeModulo, setActiveModulo] = useState<string | null>(null);
-  const [moduliCompilati, setModuliCompilati] = useState<ModuloCompilato[]>([]);
-  const [moduliCustom, setModuliCustom] = useState<ModuloCustom[]>([]);
+  const [moduliCompilati, setModuliCompilati] = useState<ModuloCompilato[]>(() => {
+    const saved = localStorage.getItem('safety_moduli_compilati');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [moduliCustom, setModuliCustom] = useState<ModuloCustom[]>(() => {
+    const saved = localStorage.getItem('safety_moduli_custom');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -778,6 +802,41 @@ export default function SafetyFormsModule() {
   const [selectedImpresa, setSelectedImpresa] = useState('');
   const [selectedLavoratore, setSelectedLavoratore] = useState('');
   const [viewingModulo, setViewingModulo] = useState<ModuloCompilato | null>(null);
+  
+  // Post-creation actions state
+  const [showPostCreationDialog, setShowPostCreationDialog] = useState(false);
+  const [lastCreatedModulo, setLastCreatedModulo] = useState<ModuloCompilato | null>(null);
+  
+  // Allegati management state
+  const [showAllegatiDialog, setShowAllegatiDialog] = useState(false);
+  const [selectedModuloForAllegati, setSelectedModuloForAllegati] = useState<ModuloCompilato | null>(null);
+  
+  // Invio modulo state
+  const [showInvioDialog, setShowInvioDialog] = useState(false);
+  const [invioDestinatario, setInvioDestinatario] = useState('');
+
+  // Auto-save moduli compilati
+  useEffect(() => {
+    localStorage.setItem('safety_moduli_compilati', JSON.stringify(moduliCompilati));
+  }, [moduliCompilati]);
+
+  // Auto-save moduli custom
+  useEffect(() => {
+    localStorage.setItem('safety_moduli_custom', JSON.stringify(moduliCustom));
+  }, [moduliCustom]);
+
+  // Stats for dashboard integration
+  const stats = useMemo(() => ({
+    totaleModuli: moduliCompilati.length,
+    firmati: moduliCompilati.filter(m => m.firmato).length,
+    daFirmare: moduliCompilati.filter(m => !m.firmato).length,
+    inviati: moduliCompilati.filter(m => m.inviato).length,
+    perTipo: MODULI_STANDARD.map(tipo => ({
+      tipo: tipo.id,
+      nome: tipo.nome,
+      count: moduliCompilati.filter(m => m.tipoModulo === tipo.id).length
+    })).filter(t => t.count > 0)
+  }), [moduliCompilati]);
 
   const isAziendaConfigured = datiAzienda.ragioneSociale && datiAzienda.partitaIva;
 
@@ -814,10 +873,18 @@ export default function SafetyFormsModule() {
       lavoratoreId: selectedLavoratore || undefined,
       dataCompilazione: new Date().toISOString().slice(0, 10),
       firmato: false,
-      datiForm: { ...formData }
+      datiForm: { ...formData },
+      allegati: []
     };
 
-    setModuliCompilati([...moduliCompilati, newModulo]);
+    const updated = [...moduliCompilati, newModulo];
+    setModuliCompilati(updated);
+    localStorage.setItem('safety_moduli_compilati', JSON.stringify(updated));
+    
+    // Show post-creation actions
+    setLastCreatedModulo(newModulo);
+    setShowPostCreationDialog(true);
+    
     toast({ title: 'Modulo salvato con successo' });
     setShowFormDialog(false);
     resetForm();
@@ -1561,6 +1628,171 @@ export default function SafetyFormsModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Allegati Dialog */}
+      <Dialog open={showAllegatiDialog} onOpenChange={setShowAllegatiDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip className="w-5 h-5" />
+              Allegati Modulo
+            </DialogTitle>
+          </DialogHeader>
+          {selectedModuloForAllegati && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                {getModuloInfo(selectedModuloForAllegati.tipoModulo)?.nome} - {getCantiere(selectedModuloForAllegati.cantiereId)?.nome}
+              </div>
+              
+              <div className="space-y-2">
+                {selectedModuloForAllegati.allegati.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nessun allegato</p>
+                ) : (
+                  selectedModuloForAllegati.allegati.map(file => (
+                    <div key={file.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => window.open(file.url, '_blank')}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          const updated = moduliCompilati.map(m => 
+                            m.id === selectedModuloForAllegati.id 
+                              ? { ...m, allegati: m.allegati.filter(a => a.id !== file.id) }
+                              : m
+                          );
+                          setModuliCompilati(updated);
+                          setSelectedModuloForAllegati(updated.find(m => m.id === selectedModuloForAllegati.id) || null);
+                        }}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="border-t pt-4">
+                <Label>Aggiungi allegato</Label>
+                <Input 
+                  type="file"
+                  className="mt-2"
+                  accept=".pdf,.doc,.docx,.jpg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    const newAllegato: FileAttachment = {
+                      id: generateId(),
+                      name: file.name,
+                      url: URL.createObjectURL(file),
+                      type: file.type,
+                      uploadedAt: new Date().toISOString()
+                    };
+                    
+                    const updated = moduliCompilati.map(m => 
+                      m.id === selectedModuloForAllegati.id 
+                        ? { ...m, allegati: [...m.allegati, newAllegato] }
+                        : m
+                    );
+                    setModuliCompilati(updated);
+                    setSelectedModuloForAllegati(updated.find(m => m.id === selectedModuloForAllegati.id) || null);
+                    toast({ title: 'Allegato aggiunto' });
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Invio Modulo Dialog */}
+      <Dialog open={showInvioDialog} onOpenChange={setShowInvioDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5" />
+              Invia Modulo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Registra l'invio di questo modulo al destinatario.
+            </p>
+            <div>
+              <Label>Destinatario</Label>
+              <Select value={invioDestinatario} onValueChange={setInvioDestinatario}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona destinatario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cse">CSE - Coordinatore Sicurezza Esecuzione</SelectItem>
+                  <SelectItem value="committente">Committente</SelectItem>
+                  <SelectItem value="dl">Direttore Lavori</SelectItem>
+                  <SelectItem value="impresa">Impresa Affidataria</SelectItem>
+                  <SelectItem value="altro">Altro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvioDialog(false)}>
+              Annulla
+            </Button>
+            <Button onClick={() => {
+              if (selectedModuloForAllegati && invioDestinatario) {
+                setModuliCompilati(moduliCompilati.map(m => 
+                  m.id === selectedModuloForAllegati.id 
+                    ? { ...m, inviato: true, dataInvio: new Date().toISOString().slice(0, 10), destinatario: invioDestinatario }
+                    : m
+                ));
+                toast({ title: 'Invio registrato', description: `Modulo inviato a ${invioDestinatario.toUpperCase()}` });
+                setShowInvioDialog(false);
+                setInvioDestinatario('');
+              }
+            }} className="gap-2">
+              <Send className="w-4 h-4" />
+              Registra Invio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Post-Creation Actions - integrazione con ecosistema */}
+      {lastCreatedModulo && (
+        <PostCreationActions
+          open={showPostCreationDialog}
+          onOpenChange={(open) => {
+            setShowPostCreationDialog(open);
+            if (!open) setLastCreatedModulo(null);
+          }}
+          entityType="documento"
+          entityId={lastCreatedModulo.id}
+          entityName={getModuloInfo(lastCreatedModulo.tipoModulo)?.nome || 'Modulo Sicurezza'}
+          availableActions={['link_cantiere', 'link_impresa', 'notify', 'upload']}
+        />
+      )}
+
+      {/* Stats Summary Card for Dashboard Integration */}
+      {stats.totaleModuli > 0 && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className="p-3 bg-card border border-border rounded-xl shadow-lg">
+            <div className="flex items-center gap-3 text-sm">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <div>
+                <span className="font-medium">{stats.totaleModuli}</span> moduli
+                <span className="mx-1 text-muted-foreground">|</span>
+                <span className="text-emerald-500">{stats.firmati} firmati</span>
+                <span className="mx-1 text-muted-foreground">|</span>
+                <span className="text-amber-500">{stats.daFirmare} da firmare</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

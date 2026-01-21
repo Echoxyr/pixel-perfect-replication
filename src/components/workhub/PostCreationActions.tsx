@@ -51,15 +51,19 @@ export type EntityType =
   | 'ordine' 
   | 'ddt' 
   | 'fattura' 
-  | 'contratto';
+  | 'contratto'
+  | 'documento'
+  | 'modulo_sicurezza';
 
 interface PostCreationActionsProps {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onOpenChange?: (open: boolean) => void;
   entityType: EntityType;
   entityId: string;
   entityName: string;
   entityData?: Record<string, unknown>;
+  availableActions?: string[];
 }
 
 interface ActionOption {
@@ -80,6 +84,8 @@ const ENTITY_ICONS: Record<EntityType, React.ElementType> = {
   ddt: Truck,
   fattura: Receipt,
   contratto: FileText,
+  documento: File,
+  modulo_sicurezza: FileText,
 };
 
 const getActionsForEntity = (entityType: EntityType): ActionOption[] => {
@@ -124,6 +130,15 @@ const getActionsForEntity = (entityType: EntityType): ActionOption[] => {
     contratto: [
       { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega il contratto a una commessa', icon: Building2, color: 'text-purple-500' },
     ],
+    documento: [
+      { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega il documento a una commessa', icon: Building2, color: 'text-purple-500' },
+      { id: 'link_impresa', label: 'Associa a Impresa', description: 'Collega il documento a un\'impresa', icon: Building2, color: 'text-green-500' },
+    ],
+    modulo_sicurezza: [
+      { id: 'link_cantiere', label: 'Associa a Commessa', description: 'Collega il modulo a una commessa', icon: Building2, color: 'text-purple-500' },
+      { id: 'link_impresa', label: 'Associa a Impresa', description: 'Collega il modulo a un\'impresa', icon: Building2, color: 'text-green-500' },
+      { id: 'link_lavoratore', label: 'Associa a Lavoratore', description: 'Collega il modulo a un lavoratore', icon: Users, color: 'text-blue-500' },
+    ],
   };
 
   return [...(specificActions[entityType] || []), ...commonActions];
@@ -132,10 +147,12 @@ const getActionsForEntity = (entityType: EntityType): ActionOption[] => {
 export function PostCreationActions({
   open,
   onClose,
+  onOpenChange,
   entityType,
   entityId,
   entityName,
   entityData = {},
+  availableActions,
 }: PostCreationActionsProps) {
   const queryClient = useQueryClient();
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
@@ -145,12 +162,20 @@ export function PostCreationActions({
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Handle close via either onClose or onOpenChange
+  const doClose = () => {
+    if (onClose) onClose();
+    if (onOpenChange) onOpenChange(false);
+  };
+
   const { uploadFile, uploading, progress } = useFileUpload({
     bucket: 'documenti',
     folder: `${entityType}/${entityId}`,
   });
 
-  const actions = getActionsForEntity(entityType);
+  const actions = availableActions 
+    ? getActionsForEntity(entityType).filter(a => availableActions.includes(a.id))
+    : getActionsForEntity(entityType);
   const EntityIcon = ENTITY_ICONS[entityType];
 
   // Fetch data for linking
@@ -505,7 +530,7 @@ export function PostCreationActions({
     setLinkTargetId('');
     setNotifyMessage('');
     setUploadedFiles([]);
-    onClose();
+    doClose();
   };
 
   return (
