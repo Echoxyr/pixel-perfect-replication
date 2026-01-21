@@ -49,16 +49,21 @@ import {
 
 // Tipologie di moduli standard D.Lgs 81/2008
 const MODULI_STANDARD = [
-  { id: 'psc_accettazione', nome: 'Presa Visione e Accettazione PSC', icon: FileSignature, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di presa visione e accettazione del Piano di Sicurezza e Coordinamento' },
+  // Dichiarazioni
+  { id: 'psc_accettazione', nome: 'Accettazione PSC', icon: FileSignature, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di presa visione e accettazione del Piano di Sicurezza e Coordinamento' },
+  { id: 'idoneita_tecnico_professionale', nome: 'Idoneità Tecnico Professionale', icon: Building2, categoria: 'dichiarazioni', descrizione: 'Dichiarazione idoneità tecnico-professionale ai sensi del D.Lgs. 81/2008' },
   { id: 'no_interdetti', nome: 'Dichiarazione Assenza Interdetti', icon: Users, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di non avere alle proprie dipendenze personale interdetto' },
   { id: 'oma', nome: 'Dichiarazione OMA', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Dichiarazione Organico Medio Annuo' },
   { id: 'dichiarazione_81', nome: 'Dichiarazione D.Lgs 81/2008', icon: Shield, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di ottemperanza al D.Lgs 81/2008' },
-  { id: 'nomina_direttore', nome: 'Nomina Direttore Cantiere', icon: HardHat, categoria: 'nomine', descrizione: 'Nomina del Direttore Tecnico di Cantiere' },
+  { id: 'antimafia', nome: 'Dichiarazione Antimafia', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Dichiarazione sostitutiva familiari conviventi ai fini antimafia' },
+  // Nomine
+  { id: 'nomina_direttore', nome: 'Nomina Direttore Tecnico', icon: HardHat, categoria: 'nomine', descrizione: 'Nomina del Direttore Tecnico di Cantiere' },
   { id: 'nomina_antincendio', nome: 'Nomina Addetto Antincendio', icon: Flame, categoria: 'nomine', descrizione: 'Nomina addetto alla lotta antincendio e gestione emergenze' },
   { id: 'nomina_primo_soccorso', nome: 'Nomina Addetto Primo Soccorso', icon: HeartPulse, categoria: 'nomine', descrizione: 'Nomina addetto al primo soccorso' },
-  { id: 'nomina_rls', nome: 'Nomina RLS', icon: UserCheck, categoria: 'nomine', descrizione: 'Nomina Rappresentante dei Lavoratori per la Sicurezza' },
+  { id: 'nomina_rls', nome: 'Verbale Nomina RLS', icon: UserCheck, categoria: 'nomine', descrizione: 'Verbale di nomina del Rappresentante dei Lavoratori per la Sicurezza' },
   { id: 'nomina_medico', nome: 'Nomina Medico Competente', icon: Stethoscope, categoria: 'nomine', descrizione: 'Nomina del Medico Competente aziendale' },
   { id: 'nomina_rspp', nome: 'Nomina RSPP', icon: ShieldCheck, categoria: 'nomine', descrizione: 'Nomina Responsabile Servizio Prevenzione e Protezione' },
+  // Verbali
   { id: 'consegna_dpi', nome: 'Verbale Consegna DPI', icon: Shield, categoria: 'verbali', descrizione: 'Verbale di consegna dei Dispositivi di Protezione Individuale' },
 ];
 
@@ -123,17 +128,19 @@ const generateProfessionalDocument = (
 
   // References normative per ogni tipo di modulo
   const RIFERIMENTI_NORMATIVI = {
-    psc_accettazione: 'Art. 100, comma 3 e Allegato XV del D.Lgs. 81/2008 - Piano di Sicurezza e Coordinamento',
-    no_interdetti: 'Art. 14 del D.Lgs. 81/2008 e s.m.i. - Provvedimenti degli organi di vigilanza',
-    oma: 'Art. 90, comma 9, lett. b) del D.Lgs. 81/2008 - Obblighi del committente',
-    dichiarazione_81: 'D.Lgs. 81/2008 e s.m.i. - Testo Unico sulla Sicurezza sul Lavoro',
-    nomina_direttore: 'Art. 90 e 97 del D.Lgs. 81/2008 - Figure della sicurezza in cantiere',
-    nomina_antincendio: 'Art. 18, comma 1, lett. b) e Art. 43 del D.Lgs. 81/2008 - D.M. 10 marzo 1998',
-    nomina_primo_soccorso: 'Art. 18, comma 1, lett. b) e Art. 45 del D.Lgs. 81/2008 - D.M. 388/2003',
-    nomina_rls: 'Art. 47, 48, 49 e 50 del D.Lgs. 81/2008 - Rappresentante dei Lavoratori per la Sicurezza',
-    nomina_medico: 'Art. 18, comma 1, lett. a) e Artt. 38-42 del D.Lgs. 81/2008 - Sorveglianza sanitaria',
-    nomina_rspp: 'Artt. 17, 31, 32, 33, 34 del D.Lgs. 81/2008 - Servizio di Prevenzione e Protezione',
-    consegna_dpi: 'Art. 18, comma 1, lett. d) e Titolo III, Capo II del D.Lgs. 81/2008 - DPI'
+    psc_accettazione: 'ai sensi art. 96, comma 2, D.Lgs. 81/08',
+    idoneita_tecnico_professionale: 'Art. 26, c. 1; art. 90, c. 9; Allegato XVII D.Lgs. 81/2008',
+    no_interdetti: 'Art. 14 del D.Lgs. 81/2008 e s.m.i.',
+    oma: 'Art. 90, comma 9, lett. b) del D.Lgs. 81/2008',
+    dichiarazione_81: 'D.Lgs. 81/2008 e s.m.i.',
+    antimafia: 'Art. 85, comma 3, D.Lgs. n. 159/2011',
+    nomina_direttore: 'Art. 90 e 97 del D.Lgs. 81/2008',
+    nomina_antincendio: 'Art. 18, comma 1, lett. b) e Art. 43 D.Lgs. 81/2008',
+    nomina_primo_soccorso: 'Art. 18, comma 1, lett. b) e Art. 45 D.Lgs. 81/2008 - D.M. 388/2003',
+    nomina_rls: 'Art. 47 del D.Lgs. 81/2008',
+    nomina_medico: 'Art. 18, comma 1, lett. a) D.Lgs. 81/2008',
+    nomina_rspp: 'Artt. 17, 31, 32, 33, 34 del D.Lgs. 81/2008',
+    consegna_dpi: 'Art. 18, comma 1, lett. d) e Art. 77 D.Lgs. 81/2008'
   };
 
   const getRiferimentoNormativo = () => {
@@ -145,21 +152,53 @@ const generateProfessionalDocument = (
     switch (modulo.tipoModulo) {
       case 'psc_accettazione':
         return `
-          <p class="dichiarazione-intro">
-            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, codice fiscale <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, in qualità di Legale Rappresentante dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, con sede legale in ${indirizzoCompleto || '_______________'}, P.IVA <strong>${datiAzienda.partitaIva || '_______________'}</strong>,
-          </p>
-          
-          <p class="dichiarazione-premessa">
-            ai sensi e per gli effetti dell'Art. 100, comma 3 del D.Lgs. 81/2008 e s.m.i. e dell'Allegato XV del medesimo decreto, consapevole delle responsabilità civili e penali connesse al rilascio di dichiarazioni mendaci ai sensi degli artt. 75 e 76 del D.P.R. 445/2000,
+          <p class="dichiarazione-corpo">
+            Ai sensi e per gli effetti dell'art. 96 del Decreto legislativo 81/08, il sottoscritto <strong>${titolareNomeCompleto}</strong>, CF: <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong> nella qualità di Legale Rappresentante dell'Impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> con sede in ${indirizzoCompleto || '_______________'}, P.IVA e C.F. <strong>${datiAzienda.partitaIva || '_______________'}</strong>, incaricata dell'esecuzione delle opere in riferimento:
           </p>
 
           <p class="dichiarazione-titolo">DICHIARA</p>
 
           <p class="dichiarazione-corpo">
-            di aver ricevuto, letto e compreso integralmente il Piano di Sicurezza e Coordinamento (PSC) ${modulo.datiForm.revisionePSC ? `Rev. ${modulo.datiForm.revisionePSC}` : ''} ${modulo.datiForm.dataPSC ? `datato ${formatDate(modulo.datiForm.dataPSC)}` : ''} relativo al cantiere in oggetto, di accettarne senza riserve tutti i contenuti e le prescrizioni in esso contenute, impegnandosi a rispettarle e a farle rispettare dai propri dipendenti e collaboratori. Dichiara altresì di aver trasmesso copia del PSC a tutti i lavoratori che opereranno nel cantiere prima dell'inizio delle rispettive attività lavorative, fornendo loro adeguata formazione e informazione sui rischi specifici presenti.
+            Di aver preso visione e di accettare i contenuti del Piano di Sicurezza e Coordinamento e di adeguare le attività lavorative alle prescrizioni in esso contenute, secondo quanto disposto dall'art. 96 del D.Lgs. 81/08 e ss.mm.ii. Si precisa che non si hanno proposte di integrazione da formulare.
           </p>
 
           ${modulo.datiForm.note ? `<p class="note-aggiuntive"><strong>Note:</strong> ${modulo.datiForm.note}</p>` : ''}
+        `;
+
+      case 'idoneita_tecnico_professionale':
+        return `
+          <p class="dichiarazione-corpo">
+            Adempimenti in materia di sicurezza, salute e igiene negli ambienti di lavoro, ai sensi del D.Lgs. n. 81/2008 e s.m.i. (art. 26, c. 1; art. 90, c. 9; Allegato XVII). Trasmissione di informazioni e documenti per l'attestazione dell'idoneità tecnico-professionale.
+          </p>
+
+          <p class="dichiarazione-corpo">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong>, nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong>, in qualità di Datore di Lavoro della scrivente <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>, impresa appaltatrice, avente sede legale in ${indirizzoCompleto || '_______________'}, Tel. <strong>${datiAzienda.telefono || '_______________'}</strong>, Partita Iva <strong>${datiAzienda.partitaIva || '_______________'}</strong>, consapevole delle sanzioni previste dagli artt. 75 e 76 del D.P.R. 445/2000 per le ipotesi di falsità in atti e dichiarazioni mendaci,
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA che:</p>
+
+          <ol class="lista-dichiarazioni">
+            <li>la ditta è regolarmente iscritta al Registro delle Imprese istituito della camera di commercio, industria e artigianato (CCIAA) di <strong>${datiAzienda.provincia || '_______________'}</strong> al n. <strong>${datiAzienda.partitaIva || '_______________'}</strong>;</li>
+            <li>la ditta è in possesso di requisiti tecnico-professionali adeguati alla natura dei lavori/servizi affidati;</li>
+            <li>è stata effettuata la valutazione dei rischi ed è stato elaborato il relativo Documento di Valutazione dei Rischi previsto dal D.Lgs. n. 81/2008 e s.m.i.;</li>
+            <li>adempie agli obblighi assicurativi, previdenziali, antinfortunistici e contrattuali previsti dalle norme nazionali e locali vigenti, nonché dal CCNL <strong>${modulo.datiForm.ccnl || '_______________'}</strong> di Settore, applicato ai lavoratori dipendenti;</li>
+            <li>la ditta è titolare delle seguenti posizioni previdenziali ed assicurative:
+              <ul>
+                <li>INPS sede di <strong>${modulo.datiForm.sedeInps || '_______________'}</strong>, Matricola <strong>${modulo.datiForm.matricolaInps || '_______________'}</strong>;</li>
+                <li>INAIL sede di <strong>${modulo.datiForm.sedeInail || '_______________'}</strong>, matricola <strong>${modulo.datiForm.matricolaInail || '_______________'}</strong>;</li>
+                <li>PAT nr. <strong>${modulo.datiForm.pat || '_______________'}</strong>;</li>
+              </ul>
+              ed è in possesso di specifico DURC (Documento unico di regolarità contributiva);</li>
+            <li>la ditta non è oggetto di provvedimenti di sospensione o interdittivi di cui all'art. 14 del D.Lgs. n. 81/2008 e s.m.i.;</li>
+            <li>le attrezzature, i macchinari, gli impianti e le opere provvisionali utilizzati sono conformi alle disposizioni del D.Lgs. n. 81/2008 e s.m.i.;</li>
+            <li>l'organico medio annuo (OMA), distinto per qualifica e relativo all'ultimo anno è:
+              <ul>
+                <li>Impiegati: <strong>${modulo.datiForm.impiegati || '___'}</strong></li>
+                <li>Operai: <strong>${modulo.datiForm.operai || '___'}</strong></li>
+                <li>Totale: <strong>${modulo.datiForm.organicoMedio || '___'}</strong></li>
+              </ul>
+            </li>
+          </ol>
         `;
 
       case 'no_interdetti':
@@ -226,25 +265,90 @@ const generateProfessionalDocument = (
           </p>
         `;
 
+      case 'antimafia':
+        return `
+          <p class="dichiarazione-titolo">DICHIARAZIONE SOSTITUTIVA DI CERTIFICAZIONE</p>
+          <p class="dichiarazione-subtitle">(D.P.R. n. 445/2000)</p>
+
+          <p class="dichiarazione-corpo">
+            Il sottoscritto <strong>${titolareNomeCompleto}</strong> nato a <strong>${datiAzienda.luogoNascitaTitolare || '_______________'}</strong> Prov. (${datiAzienda.provinciaNascitaTitolare || '__'}) il <strong>${datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '_______________'}</strong> residente a <strong>${datiAzienda.citta || '_______________'}</strong> (${datiAzienda.provincia || '__'}) via <strong>${datiAzienda.residenzaTitolare || '_______________'}</strong> Codice Fiscale <strong>${datiAzienda.codiceFiscaleTitolare || '_______________'}</strong>, in qualità di Legale Rappresentante della società <strong>${datiAzienda.ragioneSociale || '_______________'}</strong>
+          </p>
+
+          <p class="dichiarazione-corpo">
+            consapevole delle sanzioni penali in caso di dichiarazioni false e della conseguente decadenza dai benefici eventualmente conseguiti (ai sensi degli artt. 75 e 76 del D.P.R. 445/2000) sotto la propria responsabilità
+          </p>
+
+          <p class="dichiarazione-titolo">DICHIARA</p>
+
+          <p class="dichiarazione-corpo">
+            ai sensi dell'art. 85, comma 3, del D.Lgs. n. 159/2011:
+          </p>
+
+          ${modulo.datiForm.haFamiliariConviventi ? `
+          <p class="dichiarazione-corpo">
+            ☒ di avere i seguenti familiari conviventi di maggiore età:
+          </p>
+          <table class="tabella-dati">
+            <tr><td><strong>Nome:</strong></td><td>${modulo.datiForm.nomeFamiliare1 || '_______________'}</td></tr>
+            <tr><td><strong>Cognome:</strong></td><td>${modulo.datiForm.cognomeFamiliare1 || '_______________'}</td></tr>
+            <tr><td><strong>Luogo e data di nascita:</strong></td><td>${modulo.datiForm.nascitaFamiliare1 || '_______________'}</td></tr>
+            <tr><td><strong>Residenza:</strong></td><td>${modulo.datiForm.residenzaFamiliare1 || '_______________'}</td></tr>
+            <tr><td><strong>Codice fiscale:</strong></td><td>${modulo.datiForm.cfFamiliare1 || '_______________'}</td></tr>
+          </table>
+          ` : `
+          <p class="dichiarazione-corpo">
+            ☒ di NON avere familiari conviventi di maggiore età.
+          </p>
+          `}
+
+          <p class="dichiarazione-corpo dichiarazione-footer">
+            Il/la sottoscritto/a dichiara inoltre di essere informato/a, ai sensi del D.Lgs. n. 196/2003 (codice in materia di protezione di dati personali) che i dati personali raccolti saranno trattati, anche con strumenti informatici, esclusivamente nell'ambito del procedimento per il quale la presente dichiarazione viene resa.
+          </p>
+        `;
+
       case 'consegna_dpi':
         const dpiConsegnati = DPI_STANDARD.filter(dpi => modulo.datiForm[`dpi_${dpi.id}`]);
-        const dpiList = dpiConsegnati.map(dpi => 
-          `${dpi.nome} (norma ${dpi.normativa}) - quantità: ${modulo.datiForm[`qty_${dpi.id}`] || '1'}`
-        ).join('; ');
 
         return `
-          <p class="dichiarazione-premessa">
-            Ai sensi dell'art. 18, comma 1, lettera d) e del Titolo III, Capo II (artt. 74-79) del D.Lgs. 81/2008 e s.m.i., relativo all'uso dei Dispositivi di Protezione Individuale,
-          </p>
-
-          <p class="dichiarazione-titolo">VERBALE DI CONSEGNA DPI</p>
-
-          <p class="dichiarazione-corpo">
-            In data <strong>${modulo.datiForm.dataConsegna ? formatDate(modulo.datiForm.dataConsegna) : formatDate(modulo.dataCompilazione)}</strong>, presso il cantiere <strong>${cantiere?.nome || '_______________'}</strong> sito in ${cantiere?.indirizzo || '_______________'}, il Datore di Lavoro <strong>${titolareNomeCompleto}</strong> dell'impresa <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> ha consegnato al lavoratore <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong>, codice fiscale <strong>${lavoratore?.codiceFiscale || '_______________'}</strong>, mansione <strong>${lavoratore?.mansione || '_______________'}</strong>, i seguenti Dispositivi di Protezione Individuale: ${dpiList || '_______________'}.
+          <p class="dichiarazione-oggetto">
+            <strong>OGGETTO:</strong> FORNITURA DEI DISPOSITIVI DI PROTEZIONE INDIVIDUALI (DPI) SECONDO QUANTO PREVISTO DAL DECRETO LEGISLATIVO 81/2008 IN MATERIA DI IGIENE E DI SICUREZZA NEI LUOGHI DI LAVORO.
           </p>
 
           <p class="dichiarazione-corpo">
-            Il lavoratore dichiara di aver ricevuto i DPI sopra elencati e di essere stato adeguatamente formato e informato ai sensi dell'art. 77, comma 4, del D.Lgs. 81/2008 circa le corrette modalità di utilizzo, manutenzione, conservazione e riconsegna dei dispositivi, nonché sui rischi specifici dai quali i DPI sono destinati a proteggerlo e sulle circostanze nelle quali il loro uso è necessario. Il lavoratore si impegna ad utilizzare i DPI conformemente alle istruzioni ricevute e a segnalare tempestivamente eventuali difetti o inconvenienti.
+            In relazione a quanto stabilito dall'art. 18, comma 1, lettera d) e dall'art. 77 del D. Lgs. 81/2008, a seguito della Valutazione dei Rischi in relazione allo svolgimento dell'attività lavorativa nonché alle mansioni a Lei assegnate, Le vengono forniti i sotto elencati dispositivi di protezione individuali.
+          </p>
+
+          <p class="dichiarazione-corpo">
+            Secondo il dettato dell'art. 76, commi 1 e 2 del D. Lgs. 81/2008, i DPI a Sua disposizione sono conformi alle norme di cui al Titolo III - Capo II e dell'allegato VIII del D. Lgs. 81/08 e sue successive modificazioni e risultano:
+          </p>
+
+          <ul class="lista-puntata">
+            <li>essere adeguati ai rischi da prevenire, senza comportare di per sé un rischio maggiore;</li>
+            <li>essere adeguati alle condizioni esistenti sul luogo di lavoro;</li>
+            <li>tenere conto delle esigenze ergonomiche o di salute;</li>
+            <li>essere adattabili all'utilizzatore secondo le sue necessità.</li>
+          </ul>
+
+          <p class="dichiarazione-corpo">
+            Inoltre, Le è fatto obbligo di (art. 78, D.Lgs. 81/2008):
+          </p>
+
+          <ul class="lista-puntata">
+            <li>sottoporsi ai programmi di Formazione e Addestramento organizzati dall'Azienda;</li>
+            <li>utilizzare in modo appropriato i DPI messi a disposizione conformemente all'Informazione, Formazione ed Addestramento ricevuto;</li>
+            <li>provvedere alla cura dei DPI messi a disposizione;</li>
+            <li>non apportare modifiche di propria iniziativa;</li>
+            <li>al termine dell'utilizzo riconsegnare i DPI secondo la procedura aziendale;</li>
+            <li>segnalare immediatamente al datore di lavoro o al dirigente o al preposto qualsiasi difetto o inconveniente rilevato nei DPI messi a disposizione.</li>
+          </ul>
+
+          <table class="tabella-dpi">
+            <tr><th>QUANTITÀ</th><th>TIPOLOGIA DPI</th><th>SCADENZA/SPECIFICHE TECNICHE/NOTE</th></tr>
+            ${dpiConsegnati.map(dpi => `<tr><td>${modulo.datiForm[`qty_${dpi.id}`] || '1'}</td><td>${dpi.nome} (${dpi.normativa})</td><td>${modulo.datiForm[`note_${dpi.id}`] || ''}</td></tr>`).join('')}
+          </table>
+
+          <p class="dichiarazione-corpo dichiarazione-footer">
+            Il lavoratore sig. <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong> dichiara di essere stato sufficientemente informato e formato su: l'utilizzo dei DPI; i rischi delle lavorazioni per le quali devono essere impiegati. Si impegna ad utilizzare i DPI conformemente all'informazione e alla formazione ricevuta, di conservarli con cura, non apporvi modifiche di propria iniziativa, di segnalare immediatamente qualsiasi difetto o inconveniente che venga rilevato. È consapevole sia delle sanzioni stabilite dal D.Lgs. 81/2008 e s.m.i., art. 59 (ammenda da € 200 a € 600) a carico di chi non utilizza o utilizza in modo non appropriato i DPI messi a disposizione, sia delle sanzioni disciplinari previste dal CCNL.
           </p>
         `;
 
@@ -270,13 +374,15 @@ const generateProfessionalDocument = (
             },
             rls: {
               titolo: 'RAPPRESENTANTE DEI LAVORATORI PER LA SICUREZZA (RLS)',
-              riferimento: 'ai sensi degli artt. 47, 48, 49 e 50 del D.Lgs. 81/2008',
-              compiti: 'la rappresentanza dei lavoratori per quanto concerne gli aspetti della salute e della sicurezza durante il lavoro, secondo le attribuzioni di cui all\'art. 50 del D.Lgs. 81/2008'
+              riferimento: 'ai sensi dell\'art. 47 del D.Lgs. 81/2008',
+              compiti: 'la rappresentanza dei lavoratori per quanto concerne gli aspetti della salute e della sicurezza durante il lavoro',
+              isVerbale: true
             },
             medico: {
               titolo: 'MEDICO COMPETENTE',
-              riferimento: 'ai sensi dell\'art. 18, comma 1, lettera a) e degli artt. 38-42 del D.Lgs. 81/2008',
-              compiti: 'la sorveglianza sanitaria dei lavoratori, la collaborazione con il Datore di Lavoro e con il Servizio di Prevenzione e Protezione, la visita degli ambienti di lavoro e tutte le attività di cui all\'art. 25 del D.Lgs. 81/2008'
+              riferimento: 'ai sensi dell\'art. 18, comma 1, lettera a) del D.Lgs. 81/2008',
+              compiti: 'la sorveglianza sanitaria dei lavoratori, la collaborazione con il Datore di Lavoro e con il Servizio di Prevenzione e Protezione, la visita degli ambienti di lavoro e tutte le attività di cui all\'art. 25 del D.Lgs. 81/2008',
+              sorveglianzaSanitaria: true
             },
             rspp: {
               titolo: 'RESPONSABILE DEL SERVIZIO DI PREVENZIONE E PROTEZIONE (RSPP)',
@@ -284,6 +390,73 @@ const generateProfessionalDocument = (
               compiti: 'il coordinamento del Servizio di Prevenzione e Protezione, l\'individuazione dei fattori di rischio, l\'elaborazione delle misure preventive e protettive, la predisposizione dei programmi di informazione e formazione, e tutte le attività di cui all\'art. 33 del D.Lgs. 81/2008'
             }
           }[tipoNomina] || { titolo: 'INCARICATO', riferimento: 'ai sensi del D.Lgs. 81/2008', compiti: 'lo svolgimento delle mansioni assegnate' };
+
+          // Verbale per RLS (formato specifico come da documento)
+          if (tipoNomina === 'rls') {
+            return `
+              <p class="dichiarazione-titolo">VERBALE DI NOMINA DEL RAPPRESENTANTE DEI LAVORATORI</p>
+              <p class="dichiarazione-subtitle">${nominaConfig.riferimento}</p>
+
+              <p class="dichiarazione-corpo">
+                Il giorno <strong>${modulo.datiForm.dataRiunione ? formatDate(modulo.datiForm.dataRiunione) : formatDate(modulo.dataCompilazione)}</strong> alle ore <strong>${modulo.datiForm.oraRiunione || '___:___'}</strong> presso la sede della società <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> sita a <strong>${datiAzienda.citta || '_______________'}</strong> in via <strong>${datiAzienda.sedeLegale || '_______________'}</strong>, si sono riuniti tutti i dipendenti della ditta medesima al fine di ottemperare gli obblighi previsti per l'elezione del rappresentante dei lavoratori per la sicurezza. Dopo approfondita discussione e confronto tra tutti gli intervenuti, si è giunti alla seguente conclusione:
+              </p>
+
+              <p class="dichiarazione-titolo">NOMINA DEL RAPPRESENTANTE DEI LAVORATORI PER LA SICUREZZA</p>
+
+              <p class="dichiarazione-corpo">
+                Quale R.L.S. è stato eletto il/la Sig./Sig.ra <strong>${lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '_______________'}</strong> residente in <strong>${modulo.datiForm.residenzaRls || '_______________'}</strong> (${modulo.datiForm.provinciaRls || '__'}) via <strong>${modulo.datiForm.viaRls || '_______________'}</strong> n° <strong>${modulo.datiForm.civicoRls || '___'}</strong>. Tale incarico sarà tacitamente rinnovato di anno in anno salvo disdetta da comunicarsi almeno 2 mesi prima della scadenza.
+              </p>
+
+              <p class="dichiarazione-corpo">
+                Copia del presente verbale viene consegnato al datore di lavoro affinché provveda ad esporlo in visione a tutto il personale.
+              </p>
+
+              <p class="dichiarazione-firme"><strong>Firme dei partecipanti alla riunione, per conferma del contenuto del seguente verbale:</strong></p>
+              
+              <table class="tabella-firme">
+                ${(modulo.datiForm.partecipanti || '').split('\n').filter((p: string) => p.trim()).map((p: string) => `<tr><td>${p.trim()}</td><td>________________</td></tr>`).join('')}
+              </table>
+
+              <p class="dichiarazione-corpo">
+                <strong>Firma del RLS per accettazione dell'incarico:</strong>
+              </p>
+            `;
+          }
+
+          // Nomina Medico Competente (formato specifico)
+          if (tipoNomina === 'medico') {
+            return `
+              <p class="dichiarazione-titolo">NOMINA DEL MEDICO COMPETENTE</p>
+              <p class="dichiarazione-subtitle">${nominaConfig.riferimento}</p>
+
+              <p class="dichiarazione-corpo">
+                Il sottoscritto <strong>${titolareNomeCompleto}</strong>, legale rappresentante della ditta <strong>${datiAzienda.ragioneSociale || '_______________'}</strong> con sede legale in <strong>${indirizzoCompleto || '_______________'}</strong>, P.Iva <strong>${datiAzienda.partitaIva || '_______________'}</strong>, nomina in qualità di
+              </p>
+
+              <p class="dichiarazione-titolo">MEDICO COMPETENTE</p>
+
+              <p class="dichiarazione-corpo">
+                il/la Dott./Dott.ssa <strong>${modulo.datiForm.nomeMedico || '_______________'}</strong>, nato/a a <strong>${modulo.datiForm.luogoNascitaMedico || '_______________'}</strong> il <strong>${modulo.datiForm.dataNascitaMedico ? formatDate(modulo.datiForm.dataNascitaMedico) : '_______________'}</strong> in possesso dei titoli previsti dal D. Lgs. 81/2008 e successive modifiche ed integrazioni.
+              </p>
+
+              <p class="dichiarazione-corpo"><strong>La sorveglianza sanitaria comprende:</strong></p>
+
+              <ol class="lista-numerata">
+                <li>visita medica preventiva intesa a constatare l'assenza di controindicazioni al lavoro cui il lavoratore è destinato al fine di valutare la sua idoneità alla mansione specifica;</li>
+                <li>visita medica periodica per controllare lo stato di salute dei lavoratori ed esprimere il giudizio di idoneità alla mansione specifica. La periodicità di tali accertamenti, qualora non prevista dalla relativa normativa, viene stabilita, di norma, in una volta l'anno;</li>
+                <li>visita medica su richiesta del lavoratore, qualora sia ritenuta dal medico competente correlata ai rischi professionali;</li>
+                <li>visita medica in occasione del cambio della mansione onde verificare l'idoneità alla mansione specifica;</li>
+                <li>visita medica alla cessazione del rapporto di lavoro nei casi previsti dalla normativa vigente;</li>
+                <li>visita medica preventiva in fase preassuntiva;</li>
+                <li>visita medica precedente alla ripresa del lavoro, a seguito di assenza per motivi di salute di durata superiore ai sessanta giorni continuativi;</li>
+                <li>sopralluoghi sui luoghi di lavoro, riunione periodica e quant'altro previsto dal D.Lgs. 81/2008 e successive modifiche ed integrazioni.</li>
+              </ol>
+
+              <p class="dichiarazione-corpo">
+                La presente nomina ha validità dalla data di sottoscrizione fino alla revoca di una delle parti.
+              </p>
+            `;
+          }
 
           return `
             <p class="dichiarazione-intro">
