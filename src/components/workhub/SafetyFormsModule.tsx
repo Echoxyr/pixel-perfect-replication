@@ -27,6 +27,9 @@ import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { FileAttachmentManager } from '@/components/workhub/FileAttachmentManager';
 import PostCreationActions from '@/components/workhub/PostCreationActions';
+import Docxtemplater from 'docxtemplater';
+import PizZip from 'pizzip';
+import { saveAs } from 'file-saver';
 import {
   FileText,
   Download,
@@ -517,6 +520,102 @@ const generateProfessionalDocument = (
   };
 };
 
+// Genera documento Word usando il template base caricato dall'utente
+const generateWordFromTemplate = async (
+  modulo: ModuloCompilato,
+  moduloInfo: typeof MODULI_STANDARD[0] | undefined,
+  datiAzienda: DatiAzienda,
+  cantiere: any,
+  impresa: any,
+  lavoratore: any
+) => {
+  if (!datiAzienda.templateDocumentoBase) {
+    throw new Error('Nessun template Word caricato');
+  }
+
+  const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
+  const { riferimentoNormativo, titolareNomeCompleto, formatDate } = docData;
+
+  // Decode base64 template
+  const base64Data = datiAzienda.templateDocumentoBase.split(',')[1];
+  const binaryString = atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  const zip = new PizZip(bytes);
+  const doc = new Docxtemplater(zip, {
+    paragraphLoop: true,
+    linebreaks: true,
+  });
+
+  // Prepara dati per il template - placeholders standard
+  const templateData = {
+    // Dati azienda
+    ragione_sociale: datiAzienda.ragioneSociale || '',
+    partita_iva: datiAzienda.partitaIva || '',
+    codice_fiscale: datiAzienda.codiceFiscaleAzienda || '',
+    sede_legale: datiAzienda.sedeLegale || '',
+    cap: datiAzienda.cap || '',
+    citta: datiAzienda.citta || '',
+    provincia: datiAzienda.provincia || '',
+    pec: datiAzienda.pec || '',
+    email: datiAzienda.email || '',
+    telefono: datiAzienda.telefono || '',
+    rea: datiAzienda.iscrizioneREA || '',
+    
+    // Dati titolare
+    nome_titolare: datiAzienda.nomeTitolare || '',
+    cognome_titolare: datiAzienda.cognomeTitolare || '',
+    titolare_completo: titolareNomeCompleto,
+    cf_titolare: datiAzienda.codiceFiscaleTitolare || '',
+    data_nascita_titolare: datiAzienda.dataNascitaTitolare ? formatDate(datiAzienda.dataNascitaTitolare) : '',
+    luogo_nascita_titolare: datiAzienda.luogoNascitaTitolare || '',
+    prov_nascita_titolare: datiAzienda.provinciaNascitaTitolare || '',
+    residenza_titolare: datiAzienda.residenzaTitolare || '',
+    
+    // Dati modulo
+    tipo_modulo: moduloInfo?.nome || 'Documento',
+    riferimento_normativo: riferimentoNormativo,
+    data_compilazione: formatDate(modulo.dataCompilazione),
+    data_firma: modulo.dataFirma ? formatDate(modulo.dataFirma) : '',
+    
+    // Dati cantiere
+    cantiere_nome: cantiere?.nome || '',
+    cantiere_codice: cantiere?.codiceCommessa || '',
+    cantiere_indirizzo: cantiere?.indirizzo || '',
+    committente: cantiere?.committente || '',
+    
+    // Dati impresa (se presente)
+    impresa_nome: impresa?.ragioneSociale || '',
+    impresa_piva: impresa?.partitaIva || '',
+    
+    // Dati lavoratore (se presente)
+    lavoratore_nome: lavoratore?.nome || '',
+    lavoratore_cognome: lavoratore?.cognome || '',
+    lavoratore_cf: lavoratore?.codiceFiscale || '',
+    lavoratore_mansione: lavoratore?.mansione || '',
+    lavoratore_completo: lavoratore ? `${lavoratore.cognome} ${lavoratore.nome}` : '',
+    
+    // Dati form specifici
+    ...modulo.datiForm,
+    
+    // Data odierna
+    data_oggi: formatDate(new Date().toISOString().slice(0, 10)),
+    luogo: datiAzienda.citta || '',
+  };
+
+  doc.render(templateData);
+  
+  const out = doc.getZip().generate({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
+  
+  return out;
+};
+
 // Generate professional PDF with letterhead - uses the document content generator
 // Se templateDocumentoBase e presente, usa quello come base, altrimenti usa i dati azienda
 const generateProfessionalPDF = (
@@ -561,20 +660,13 @@ const generateProfessionalPDF = (
           display: flex;
           flex-direction: column;
           padding: 0;
+          position: relative;
         }
         .header {
           text-align: center;
           padding-bottom: 15px;
           border-bottom: 1px solid #333;
           margin-bottom: 25px;
-        }
-        .header-image {
-          max-width: 100%;
-          max-height: 100px;
-          object-fit: contain;
-        }
-        .header-text {
-          margin-top: 10px;
         }
         .company-name {
           font-size: 12pt;
@@ -616,15 +708,15 @@ const generateProfessionalPDF = (
           margin: 4px 0;
           font-size: 10pt;
         }
-        .dichiarazione-intro {
+        .dichiarazione-intro, .dichiarazione-premessa, .dichiarazione-corpo {
           text-align: justify;
           margin-bottom: 15px;
           line-height: 1.6;
         }
+        .dichiarazione-corpo {
+          text-indent: 25px;
+        }
         .dichiarazione-premessa {
-          text-align: justify;
-          margin-bottom: 20px;
-          line-height: 1.6;
           font-style: italic;
         }
         .dichiarazione-titolo {
@@ -634,46 +726,48 @@ const generateProfessionalPDF = (
           margin: 25px 0;
           letter-spacing: 2px;
         }
-        .dichiarazione-corpo {
-          text-align: justify;
-          margin-bottom: 15px;
-          line-height: 1.6;
-          text-indent: 25px;
-        }
-        .nomina-ruolo {
-          text-align: center;
-          font-weight: bold;
-          font-size: 11pt;
-          margin: 20px 0;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .note-aggiuntive {
-          margin-top: 20px;
-          padding: 12px;
-          background: #fafafa;
-          border-left: 2px solid #666;
-        }
-        .signature-area {
-          margin-top: 60px;
-          display: flex;
-          justify-content: space-between;
-          page-break-inside: avoid;
-        }
-        .signature-box {
-          width: 42%;
-          text-align: center;
-        }
-        .signature-line {
-          border-top: 1px solid #333;
-          margin-top: 50px;
-          padding-top: 5px;
-          font-size: 9pt;
-        }
         .date-place {
           text-align: right;
           margin: 30px 0;
           font-size: 10pt;
+        }
+        .signature-section {
+          margin-top: 50px;
+          page-break-inside: avoid;
+        }
+        .signature-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 20px;
+        }
+        .signature-box {
+          width: 45%;
+          text-align: center;
+        }
+        .signature-label {
+          font-size: 10pt;
+          margin-bottom: 5px;
+        }
+        .signature-name {
+          font-size: 9pt;
+          color: #444;
+          margin-bottom: 40px;
+        }
+        .signature-line {
+          border-top: 1px solid #333;
+          padding-top: 5px;
+          font-size: 8pt;
+          color: #666;
+        }
+        .stamp-container {
+          text-align: right;
+          margin-top: 30px;
+          padding-right: 20px;
+        }
+        .stamp-image {
+          max-width: 150px;
+          max-height: 150px;
+          object-fit: contain;
         }
         .footer {
           margin-top: auto;
@@ -683,26 +777,10 @@ const generateProfessionalPDF = (
           font-size: 8pt;
           color: #666;
         }
-        .footer-image {
-          max-width: 100%;
-          max-height: 50px;
-          object-fit: contain;
-          margin-bottom: 8px;
-        }
-        .stamp {
-          position: absolute;
-          right: 60px;
-          bottom: 150px;
-          max-width: 120px;
-          max-height: 120px;
-          opacity: 0.9;
-        }
-        strong {
-          font-weight: bold;
-        }
-        p {
-          margin: 0 0 10px 0;
-        }
+        strong { font-weight: bold; }
+        p { margin: 0 0 10px 0; }
+        ol, ul { margin: 10px 0 10px 25px; }
+        li { margin-bottom: 8px; }
       </style>
     </head>
     <body>
@@ -710,19 +788,17 @@ const generateProfessionalPDF = (
         ${!hasWordTemplate ? `
         <!-- Header generata da dati azienda -->
         <div class="header">
-          <div class="header-text">
-            <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
-            <div class="company-info">
-              ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
-              ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
-              ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
-              ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
-              ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
-            </div>
+          <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
+          <div class="company-info">
+            ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
+            ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
+            ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
+            ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
+            ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
           </div>
         </div>
         ` : `
-        <!-- Spazio per intestazione da template Word caricato -->
+        <!-- Spazio per intestazione da template Word -->
         <div style="height: 80px; margin-bottom: 20px;"></div>
         `}
 
@@ -746,26 +822,31 @@ const generateProfessionalPDF = (
 
         <!-- Date and Place -->
         <div class="date-place">
-          ${datiAzienda.citta || '_______________'}, li ${formatDate(modulo.dataCompilazione)}
+          ${datiAzienda.citta || '_______________'}, lì ${formatDate(modulo.dataCompilazione)}
         </div>
 
-        <!-- Signatures -->
-        <div class="signature-area">
-          <div class="signature-box">
-            <p>Il Datore di Lavoro / Legale Rappresentante</p>
-            <p style="font-size: 9pt;">(${titolareNomeCompleto || '_______________'})</p>
-            <div class="signature-line">Firma</div>
+        <!-- Signature Section - con firma e timbro posizionati correttamente -->
+        <div class="signature-section">
+          <div class="signature-row">
+            <div class="signature-box">
+              <p class="signature-label">Il Datore di Lavoro / Legale Rappresentante</p>
+              <p class="signature-name">(${titolareNomeCompleto || '_______________'})</p>
+              <div class="signature-line">Firma</div>
+            </div>
+            <div class="signature-box">
+              <p class="signature-label">${lavoratore ? 'Il Lavoratore / Nominato' : 'Per accettazione'}</p>
+              <p class="signature-name">${lavoratore ? `(${lavoratore.cognome} ${lavoratore.nome})` : '(&nbsp;)'}</p>
+              <div class="signature-line">Firma</div>
+            </div>
           </div>
-          <div class="signature-box">
-            <p>${lavoratore ? 'Il Lavoratore / Nominato' : 'Per accettazione'}</p>
-            ${lavoratore ? `<p style="font-size: 9pt;">(${lavoratore.cognome} ${lavoratore.nome})</p>` : '<p style="font-size: 9pt;">&nbsp;</p>'}
-            <div class="signature-line">Firma</div>
+          
+          <!-- Timbro posizionato sotto la firma destra, circa 1cm dal bordo -->
+          ${modulo.firmato && datiAzienda.timbro ? `
+          <div class="stamp-container">
+            <img src="${datiAzienda.timbro}" class="stamp-image" alt="Timbro aziendale" />
           </div>
+          ` : ''}
         </div>
-
-        ${modulo.firmato && datiAzienda.timbro ? `
-        <img src="${datiAzienda.timbro}" class="stamp" alt="Timbro" style="right: ${datiAzienda.timbroPositionX || 60}px; bottom: ${datiAzienda.timbroPositionY || 150}px;" />
-        ` : ''}
 
         ${!hasWordTemplate ? `
         <!-- Footer -->
@@ -908,6 +989,37 @@ export default function SafetyFormsModule() {
     }
     
     toast({ title: 'Documento pronto per la stampa/download' });
+  };
+
+  // Download come Word usando il template caricato
+  const handleDownloadWord = async (modulo: ModuloCompilato) => {
+    const moduloInfo = getModuloInfo(modulo.tipoModulo);
+    const cantiere = getCantiere(modulo.cantiereId);
+    const impresa = getImpresa(modulo.impresaId || '');
+    const lavoratore = getLavoratore(modulo.lavoratoreId || '');
+
+    if (!datiAzienda.templateDocumentoBase) {
+      toast({ 
+        title: 'Template Word non trovato', 
+        description: 'Carica un template Word in Impostazioni → Dati Azienda per esportare in formato Word',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    try {
+      const blob = await generateWordFromTemplate(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
+      const fileName = `${moduloInfo?.nome || 'Documento'}_${cantiere?.codiceCommessa || ''}_${modulo.dataCompilazione}.docx`;
+      saveAs(blob, fileName);
+      toast({ title: 'Documento Word scaricato con successo' });
+    } catch (error) {
+      console.error('Errore generazione Word:', error);
+      toast({ 
+        title: 'Errore generazione Word', 
+        description: 'Verifica che il template Word sia valido',
+        variant: 'destructive' 
+      });
+    }
   };
 
   const handleDeleteModulo = (id: string) => {
@@ -1401,6 +1513,17 @@ export default function SafetyFormsModule() {
                           <Download className="w-4 h-4" />
                           PDF
                         </Button>
+                        {datiAzienda.templateDocumentoBase && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadWord(modulo)}
+                            className="gap-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Word
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1620,10 +1743,18 @@ export default function SafetyFormsModule() {
               Chiudi
             </Button>
             {viewingModulo && (
-              <Button onClick={() => { handleDownloadPDF(viewingModulo); setViewingModulo(null); }}>
-                <Download className="w-4 h-4 mr-2" />
-                Scarica PDF
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => { handleDownloadPDF(viewingModulo); setViewingModulo(null); }}>
+                  <Download className="w-4 h-4 mr-2" />
+                  PDF
+                </Button>
+                {datiAzienda.templateDocumentoBase && (
+                  <Button variant="secondary" onClick={() => { handleDownloadWord(viewingModulo); setViewingModulo(null); }}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Word
+                  </Button>
+                )}
+              </div>
             )}
           </DialogFooter>
         </DialogContent>
