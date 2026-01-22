@@ -57,24 +57,24 @@ import {
   Send
 } from 'lucide-react';
 
-// Tipologie di moduli standard D.Lgs 81/2008
+// Tipologie di moduli standard D.Lgs 81/2008 - basati sui moduli caricati dall'utente
 const MODULI_STANDARD = [
   // Dichiarazioni
-  { id: 'psc_accettazione', nome: 'Accettazione PSC', icon: FileSignature, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di presa visione e accettazione del Piano di Sicurezza e Coordinamento' },
-  { id: 'idoneita_tecnico_professionale', nome: 'Idoneità Tecnico Professionale', icon: Building2, categoria: 'dichiarazioni', descrizione: 'Dichiarazione idoneità tecnico-professionale ai sensi del D.Lgs. 81/2008' },
-  { id: 'no_interdetti', nome: 'Dichiarazione Assenza Interdetti', icon: Users, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di non avere alle proprie dipendenze personale interdetto' },
-  { id: 'oma', nome: 'Dichiarazione OMA', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Dichiarazione Organico Medio Annuo' },
-  { id: 'dichiarazione_81', nome: 'Dichiarazione D.Lgs 81/2008', icon: Shield, categoria: 'dichiarazioni', descrizione: 'Dichiarazione di ottemperanza al D.Lgs 81/2008' },
-  { id: 'antimafia', nome: 'Dichiarazione Antimafia', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Dichiarazione sostitutiva familiari conviventi ai fini antimafia' },
+  { id: 'psc_accettazione', nome: 'Accettazione PSC', icon: FileSignature, categoria: 'dichiarazioni', descrizione: 'Presa visione e accettazione PSC (Art. 96, c.2 D.Lgs. 81/08)' },
+  { id: 'idoneita_tecnico_professionale', nome: 'Idoneità Tecnico Professionale', icon: Building2, categoria: 'dichiarazioni', descrizione: 'Dichiarazione idoneità con INPS/INAIL/PAT/OMA (Art. 26, 90 D.Lgs. 81/08)' },
+  { id: 'no_interdetti', nome: 'Dichiarazione Assenza Interdetti', icon: Users, categoria: 'dichiarazioni', descrizione: 'Assenza personale interdetto (Art. 14 D.Lgs. 81/08)' },
+  { id: 'oma', nome: 'Dichiarazione OMA', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Organico Medio Annuo (Art. 90, c.9, lett.b D.Lgs. 81/08)' },
+  { id: 'dichiarazione_81', nome: 'Dichiarazione D.Lgs 81/2008', icon: Shield, categoria: 'dichiarazioni', descrizione: 'Ottemperanza obblighi sicurezza D.Lgs 81/08' },
+  { id: 'antimafia', nome: 'Dichiarazione Antimafia', icon: FileText, categoria: 'dichiarazioni', descrizione: 'Familiari conviventi (Art. 85, c.3 D.Lgs. 159/2011)' },
   // Nomine
-  { id: 'nomina_direttore', nome: 'Nomina Direttore Tecnico', icon: HardHat, categoria: 'nomine', descrizione: 'Nomina del Direttore Tecnico di Cantiere' },
-  { id: 'nomina_antincendio', nome: 'Nomina Addetto Antincendio', icon: Flame, categoria: 'nomine', descrizione: 'Nomina addetto alla lotta antincendio e gestione emergenze' },
-  { id: 'nomina_primo_soccorso', nome: 'Nomina Addetto Primo Soccorso', icon: HeartPulse, categoria: 'nomine', descrizione: 'Nomina addetto al primo soccorso' },
-  { id: 'nomina_rls', nome: 'Verbale Nomina RLS', icon: UserCheck, categoria: 'nomine', descrizione: 'Verbale di nomina del Rappresentante dei Lavoratori per la Sicurezza' },
-  { id: 'nomina_medico', nome: 'Nomina Medico Competente', icon: Stethoscope, categoria: 'nomine', descrizione: 'Nomina del Medico Competente aziendale' },
-  { id: 'nomina_rspp', nome: 'Nomina RSPP', icon: ShieldCheck, categoria: 'nomine', descrizione: 'Nomina Responsabile Servizio Prevenzione e Protezione' },
+  { id: 'nomina_direttore', nome: 'Nomina Direttore Tecnico', icon: HardHat, categoria: 'nomine', descrizione: 'Direttore Tecnico di Cantiere (MOD 01.01)' },
+  { id: 'nomina_antincendio', nome: 'Nomina Addetto Antincendio', icon: Flame, categoria: 'nomine', descrizione: 'Addetto antincendio e emergenze (Art. 18, 43 D.Lgs. 81/08)' },
+  { id: 'nomina_primo_soccorso', nome: 'Nomina Addetto Primo Soccorso', icon: HeartPulse, categoria: 'nomine', descrizione: 'Addetto primo soccorso (Art. 45, D.M. 388/03)' },
+  { id: 'nomina_rls', nome: 'Verbale Nomina RLS', icon: UserCheck, categoria: 'nomine', descrizione: 'Verbale riunione nomina RLS (Art. 47 D.Lgs. 81/08)' },
+  { id: 'nomina_medico', nome: 'Nomina Medico Competente', icon: Stethoscope, categoria: 'nomine', descrizione: 'Medico Competente con protocollo sanitario (Art. 18 D.Lgs. 81/08)' },
+  { id: 'nomina_rspp', nome: 'Nomina RSPP', icon: ShieldCheck, categoria: 'nomine', descrizione: 'Responsabile SPP (Artt. 17, 31-34 D.Lgs. 81/08)' },
   // Verbali
-  { id: 'consegna_dpi', nome: 'Verbale Consegna DPI', icon: Shield, categoria: 'verbali', descrizione: 'Verbale di consegna dei Dispositivi di Protezione Individuale' },
+  { id: 'consegna_dpi', nome: 'Verbale Consegna DPI', icon: Shield, categoria: 'verbali', descrizione: 'Consegna DPI con tabella quantità/tipologia (MOD 01.08)' },
 ];
 
 // Corsi obbligatori per tipologia nomina
