@@ -75,12 +75,12 @@ export default function Impostazioni() {
     if (!file) return;
 
     // Check file type
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword'
-    ];
-    if (!validTypes.includes(file.type) && !file.name.endsWith('.docx') && !file.name.endsWith('.doc')) {
-      toast({ title: 'Formato non valido', description: 'Carica solo file Word (.docx o .doc)', variant: 'destructive' });
+    // Nota: la generazione documenti usa un motore basato su .docx (formato zip). I .doc non sono supportati.
+    const isDocx =
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.name.toLowerCase().endsWith('.docx');
+    if (!isDocx) {
+      toast({ title: 'Formato non valido', description: 'Carica solo file Word .DOCX', variant: 'destructive' });
       return;
     }
 
