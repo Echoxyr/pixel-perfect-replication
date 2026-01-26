@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { FileAttachmentManager } from '@/components/workhub/FileAttachmentManager';
 import PostCreationActions from '@/components/workhub/PostCreationActions';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import { HtmlPreviewFrame } from '@/components/workhub/HtmlPreviewFrame';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
@@ -125,10 +127,28 @@ interface FileAttachment {
 interface ModuloCustom {
   id: string;
   nome: string;
-  tipo: 'word' | 'pdf';
   dataCaricamento: string;
-  fileUrl: string;
+  path?: string;
+  url?: string;
+  size?: number;
+  mimeType?: string;
+  // compatibilità vecchie versioni (URL.createObjectURL)
+  fileUrl?: string;
 }
+
+const stripHtmlToText = (html: string) => {
+  return html
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/?p[^>]*>/gi, "\n")
+    .replace(/<\/?li[^>]*>/gi, "\n- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+};
 
 // Generate professional document content with proper legal formatting
 const generateProfessionalDocument = (
@@ -534,7 +554,7 @@ const generateWordFromTemplate = async (
   }
 
   const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
-  const { riferimentoNormativo, titolareNomeCompleto, formatDate } = docData;
+  const { riferimentoNormativo, titolareNomeCompleto, formatDate, content } = docData;
 
   // Decode base64 template
   const base64Data = datiAzienda.templateDocumentoBase.split(',')[1];
@@ -600,6 +620,9 @@ const generateWordFromTemplate = async (
     
     // Dati form specifici
     ...modulo.datiForm,
+
+    // Contenuto in testo (usa nel template placeholder {contenuto_testo})
+    contenuto_testo: stripHtmlToText(content),
     
     // Data odierna
     data_oggi: formatDate(new Date().toISOString().slice(0, 10)),
@@ -629,8 +652,10 @@ const generateProfessionalPDF = (
   const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
   const { content, riferimentoNormativo, titolareNomeCompleto, indirizzoCompleto, formatDate } = docData;
 
-  // Se presente template Word base, non mostrare intestazione generata
-  const hasWordTemplate = datiAzienda.templateDocumentoBase && datiAzienda.templateDocumentoBase.length > 0;
+  const hasHeaderImage = !!datiAzienda.cartaIntestataHeader;
+  const hasFooterImage = !!datiAzienda.cartaIntestataFooter;
+  const stampX = typeof datiAzienda.timbroPositionX === 'number' ? datiAzienda.timbroPositionX : null;
+  const stampY = typeof datiAzienda.timbroPositionY === 'number' ? datiAzienda.timbroPositionY : null;
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -661,6 +686,28 @@ const generateProfessionalPDF = (
           flex-direction: column;
           padding: 0;
           position: relative;
+          padding-bottom: 55mm;
+        }
+        .letterhead-image {
+          width: 100%;
+          max-height: 95px;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto;
+        }
+        .letterhead-footer {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          padding-top: 10px;
+        }
+        .letterhead-footer img {
+          width: 100%;
+          max-height: 70px;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto;
         }
         .header {
           text-align: center;
@@ -732,8 +779,10 @@ const generateProfessionalPDF = (
           font-size: 10pt;
         }
         .signature-section {
-          margin-top: 50px;
+          margin-top: 30px;
           page-break-inside: avoid;
+          position: relative;
+          padding-bottom: 45mm;
         }
         .signature-row {
           display: flex;
@@ -760,9 +809,11 @@ const generateProfessionalPDF = (
           color: #666;
         }
         .stamp-container {
-          text-align: right;
-          margin-top: 30px;
-          padding-right: 20px;
+          position: absolute;
+          width: 160px;
+          height: 160px;
+          right: 0;
+          bottom: 0;
         }
         .stamp-image {
           max-width: 150px;
@@ -785,21 +836,21 @@ const generateProfessionalPDF = (
     </head>
     <body>
       <div class="page-container">
-        ${!hasWordTemplate ? `
-        <!-- Header generata da dati azienda -->
-        <div class="header">
-          <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
-          <div class="company-info">
-            ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
-            ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
-            ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
-            ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
-            ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
-          </div>
-        </div>
+        <!-- Header: usa immagine carta intestata se presente, altrimenti dati azienda -->
+        ${hasHeaderImage ? `
+          <img src="${datiAzienda.cartaIntestataHeader}" alt="Carta intestata" class="letterhead-image" />
+          <div style="height: 10px;"></div>
         ` : `
-        <!-- Spazio per intestazione da template Word -->
-        <div style="height: 80px; margin-bottom: 20px;"></div>
+          <div class="header">
+            <div class="company-name">${datiAzienda.ragioneSociale || 'AZIENDA'}</div>
+            <div class="company-info">
+              ${indirizzoCompleto ? `${indirizzoCompleto}<br/>` : ''}
+              ${datiAzienda.partitaIva ? `P.IVA: ${datiAzienda.partitaIva}` : ''} ${datiAzienda.codiceFiscaleAzienda ? `- C.F.: ${datiAzienda.codiceFiscaleAzienda}` : ''}<br/>
+              ${datiAzienda.iscrizioneREA ? `REA: ${datiAzienda.iscrizioneREA}<br/>` : ''}
+              ${datiAzienda.telefono ? `Tel: ${datiAzienda.telefono}` : ''} ${datiAzienda.email ? `- Email: ${datiAzienda.email}` : ''}<br/>
+              ${datiAzienda.pec ? `PEC: ${datiAzienda.pec}` : ''}
+            </div>
+          </div>
         `}
 
         <!-- Document Title -->
@@ -842,19 +893,23 @@ const generateProfessionalPDF = (
           
           <!-- Timbro posizionato sotto la firma destra, circa 1cm dal bordo -->
           ${modulo.firmato && datiAzienda.timbro ? `
-          <div class="stamp-container">
+          <div class="stamp-container" style="${stampX !== null && stampY !== null ? `left:${stampX}%;top:${stampY}%;transform:translate(-50%,-50%);right:auto;bottom:auto;` : ''}">
             <img src="${datiAzienda.timbro}" class="stamp-image" alt="Timbro aziendale" />
           </div>
           ` : ''}
         </div>
 
-        ${!hasWordTemplate ? `
         <!-- Footer -->
-        <div class="footer">
-          <p>${datiAzienda.ragioneSociale || ''} ${datiAzienda.partitaIva ? `- P.IVA ${datiAzienda.partitaIva}` : ''}</p>
-          <p>Documento generato il ${formatDate(new Date().toISOString().slice(0, 10))}</p>
-        </div>
-        ` : ''}
+        ${hasFooterImage ? `
+          <div class="letterhead-footer">
+            <img src="${datiAzienda.cartaIntestataFooter}" alt="Footer carta intestata" />
+          </div>
+        ` : `
+          <div class="footer">
+            <p>${datiAzienda.ragioneSociale || ''} ${datiAzienda.partitaIva ? `- P.IVA ${datiAzienda.partitaIva}` : ''}</p>
+            <p>Documento generato il ${formatDate(new Date().toISOString().slice(0, 10))}</p>
+          </div>
+        `}
       </div>
     </body>
     </html>
@@ -867,6 +922,11 @@ export default function SafetyFormsModule() {
   const { cantieri, imprese, lavoratori, datiAzienda } = useWorkHub();
   const { toast } = useToast();
 
+  const { uploadFile: uploadCustomFile, deleteFile: deleteCustomFile } = useFileUpload({
+    bucket: 'documenti',
+    folder: 'compliance/sicurezza/moduli-custom',
+  });
+
   const [activeModulo, setActiveModulo] = useState<string | null>(null);
   const [moduliCompilati, setModuliCompilati] = useState<ModuloCompilato[]>(() => {
     const saved = localStorage.getItem('safety_moduli_compilati');
@@ -874,7 +934,19 @@ export default function SafetyFormsModule() {
   });
   const [moduliCustom, setModuliCustom] = useState<ModuloCustom[]>(() => {
     const saved = localStorage.getItem('safety_moduli_custom');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed)
+        ? parsed.map((m: any) => ({
+            ...m,
+            // migrazione: vecchio shape {fileUrl}
+            url: m.url || m.fileUrl,
+          }))
+        : [];
+    } catch {
+      return [];
+    }
   });
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -883,6 +955,7 @@ export default function SafetyFormsModule() {
   const [selectedImpresa, setSelectedImpresa] = useState('');
   const [selectedLavoratore, setSelectedLavoratore] = useState('');
   const [viewingModulo, setViewingModulo] = useState<ModuloCompilato | null>(null);
+  const [editingModuloId, setEditingModuloId] = useState<string | null>(null);
   
   // Post-creation actions state
   const [showPostCreationDialog, setShowPostCreationDialog] = useState(false);
@@ -937,12 +1010,43 @@ export default function SafetyFormsModule() {
     }
     setActiveModulo(moduloId);
     setFormData({});
+    setEditingModuloId(null);
+    setShowFormDialog(true);
+  };
+
+  const handleEditModulo = (modulo: ModuloCompilato) => {
+    setActiveModulo(modulo.tipoModulo);
+    setSelectedCantiere(modulo.cantiereId);
+    setSelectedImpresa(modulo.impresaId || '');
+    setSelectedLavoratore(modulo.lavoratoreId || '');
+    setFormData({ ...modulo.datiForm });
+    setEditingModuloId(modulo.id);
     setShowFormDialog(true);
   };
 
   const handleSaveForm = () => {
     if (!selectedCantiere) {
       toast({ title: 'Seleziona un cantiere', variant: 'destructive' });
+      return;
+    }
+
+    if (editingModuloId) {
+      const updated = moduliCompilati.map(m =>
+        m.id === editingModuloId
+          ? {
+              ...m,
+              cantiereId: selectedCantiere,
+              impresaId: selectedImpresa || undefined,
+              lavoratoreId: selectedLavoratore || undefined,
+              datiForm: { ...formData },
+            }
+          : m
+      );
+      setModuliCompilati(updated);
+      localStorage.setItem('safety_moduli_compilati', JSON.stringify(updated));
+      toast({ title: 'Modulo aggiornato' });
+      setShowFormDialog(false);
+      resetForm();
       return;
     }
 
@@ -1038,26 +1142,36 @@ export default function SafetyFormsModule() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const isValid = file.type === 'application/pdf' || 
-                    file.type === 'application/msword' || 
-                    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    
+    // Nota: i .doc non sono supportati dal flusso di generazione/modifica.
+    const isValid =
+      file.type === 'application/pdf' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.name.toLowerCase().endsWith('.docx');
+
     if (!isValid) {
-      toast({ title: 'Formato non supportato', description: 'Carica solo file PDF o Word', variant: 'destructive' });
+      toast({ title: 'Formato non supportato', description: 'Carica solo PDF o Word .DOCX', variant: 'destructive' });
       return;
     }
 
-    const newCustom: ModuloCustom = {
-      id: generateId(),
-      nome: file.name,
-      tipo: file.type.includes('pdf') ? 'pdf' : 'word',
-      dataCaricamento: new Date().toISOString().slice(0, 10),
-      fileUrl: URL.createObjectURL(file)
-    };
+    // upload su storage per mantenere visibile/modificabile anche dopo refresh
+    (async () => {
+      const result = await uploadCustomFile(file);
+      if (!result) return;
 
-    setModuliCustom([...moduliCustom, newCustom]);
-    toast({ title: 'Modulo caricato con successo' });
-    setShowUploadDialog(false);
+      const newCustom: ModuloCustom = {
+        id: generateId(),
+        nome: result.name,
+        dataCaricamento: new Date().toISOString().slice(0, 10),
+        path: result.path,
+        url: result.url,
+        size: result.size,
+        mimeType: result.type,
+      };
+
+      setModuliCustom(prev => [...prev, newCustom]);
+      toast({ title: 'Modulo caricato con successo' });
+      setShowUploadDialog(false);
+    })();
   };
 
   const resetForm = () => {
@@ -1066,6 +1180,7 @@ export default function SafetyFormsModule() {
     setSelectedCantiere('');
     setSelectedImpresa('');
     setSelectedLavoratore('');
+    setEditingModuloId(null);
   };
 
   // Render form fields based on module type
