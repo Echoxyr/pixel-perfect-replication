@@ -29,6 +29,7 @@ import { FileAttachmentManager } from '@/components/workhub/FileAttachmentManage
 import PostCreationActions from '@/components/workhub/PostCreationActions';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { HtmlPreviewFrame } from '@/components/workhub/HtmlPreviewFrame';
+import { FileViewerModal } from '@/components/workhub/FileViewerModal';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { saveAs } from 'file-saver';
@@ -681,12 +682,13 @@ const generateProfessionalPDF = (
           text-align: justify;
         }
         .page-container {
-          min-height: 100vh;
+          min-height: auto;
+          max-height: 100%;
           display: flex;
           flex-direction: column;
           padding: 0;
           position: relative;
-          padding-bottom: 55mm;
+          padding-bottom: 20mm;
         }
         .letterhead-image {
           width: 100%;
@@ -779,10 +781,10 @@ const generateProfessionalPDF = (
           font-size: 10pt;
         }
         .signature-section {
-          margin-top: 30px;
+          margin-top: 20px;
           page-break-inside: avoid;
           position: relative;
-          padding-bottom: 45mm;
+          padding-bottom: 15mm;
         }
         .signature-row {
           display: flex;
@@ -810,14 +812,14 @@ const generateProfessionalPDF = (
         }
         .stamp-container {
           position: absolute;
-          width: 160px;
-          height: 160px;
-          right: 0;
-          bottom: 0;
+          width: 120px;
+          height: 120px;
+          right: 10px;
+          bottom: 10px;
         }
         .stamp-image {
-          max-width: 150px;
-          max-height: 150px;
+          max-width: 100px;
+          max-height: 100px;
           object-fit: contain;
         }
         .footer {
@@ -891,9 +893,9 @@ const generateProfessionalPDF = (
             </div>
           </div>
           
-          <!-- Timbro posizionato sotto la firma destra, circa 1cm dal bordo -->
-          ${modulo.firmato && datiAzienda.timbro ? `
-          <div class="stamp-container" style="${stampX !== null && stampY !== null ? `left:${stampX}%;top:${stampY}%;transform:translate(-50%,-50%);right:auto;bottom:auto;` : ''}">
+          <!-- Timbro posizionato in basso a destra -->
+          ${datiAzienda.timbro ? `
+          <div class="stamp-container">
             <img src="${datiAzienda.timbro}" class="stamp-image" alt="Timbro aziendale" />
           </div>
           ` : ''}
@@ -968,6 +970,10 @@ export default function SafetyFormsModule() {
   // Invio modulo state
   const [showInvioDialog, setShowInvioDialog] = useState(false);
   const [invioDestinatario, setInvioDestinatario] = useState('');
+  
+  // Custom module viewing/replacing
+  const [viewingCustomModulo, setViewingCustomModulo] = useState<ModuloCustom | null>(null);
+  const [replacingCustomModuloId, setReplacingCustomModuloId] = useState<string | null>(null);
 
   // Auto-save moduli compilati
   useEffect(() => {
@@ -1172,6 +1178,46 @@ export default function SafetyFormsModule() {
       toast({ title: 'Modulo caricato con successo' });
       setShowUploadDialog(false);
     })();
+  };
+
+  // Sostituisci modulo custom (rimpiazza file)
+  const handleReplaceCustom = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !replacingCustomModuloId) return;
+
+    const isValid =
+      file.type === 'application/pdf' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.name.toLowerCase().endsWith('.docx');
+
+    if (!isValid) {
+      toast({ title: 'Formato non supportato', description: 'Carica solo PDF o Word .DOCX', variant: 'destructive' });
+      setReplacingCustomModuloId(null);
+      return;
+    }
+
+    const result = await uploadCustomFile(file);
+    if (!result) {
+      setReplacingCustomModuloId(null);
+      return;
+    }
+
+    setModuliCustom(prev => prev.map(m =>
+      m.id === replacingCustomModuloId
+        ? {
+            ...m,
+            nome: result.name,
+            path: result.path,
+            url: result.url,
+            size: result.size,
+            mimeType: result.type,
+            dataCaricamento: new Date().toISOString().slice(0, 10),
+          }
+        : m
+    ));
+    toast({ title: 'Modulo sostituito con successo' });
+    setReplacingCustomModuloId(null);
+    e.target.value = '';
   };
 
   const resetForm = () => {
@@ -1683,15 +1729,35 @@ export default function SafetyFormsModule() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      onClick={() => {
+                        setViewingCustomModulo(modulo);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Visualizza
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => window.open(modulo.url || modulo.fileUrl, '_blank')}
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Scarica
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setReplacingCustomModuloId(modulo.id);
+                        document.getElementById('replace-custom-input')?.click();
+                      }}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Sostituisci
                     </Button>
                     <Button
                       variant="ghost"
@@ -1808,17 +1874,17 @@ export default function SafetyFormsModule() {
         </DialogContent>
       </Dialog>
 
-      {/* View Modulo Dialog */}
+      {/* View Modulo Dialog - con preview HTML reale */}
       <Dialog open={!!viewingModulo} onOpenChange={(open) => !open && setViewingModulo(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {viewingModulo && getModuloInfo(viewingModulo.tipoModulo)?.nome}
             </DialogTitle>
           </DialogHeader>
           {viewingModulo && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex-1 overflow-auto space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Cantiere:</span>
                   <p className="font-medium">{getCantiere(viewingModulo.cantiereId)?.nome || '-'}</p>
@@ -1845,26 +1911,45 @@ export default function SafetyFormsModule() {
                   </div>
                 )}
               </div>
+              {/* Anteprima documento HTML */}
               <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">Dati del modulo:</h4>
-                <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-60">
-                  {JSON.stringify(viewingModulo.datiForm, null, 2)}
-                </pre>
+                <h4 className="font-medium mb-2">Anteprima documento:</h4>
+                <HtmlPreviewFrame
+                  html={generateProfessionalPDF(
+                    viewingModulo,
+                    getModuloInfo(viewingModulo.tipoModulo),
+                    datiAzienda,
+                    getCantiere(viewingModulo.cantiereId),
+                    getImpresa(viewingModulo.impresaId || ''),
+                    getLavoratore(viewingModulo.lavoratoreId || '')
+                  )}
+                  className="h-[50vh]"
+                />
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
             <Button variant="outline" onClick={() => setViewingModulo(null)}>
               Chiudi
             </Button>
             {viewingModulo && (
-              <div className="flex gap-2">
-                <Button onClick={() => { handleDownloadPDF(viewingModulo); setViewingModulo(null); }}>
+              <div className="flex gap-2 flex-wrap">
+                <Button 
+                  variant="secondary"
+                  onClick={() => { 
+                    handleEditModulo(viewingModulo); 
+                    setViewingModulo(null); 
+                  }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifica
+                </Button>
+                <Button onClick={() => { handleDownloadPDF(viewingModulo); }}>
                   <Download className="w-4 h-4 mr-2" />
                   PDF
                 </Button>
                 {datiAzienda.templateDocumentoBase && (
-                  <Button variant="secondary" onClick={() => { handleDownloadWord(viewingModulo); setViewingModulo(null); }}>
+                  <Button variant="secondary" onClick={() => { handleDownloadWord(viewingModulo); }}>
                     <FileText className="w-4 h-4 mr-2" />
                     Word
                   </Button>
@@ -2006,6 +2091,29 @@ export default function SafetyFormsModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden input for replacing custom modules */}
+      <input
+        id="replace-custom-input"
+        type="file"
+        accept=".pdf,.docx"
+        className="hidden"
+        onChange={handleReplaceCustom}
+      />
+
+      {/* FileViewerModal for custom modules */}
+      <FileViewerModal
+        open={!!viewingCustomModulo}
+        onOpenChange={(open) => !open && setViewingCustomModulo(null)}
+        file={viewingCustomModulo ? {
+          name: viewingCustomModulo.nome,
+          url: viewingCustomModulo.url || viewingCustomModulo.fileUrl || '',
+          size: viewingCustomModulo.size,
+          type: viewingCustomModulo.mimeType,
+          path: viewingCustomModulo.path,
+        } : null}
+        allowDelete={false}
+      />
 
       {/* Post-Creation Actions - integrazione con ecosistema */}
       {lastCreatedModulo && (
