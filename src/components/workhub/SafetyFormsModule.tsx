@@ -1679,7 +1679,7 @@ export default function SafetyFormsModule() {
                     <div className="flex-1">
                       <h4 className="font-medium truncate">{modulo.nome}</h4>
                       <p className="text-xs text-muted-foreground">
-                        {modulo.tipo.toUpperCase()} • {formatDateFull(modulo.dataCaricamento)}
+                        {modulo.mimeType?.includes('pdf') ? 'PDF' : modulo.mimeType?.includes('word') || modulo.mimeType?.includes('docx') ? 'DOCX' : 'FILE'} • {formatDateFull(modulo.dataCaricamento)}
                       </p>
                     </div>
                   </div>
@@ -1688,7 +1688,7 @@ export default function SafetyFormsModule() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => window.open(modulo.fileUrl, '_blank')}
+                      onClick={() => window.open(modulo.url || modulo.fileUrl, '_blank')}
                     >
                       <Download className="w-4 h-4 mr-1" />
                       Scarica
