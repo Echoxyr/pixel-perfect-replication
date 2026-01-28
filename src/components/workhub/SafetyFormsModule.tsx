@@ -557,6 +557,78 @@ const generateWordFromTemplate = async (
   const docData = generateProfessionalDocument(modulo, moduloInfo, datiAzienda, cantiere, impresa, lavoratore);
   const { riferimentoNormativo, titolareNomeCompleto, formatDate, content } = docData;
 
+  const escapeXml = (unsafe: string) =>
+    unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+
+  const docxParagraph = (
+    text: string,
+    opts: { align?: 'both' | 'center' | 'right' | 'left'; bold?: boolean; italic?: boolean; sizeHalfPt?: number } = {}
+  ) => {
+    const { align = 'both', bold = false, italic = false, sizeHalfPt = 20 } = opts;
+    const safeText = escapeXml(text);
+    return `
+      <w:p>
+        <w:pPr>
+          <w:jc w:val="${align}"/>
+          <w:spacing w:after="160" w:line="360" w:lineRule="auto"/>
+        </w:pPr>
+        <w:r>
+          <w:rPr>
+            <w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>
+            <w:sz w:val="${sizeHalfPt}"/>
+            <w:szCs w:val="${sizeHalfPt}"/>
+            ${bold ? '<w:b/>' : ''}
+            ${italic ? '<w:i/>' : ''}
+          </w:rPr>
+          <w:t xml:space="preserve">${safeText}</w:t>
+        </w:r>
+      </w:p>
+    `;
+  };
+
+  const docxParagraphsFromText = (text: string) => {
+    const normalized = (text || '').replace(/\r\n/g, '\n');
+    const blocks = normalized
+      .split(/\n\s*\n/g)
+      .map((b) => b.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim());
+
+    return blocks
+      .flatMap((b) => (b ? [docxParagraph(b)] : [docxParagraph('')]))
+      .join('');
+  };
+
+  const docxParagraphsFromLines = (text: string) => {
+    const lines = (text || '').replace(/\r\n/g, '\n').split('\n');
+    return lines
+      .map((line) => {
+        const trimmed = line.trim();
+        if (!trimmed) return docxParagraph('');
+        const isDateLine = /\b(lì|li)\b/i.test(trimmed) && /\d/.test(trimmed);
+        return docxParagraph(trimmed, { align: isDateLine ? 'right' : 'left' });
+      })
+      .join('');
+  };
+
+  // Corpo documento: sempre incluso nel DOCX anche se il template non ha placeholder.
+  const corpoTesto = stripHtmlToText(content);
+  const firmaSezione = [
+    '',
+    `${datiAzienda.citta || '_______________'}, lì ${formatDate(modulo.dataCompilazione)}`,
+    '',
+    'Il Datore di Lavoro / Legale Rappresentante',
+    `(${titolareNomeCompleto || '_______________'})`,
+    'Firma: ________________________________',
+    '',
+    lavoratore ? 'Il Lavoratore / Nominato' : 'Per accettazione',
+    lavoratore ? `(${lavoratore.cognome} ${lavoratore.nome})` : '(&nbsp;)',
+    'Firma: ________________________________',
+  ].join('\n');
+
   // Decode base64 template
   const base64Data = datiAzienda.templateDocumentoBase.split(',')[1];
   const binaryString = atob(base64Data);
@@ -622,8 +694,8 @@ const generateWordFromTemplate = async (
     // Dati form specifici
     ...modulo.datiForm,
 
-    // Contenuto in testo (usa nel template placeholder {contenuto_testo})
-    contenuto_testo: stripHtmlToText(content),
+    // Contenuto in testo (se il template include {contenuto_testo})
+    contenuto_testo: corpoTesto,
     
     // Data odierna
     data_oggi: formatDate(new Date().toISOString().slice(0, 10)),
@@ -631,6 +703,45 @@ const generateWordFromTemplate = async (
   };
 
   doc.render(templateData);
+
+  // Se il template non contiene un placeholder per il contenuto, inseriamo comunque il corpo nel document.xml
+  // (così il file non risulta “vuoto” con sola carta intestata).
+  try {
+    const zipOut = doc.getZip();
+    const docXmlFile = zipOut.file('word/document.xml');
+    if (docXmlFile) {
+      const xml = docXmlFile.asText();
+
+      // Evita duplicazioni se il contenuto è già finito nel documento via placeholder.
+      const snippet = corpoTesto.replace(/\s+/g, ' ').trim().slice(0, 80);
+      const snippetEscaped = escapeXml(snippet);
+      const alreadyHasBody = snippet && xml.includes(snippetEscaped);
+
+      if (!alreadyHasBody) {
+        const insertAt = (() => {
+          const sectIdx = xml.lastIndexOf('<w:sectPr');
+          if (sectIdx > -1) return sectIdx;
+          const bodyEnd = xml.lastIndexOf('</w:body>');
+          return bodyEnd > -1 ? bodyEnd : xml.length;
+        })();
+
+        const injectedXml = [
+          docxParagraph(moduloInfo?.nome || 'Documento', { align: 'center', bold: true, sizeHalfPt: 24 }),
+          docxParagraph(riferimentoNormativo || '', { align: 'center', italic: true, sizeHalfPt: 18 }),
+          docxParagraph(''),
+          docxParagraphsFromText(corpoTesto),
+          docxParagraph(''),
+          docxParagraphsFromLines(firmaSezione),
+        ].join('');
+
+        const newXml = `${xml.slice(0, insertAt)}${injectedXml}${xml.slice(insertAt)}`;
+        zipOut.file('word/document.xml', newXml);
+      }
+    }
+  } catch (e) {
+    // Non bloccare il download: in caso di template complesso, si mantiene l'output renderizzato.
+    console.warn('DOCX inject warning:', e);
+  }
   
   const out = doc.getZip().generate({
     type: 'blob',
@@ -794,6 +905,8 @@ const generateProfessionalPDF = (
         .signature-box {
           width: 45%;
           text-align: center;
+          position: relative;
+          min-height: 140px;
         }
         .signature-label {
           font-size: 10pt;
@@ -805,6 +918,10 @@ const generateProfessionalPDF = (
           margin-bottom: 40px;
         }
         .signature-line {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
           border-top: 1px solid #333;
           padding-top: 5px;
           font-size: 8pt;
@@ -814,8 +931,9 @@ const generateProfessionalPDF = (
           position: absolute;
           width: 120px;
           height: 120px;
-          right: 10px;
-          bottom: 10px;
+          left: 50%;
+          bottom: 28px; /* sopra la riga firma */
+          transform: translateX(-50%);
         }
         .stamp-image {
           max-width: 100px;
@@ -884,6 +1002,11 @@ const generateProfessionalPDF = (
             <div class="signature-box">
               <p class="signature-label">Il Datore di Lavoro / Legale Rappresentante</p>
               <p class="signature-name">(${titolareNomeCompleto || '_______________'})</p>
+              ${datiAzienda.timbro ? `
+              <div class="stamp-container">
+                <img src="${datiAzienda.timbro}" class="stamp-image" alt="Timbro aziendale" />
+              </div>
+              ` : ''}
               <div class="signature-line">Firma</div>
             </div>
             <div class="signature-box">
@@ -892,13 +1015,6 @@ const generateProfessionalPDF = (
               <div class="signature-line">Firma</div>
             </div>
           </div>
-          
-          <!-- Timbro posizionato in basso a destra -->
-          ${datiAzienda.timbro ? `
-          <div class="stamp-container">
-            <img src="${datiAzienda.timbro}" class="stamp-image" alt="Timbro aziendale" />
-          </div>
-          ` : ''}
         </div>
 
         <!-- Footer -->
